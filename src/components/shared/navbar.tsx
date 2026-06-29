@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -9,6 +10,12 @@ import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Route links (e.g. /about) are active on their page; in-page anchor links
+  // (#solutions…) act as the active item on the homepage only.
+  const isActive = (href: string, index: number) =>
+    href.startsWith("/") ? pathname === href : pathname === "/" && index === 0;
 
   return (
     <nav className="bg-surface/60 fixed top-0 z-50 w-full border-b border-white/10 shadow-sm backdrop-blur-xl">
@@ -28,7 +35,7 @@ export function Navbar() {
               href={link.href}
               className={cn(
                 "text-body-md transition-colors",
-                i === 0
+                isActive(link.href, i)
                   ? "text-primary border-primary border-b-2 pb-1 font-bold"
                   : "text-on-surface/80 hover:text-primary",
               )}

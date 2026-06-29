@@ -13,7 +13,7 @@ export const siteConfig = {
     { title: "Solutions", href: "#solutions" },
     { title: "Industries", href: "#industries" },
     { title: "Resources", href: "#resources" },
-    { title: "About Us", href: "#about" },
+    { title: "About Us", href: "/about" },
   ],
   // Footer link columns.
   footerNav: {

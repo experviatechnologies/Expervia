@@ -114,28 +114,6 @@
   --text-label-sm--font-weight: 500;
 }
 
-/* Brand-aligned semantic tokens consumed by shadcn components. */
-.dark {
-  --background: #101415;
-  --foreground: #e0e3e5;
-  --card: #1d2022;
-  --card-foreground: #e0e3e5;
-  --popover: #1d2022;
-  --popover-foreground: #e0e3e5;
-  --primary: #d0bcff;
-  --primary-foreground: #3b0091;
-  --secondary: #56378d;
-  --secondary-foreground: #e9ddff;
-  --muted: #191c1e;
-  --muted-foreground: #cbc3d7;
-  --accent: #272a2c;
-  --accent-foreground: #e0e3e5;
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: #8a5cf5;
-}
-
 /* Reusable visual effects from the design system. */
 @layer components {
   .glass-panel {
@@ -151,6 +129,43 @@
   }
   .hover-lift:hover {
     transform: translateY(-8px);
+  }
+
+  /* Card style with purple top-border on hover (About page). */
+  .glass-card {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card:hover {
+    border-top-color: #8a5cf5;
+    background: rgba(30, 41, 59, 0.6);
+    transform: translateY(-4px);
+  }
+  .partnership-card {
+    background: linear-gradient(
+      145deg,
+      rgba(29, 32, 34, 0.8) 0%,
+      rgba(11, 15, 16, 1) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .text-glow {
+    text-shadow: 0 0 20px rgba(208, 188, 255, 0.3);
+  }
+  .hero-radial {
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(138, 92, 245, 0.15),
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at bottom left,
+        rgba(60, 27, 115, 0.1),
+        transparent 50%
+      );
   }
 }
 
@@ -190,24 +205,25 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Brand-aligned semantic tokens (Expervia dark theme). */
+  --background: #101415;
+  --foreground: #e0e3e5;
+  --card: #1d2022;
+  --card-foreground: #e0e3e5;
+  --popover: #1d2022;
+  --popover-foreground: #e0e3e5;
+  --primary: #d0bcff;
+  --primary-foreground: #3b0091;
+  --secondary: #56378d;
+  --secondary-foreground: #e9ddff;
+  --muted: #191c1e;
+  --muted-foreground: #cbc3d7;
+  --accent: #272a2c;
+  --accent-foreground: #e0e3e5;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: #8a5cf5;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

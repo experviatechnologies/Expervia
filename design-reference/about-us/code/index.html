@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>About Us | Expervia Technologies</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#9f78ff",
+                    "on-surface": "#e0e3e5",
+                    "inverse-primary": "#6d3bd6",
+                    "on-surface-variant": "#cbc3d7",
+                    "surface-bright": "#363a3b",
+                    "surface-container": "#1d2022",
+                    "on-tertiary-fixed": "#131b2e",
+                    "on-secondary-container": "#c7aaff",
+                    "background": "#101415",
+                    "on-background": "#e0e3e5",
+                    "tertiary": "#bec6e0",
+                    "on-secondary-fixed": "#260059",
+                    "tertiary-container": "#8990a8",
+                    "surface-dim": "#101415",
+                    "on-primary-fixed": "#23005c",
+                    "primary-fixed": "#e9ddff",
+                    "on-primary": "#3b0091",
+                    "secondary-container": "#56378d",
+                    "on-primary-fixed-variant": "#5417be",
+                    "tertiary-fixed-dim": "#bec6e0",
+                    "surface-container-highest": "#323537",
+                    "on-tertiary": "#283044",
+                    "error-container": "#93000a",
+                    "on-primary-container": "#330080",
+                    "outline": "#958ea0",
+                    "on-error": "#690005",
+                    "surface-variant": "#323537",
+                    "surface-tint": "#d0bcff",
+                    "secondary-fixed": "#ebdcff",
+                    "surface": "#101415",
+                    "outline-variant": "#494454",
+                    "surface-container-lowest": "#0b0f10",
+                    "on-secondary": "#3c1b73",
+                    "error": "#ffb4ab",
+                    "on-error-container": "#ffdad6",
+                    "inverse-on-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#3f465c",
+                    "secondary": "#d3bbff",
+                    "on-tertiary-container": "#22293d",
+                    "tertiary-fixed": "#dae2fd",
+                    "secondary-fixed-dim": "#d3bbff",
+                    "primary-fixed-dim": "#d0bcff",
+                    "on-secondary-fixed-variant": "#53358b",
+                    "primary": "#d0bcff",
+                    "inverse-surface": "#e0e3e5",
+                    "surface-container-high": "#272a2c",
+                    "surface-container-low": "#191c1e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-padding": "120px",
+                    "margin-desktop": "64px",
+                    "stack-md": "16px",
+                    "container-max": "1280px",
+                    "stack-sm": "8px",
+                    "stack-lg": "24px",
+                    "gutter": "32px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Manrope"],
+                    "label-sm": ["JetBrains Mono"],
+                    "headline-lg-mobile": ["Manrope"],
+                    "headline-md": ["Manrope"],
+                    "display-lg": ["Manrope"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-top-color: #8A5CF5;
+            background: rgba(30, 41, 59, 0.6);
+            transform: translateY(-4px);
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at top right, rgba(138, 92, 245, 0.15), transparent 50%),
+                        radial-gradient(circle at bottom left, rgba(60, 27, 115, 0.1), transparent 50%);
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(208, 188, 255, 0.3);
+        }
+        .partnership-card {
+            background: linear-gradient(145deg, rgba(29, 32, 34, 0.8) 0%, rgba(11, 15, 16, 1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl border-b border-white/10 shadow-sm">
+<div class="flex justify-between items-center max-w-container-max mx-auto px-margin-desktop h-20">
+<div class="font-headline-md text-headline-md font-bold text-primary">Expervia</div>
+<div class="hidden md:flex gap-stack-lg items-center">
+<a class="font-body-md text-body-md text-on-surface/80 hover:text-primary transition-colors" href="#">Solutions</a>
+<a class="font-body-md text-body-md text-on-surface/80 hover:text-primary transition-colors" href="#">Security</a>
+<a class="font-body-md text-body-md text-on-surface/80 hover:text-primary transition-colors" href="#">AI Apps</a>
+<a class="font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1" href="#">About</a>
+<a class="font-body-md text-body-md text-on-surface/80 hover:text-primary transition-colors" href="#">Insights</a>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-bold hover:brightness-110 active:scale-95 transition-all">
+                Talk to Us
+            </button>
+</div>
+</nav>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="relative min-h-[80vh] flex items-center overflow-hidden hero-gradient">
+<div class="relative z-10 max-w-container-max mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-gutter items-center py-section-padding">
+<div class="space-y-stack-lg">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary-container">Established 2018</span>
+<h1 class="font-display-lg text-display-lg text-glow leading-tight">
+                        Powering Africa's Intelligent Enterprise Through AI, Cloud &amp; Digital Transformation
+                    </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        In a new era defined by artificial intelligence and escalating digital complexity, Expervia Technologies stands as the catalyst for organizational evolution across the continent.
+                    </p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md pt-stack-md">
+<div class="p-stack-lg glass-card rounded-xl">
+<h3 class="font-label-sm text-label-sm text-primary mb-2 uppercase tracking-widest">Our Vision</h3>
+<p class="font-body-md text-body-md">To be Africa's premier architect of the intelligent future, bridging the gap between today's infrastructure and tomorrow's possibilities.</p>
+</div>
+<div class="p-stack-lg glass-card rounded-xl">
+<h3 class="font-label-sm text-label-sm text-primary mb-2 uppercase tracking-widest">Our Mission</h3>
+<p class="font-body-md text-body-md">To empower African enterprises with world-class technical expertise, secure digital foundations, and transformative AI solutions.</p>
+</div>
+</div>
+</div>
+<div class="hidden lg:block relative aspect-square group">
+<div class="absolute -inset-4 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+<img alt="Futuristic data center infrastructure" class="relative z-10 w-full h-full object-cover rounded-2xl border border-white/10 group-hover:scale-[1.02] transition-transform duration-500 shadow-2xl" src="https://lh3.googleusercontent.com/aida/AP1WRLuiCzfUHj4CixDgyKzI9rhf_vMkT9TnOBkcpZ-e7WaaLpAhQPch_sgugYpmsh2Sa9nFUPZ8VwKzNEOJL6C2lS9GXKBGrYBzLt8iOemSarSdLIJTJ8QqWfFRnMwb7QVDxUcXQfXWn0zSb8g4xdfZ2oRcTw1CGDGGTlJq9NdvLumprhxuei6bxYoXBWDf78HN-vBvUjA7xby6US6pCpsj_15SvuBpoh_OQAVLkdtVCiKkIqgS7152prGyCWm1"/>
+</div>
+</div>
+</section>
+<!-- What We Believe Section -->
+<section class="py-section-padding bg-surface-container-lowest">
+<div class="max-w-container-max mx-auto px-margin-desktop text-center">
+<div class="max-w-3xl mx-auto space-y-stack-lg">
+<h2 class="font-headline-lg text-headline-lg">What We Believe</h2>
+<div class="h-1 w-24 bg-primary mx-auto rounded-full"></div>
+<p class="font-display-lg text-headline-lg italic font-light text-on-surface/90 leading-relaxed">
+                        "Technology alone does not transform organizations. <span class="text-primary font-bold">Strategy does.</span> We combine deep technical rigor with strategic foresight to ensure every byte of code drives business value."
+                    </p>
+</div>
+</div>
+</section>
+<!-- Core Areas of Expertise -->
+<section class="py-section-padding bg-surface-container-low">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="mb-16">
+<h2 class="font-headline-lg text-headline-lg mb-4">Core Areas of Expertise</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Our multidisciplinary approach ensures holistic digital resilience and growth.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- AI -->
+<div class="glass-card p-10 rounded-2xl space-y-stack-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">psychology</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-white">Artificial Intelligence</h3>
+<ul class="space-y-2 text-on-surface-variant font-body-md">
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Enterprise LLM &amp; Generative AI Implementation</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Predictive Analytics &amp; Machine Learning Models</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>AI Strategy &amp; Governance Frameworks</li>
+</ul>
+</div>
+<!-- Cloud -->
+<div class="glass-card p-10 rounded-2xl space-y-stack-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">cloud_done</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-white">Cloud Transformation</h3>
+<ul class="space-y-2 text-on-surface-variant font-body-md">
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Hybrid &amp; Multi-Cloud Architecture</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Migration &amp; Legacy Modernization</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Managed Cloud Services &amp; Optimization</li>
+</ul>
+</div>
+<!-- Cyber -->
+<div class="glass-card p-10 rounded-2xl space-y-stack-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">shield_person</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-white">Cybersecurity</h3>
+<ul class="space-y-2 text-on-surface-variant font-body-md">
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Zero-Trust Security Frameworks</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Managed Threat Detection &amp; Response</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Regulatory Compliance &amp; Audit Readiness</li>
+</ul>
+</div>
+<!-- Digital -->
+<div class="glass-card p-10 rounded-2xl space-y-stack-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">transform</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-white">Digital Transformation</h3>
+<ul class="space-y-2 text-on-surface-variant font-body-md">
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Application Modernization &amp; Microservices</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Business Process Automation (BPA)</li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>Customer Experience (CX) Orchestration</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- Strategic Partnerships -->
+<section class="py-section-padding">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-headline-lg mb-4">Strategic Ecosystem Partnerships</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">We leverage world-class technology stacks to deliver local impact.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Microsoft -->
+<div class="partnership-card p-8 rounded-2xl border-l-4 border-l-blue-500">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-blue-500 text-4xl">cloud</span>
+<h3 class="font-headline-md text-headline-md">Microsoft Solutions</h3>
+</div>
+<p class="font-body-md text-on-surface-variant mb-6">Advanced deployment of Azure Cloud, M365 Modern Workplace, and enterprise Security solutions.</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container rounded text-label-sm border border-outline-variant">Azure AI</span>
+<span class="px-3 py-1 bg-surface-container rounded text-label-sm border border-outline-variant">Dynamics 365</span>
+<span class="px-3 py-1 bg-surface-container rounded text-label-sm border border-outline-variant">Sentinel</span>
+</div>
+</div>
+<!-- Huawei -->
+<div class="partnership-card p-8 rounded-2xl border-l-4 border-l-red-500">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-red-500 text-4xl">settings_input_antenna</span>
+<h3 class="font-headline-md text-headline-md">Huawei Technologies</h3>
+</div>
+<p class="font-body-md text-on-surface-variant mb-6">Cutting-edge Cloud Stack, high-performance Data Storage, and Intelligent Networking infrastructure.</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container rounded text-label-sm border border-outline-variant">Cloud Stack 8.x</span>
+<span class="px-3 py-1 bg-surface-container rounded text-label-sm border border-outline-variant">OceanStor</span>
+<span class="px-3 py-1 bg-surface-container rounded text-label-sm border border-outline-variant">AirEngine</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Industries & Why Choose Us -->
+<section class="py-section-padding bg-surface-container-high overflow-hidden relative">
+<div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] -z-10"></div>
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-20">
+<div>
+<h2 class="font-headline-lg text-headline-lg mb-8">Industries We Empower</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="flex items-center gap-3 p-4 bg-surface rounded-xl border border-outline-variant">
+<span class="material-symbols-outlined text-primary">account_balance</span>
+<span class="font-body-md">Financial Services</span>
+</div>
+<div class="flex items-center gap-3 p-4 bg-surface rounded-xl border border-outline-variant">
+<span class="material-symbols-outlined text-primary">factory</span>
+<span class="font-body-md">Manufacturing</span>
+</div>
+<div class="flex items-center gap-3 p-4 bg-surface rounded-xl border border-outline-variant">
+<span class="material-symbols-outlined text-primary">bolt</span>
+<span class="font-body-md">Energy &amp; Utilities</span>
+</div>
+<div class="flex items-center gap-3 p-4 bg-surface rounded-xl border border-outline-variant">
+<span class="material-symbols-outlined text-primary">local_shipping</span>
+<span class="font-body-md">Logistics</span>
+</div>
+<div class="flex items-center gap-3 p-4 bg-surface rounded-xl border border-outline-variant">
+<span class="material-symbols-outlined text-primary">government_line</span>
+<span class="font-body-md">Public Sector</span>
+</div>
+<div class="flex items-center gap-3 p-4 bg-surface rounded-xl border border-outline-variant">
+<span class="material-symbols-outlined text-primary">health_and_safety</span>
+<span class="font-body-md">Healthcare</span>
+</div>
+</div>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg mb-8">Why Expervia?</h2>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="shrink-0 w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">1</div>
+<div>
+<h4 class="font-headline-md text-white mb-1">Deep Local Context</h4>
+<p class="font-body-md text-on-surface-variant">We understand the unique connectivity and regulatory landscape of the African market.</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="shrink-0 w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">2</div>
+<div>
+<h4 class="font-headline-md text-white mb-1">Vendor Neutrality</h4>
+<p class="font-body-md text-on-surface-variant">We choose the best-fit technology for your specific business case, not the vendor's quota.</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="shrink-0 w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">3</div>
+<div>
+<h4 class="font-headline-md text-white mb-1">Elite Technical Talent</h4>
+<p class="font-body-md text-on-surface-variant">Our engineers hold top-tier certifications across AI, Cyber, and Cloud disciplines.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Leadership Team -->
+<section class="py-section-padding">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-headline-lg mb-4">The Minds Behind the Intelligence</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">A collective of visionary leaders and technical specialists.</p>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Leader 1 -->
+<div class="group relative overflow-hidden rounded-xl aspect-[3/4]">
+<img alt="David Chen" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm3GmudKXtLyjgmiyerrgPDyRWSvEeUggXYF5pXozxkz1PgJdA3WsZZfJmIQKkD0ZXH3VAVoA6sQE3VaFq_SB8wzj-LIZATHMWm70ecFJiqT5v2kkz0uhxnE78Wrj9g3IuGfCO4Ll4yxw3WYGU6QRdJ5xq1xZ3qyYDpj1f_WPz0BNPLfEQnWI53dyQz4qsnmTk5BYDG-g-OKiZc3upkEwMXxnU3R-vLLe21SJwBbmJFnEzMnXKKAVADPrHB76JEFWDgrDXjW9uJ_J_"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 p-stack-lg w-full">
+<p class="font-label-sm text-label-sm text-primary uppercase mb-1">Chief Executive Officer</p>
+<h4 class="font-headline-md text-headline-md text-white">David Chen</h4>
+<div class="h-0 group-hover:h-8 overflow-hidden transition-all duration-300 opacity-0 group-hover:opacity-100 mt-2">
+<a class="text-primary-container hover:text-white transition-colors" href="#">LinkedIn Profile</a>
+</div>
+</div>
+</div>
+<!-- Leader 2 -->
+<div class="group relative overflow-hidden rounded-xl aspect-[3/4]">
+<img alt="Sarah Al-Fayed" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-6BazAQC3ioj57pt_4a9CD5__8d9J0DUnhEnz7NS0qfRDR8cB475iB9yRTNzmBlBUbZQ_gD_Q3ZuxvfyFEbIWjszWMp9bwM-5xqRYoCaqNiQPOkhrytmJpPSe36RCguAeySXvzjXBYlYJ5K4gSl7FF5IzljWtbdbC3l9qfNxOV_x94612tR77-vWnkYaXWzlyTMdfd9MDQejtQbx89bqtOUIXLLfhchKfWUk3dIgO2zqHsyfYx7HG8hqM2wgEe7l_ZN13ghqbPETU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 p-stack-lg w-full">
+<p class="font-label-sm text-label-sm text-primary uppercase mb-1">Chief Technology Officer</p>
+<h4 class="font-headline-md text-headline-md text-white">Sarah Al-Fayed</h4>
+<div class="h-0 group-hover:h-8 overflow-hidden transition-all duration-300 opacity-0 group-hover:opacity-100 mt-2">
+<a class="text-primary-container hover:text-white transition-colors" href="#">LinkedIn Profile</a>
+</div>
+</div>
+</div>
+<!-- Leader 3 -->
+<div class="group relative overflow-hidden rounded-xl aspect-[3/4]">
+<img alt="Marcus Thorne" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA28QgzrFc8TLxNiFw5sNXbH1oMnn6iR8-2caxdjtAypeA0SI5Ldc2i9bZ6i9hkoUeKRfvdYwKD5dYSTp-PH-MkMDqVk6ujtkM5czQSWkSG74qnzGoJ1WwB1rDFQ_7TjbR9yP1YeLCDO--J5NVTHg2Q67baHjBeVgLx1IBWOmVfz9oXoEFpDKpZVmjGYK6W3MF9uQONKTwo5gVJcvxLoALZjkTFS30r3uk7-naVraQ0yGtgyZ1UwSVsfbMSb-oUZ-x3voD_fT6X2cfG"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 p-stack-lg w-full">
+<p class="font-label-sm text-label-sm text-primary uppercase mb-1">Head of Cybersecurity</p>
+<h4 class="font-headline-md text-headline-md text-white">Marcus Thorne</h4>
+<div class="h-0 group-hover:h-8 overflow-hidden transition-all duration-300 opacity-0 group-hover:opacity-100 mt-2">
+<a class="text-primary-container hover:text-white transition-colors" href="#">LinkedIn Profile</a>
+</div>
+</div>
+</div>
+<!-- Leader 4 -->
+<div class="group relative overflow-hidden rounded-xl aspect-[3/4]">
+<img alt="Elena Rodriguez" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPL7xHxSZsi1i6yobC0mEN6r2NEoJomPuwkuLNqd1ex1hmIaa5NBgCscuJr1qn_QLUquGXSQSUS9FUYPuSQ7gsO2XouhlOEFVnzAxA7kCehM4YeMmmh82TgZYj-8ltO7BmuhBCBC_hAhRQ4H_gWU-wt3iCqsu6gN_qZT3HzXLzFHazw-Jj29kQrifWnWYnrVa-arrBuIgBMv1zsnqv8jFat3yz_phn78rcrzqz943SSQDlF6FfgT4flALI_bkSnvhaBdom4CvIeuhK"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 p-stack-lg w-full">
+<p class="font-label-sm text-label-sm text-primary uppercase mb-1">VP, Customer Success</p>
+<h4 class="font-headline-md text-headline-md text-white">Elena Rodriguez</h4>
+<div class="h-0 group-hover:h-8 overflow-hidden transition-all duration-300 opacity-0 group-hover:opacity-100 mt-2">
+<a class="text-primary-container hover:text-white transition-colors" href="#">LinkedIn Profile</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-section-padding relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/5"></div>
+<div class="relative z-10 max-w-container-max mx-auto px-margin-desktop text-center">
+<div class="glass-card p-12 md:p-24 rounded-3xl overflow-hidden relative">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px]"></div>
+<h2 class="font-headline-lg text-headline-lg mb-6">Building Africa's Intelligent Future</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto mb-10">Join the forward-thinking organizations building the future on Expervia's intelligence framework. Let's architect your success story together.</p>
+<button class="bg-primary text-on-primary px-10 py-4 rounded-lg font-bold text-body-lg hover:shadow-[0_0_40px_rgba(138,92,245,0.3)] transition-all active:scale-95">
+                        Schedule an Architecture Review
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full bg-surface-container-lowest border-t border-outline-variant">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter max-w-container-max mx-auto px-margin-desktop py-section-padding">
+<div class="space-y-stack-md">
+<div class="font-headline-md text-headline-md font-bold text-on-surface">Expervia</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Architecting the future of African digital enterprise through AI and Secure Cloud solutions.</p>
+</div>
+<div class="flex flex-col gap-stack-sm">
+<h5 class="font-headline-md text-body-lg font-bold mb-2">Company</h5>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Leadership</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Careers</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Sustainability</a>
+</div>
+<div class="flex flex-col gap-stack-sm">
+<h5 class="font-headline-md text-body-lg font-bold mb-2">Legal &amp; Security</h5>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Security Architecture</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">AI Governance</a>
+</div>
+<div class="flex flex-col gap-stack-sm">
+<h5 class="font-headline-md text-body-lg font-bold mb-2">Connect</h5>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">LinkedIn</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Twitter (X)</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Support</a>
+</div>
+</div>
+<div class="max-w-container-max mx-auto px-margin-desktop py-8 border-t border-outline-variant/30 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant/60">© 2024 Expervia Technologies. All rights reserved.</p>
+</div>
+</footer>
+<script>
+        document.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('shadow-lg', 'bg-surface/90');
+            } else {
+                nav.classList.remove('shadow-lg', 'bg-surface/90');
+            }
+        });
+    </script>
+</body></html>
