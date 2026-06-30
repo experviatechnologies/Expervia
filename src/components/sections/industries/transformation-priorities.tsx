@@ -16,7 +16,7 @@ type Priority = { icon: LucideIcon; label: string; href?: string };
 // are placeholders until their page is built.
 const priorities: Priority[] = [
   { icon: BrainCircuit, label: "AI & Intelligence", href: "/solutions/ai" },
-  { icon: CloudCog, label: "Cloud Transformation" },
+  { icon: CloudCog, label: "Cloud Transformation", href: "/solutions/cloud" },
   { icon: ShieldCheck, label: "Cybersecurity" },
   { icon: BarChart3, label: "Data & Analytics" },
   { icon: Rocket, label: "Digital Evolution" },

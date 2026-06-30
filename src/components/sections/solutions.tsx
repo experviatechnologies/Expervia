@@ -34,6 +34,7 @@ const solutions: Solution[] = [
     title: "Cloud Computing",
     description:
       "Scalable hybrid and multi-cloud strategies powered by Microsoft Azure and Huawei Cloud.",
+    href: "/solutions/cloud",
   },
   {
     icon: ShieldCheck,

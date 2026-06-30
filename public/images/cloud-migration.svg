@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101415"/>
+      <stop offset="1" stop-color="#0b0f10"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="66%" cy="34%" r="60%">
+      <stop offset="0" stop-color="#8a5cf5" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8a5cf5" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <rect width="1200" height="800" fill="url(#glow)"/>
+  <g stroke="#d0bcff" stroke-opacity="0.18" fill="none" stroke-width="2">
+    <path d="M220 560 C 420 560, 480 300, 700 300 S 980 280, 1000 260"/>
+    <path d="M220 620 C 460 620, 520 420, 760 420 S 1000 400, 1020 380"/>
+  </g>
+  <g fill="#d0bcff" fill-opacity="0.25">
+    <circle cx="220" cy="560" r="9"/>
+    <circle cx="1000" cy="260" r="11"/>
+    <circle cx="220" cy="620" r="7"/>
+    <circle cx="1020" cy="380" r="8"/>
+  </g>
+  <text x="600" y="420" text-anchor="middle" fill="#cbc3d7" fill-opacity="0.22"
+        font-family="monospace" font-size="22" letter-spacing="3">
+    CLOUD MIGRATION IMAGE — replace /public/images/cloud-migration.jpg
+  </text>
+</svg>
