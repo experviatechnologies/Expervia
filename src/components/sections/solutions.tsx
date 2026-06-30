@@ -41,6 +41,7 @@ const solutions: Solution[] = [
     title: "Cybersecurity",
     description:
       "Security-first architecture protecting your digital assets in an evolving threat landscape.",
+    href: "/solutions/cybersecurity",
   },
   {
     icon: Repeat,
@@ -72,6 +73,7 @@ const solutions: Solution[] = [
     title: "Data & Analytics",
     description:
       "Turning raw data into actionable business intelligence through advanced modeling.",
+    href: "/solutions/data",
   },
 ];
 

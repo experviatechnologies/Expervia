@@ -112,7 +112,7 @@ export function Footer() {
         <div className="border-outline-variant/30 flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
           <p className="text-on-surface-variant text-sm">
             © {new Date().getFullYear()} {siteConfig.name} Technologies. All
-            rights reserved. {siteConfig.contact.address}
+            rights reserved.
           </p>
           <div className="text-on-surface-variant flex gap-8 text-sm">
             {regions.map((r) => (

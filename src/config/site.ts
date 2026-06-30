@@ -12,7 +12,7 @@ export const siteConfig = {
   navLinks: [
     { title: "Solutions", href: "/#solutions" },
     { title: "Industries", href: "/industries" },
-    { title: "Resources", href: "/#resources" },
+    { title: "Services", href: "/services" },
     { title: "About Us", href: "/about" },
   ],
   // Footer link columns.

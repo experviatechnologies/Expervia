@@ -17,8 +17,12 @@ type Priority = { icon: LucideIcon; label: string; href?: string };
 const priorities: Priority[] = [
   { icon: BrainCircuit, label: "AI & Intelligence", href: "/solutions/ai" },
   { icon: CloudCog, label: "Cloud Transformation", href: "/solutions/cloud" },
-  { icon: ShieldCheck, label: "Cybersecurity" },
-  { icon: BarChart3, label: "Data & Analytics" },
+  {
+    icon: ShieldCheck,
+    label: "Cybersecurity",
+    href: "/solutions/cybersecurity",
+  },
+  { icon: BarChart3, label: "Data & Analytics", href: "/solutions/data" },
   { icon: Rocket, label: "Digital Evolution" },
   {
     icon: LayoutGrid,
