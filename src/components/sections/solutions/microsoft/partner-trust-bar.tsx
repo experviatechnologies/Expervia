@@ -9,7 +9,7 @@ const credentials: { icon: LucideIcon; title: string; subtitle: string }[] = [
   },
   {
     icon: PackageCheck,
-    title: "Cloud Solution Provider (CSP)",
+    title: "Microsoft Cloud Solutions Partner",
     subtitle: "Direct Licensing & Support",
   },
 ];

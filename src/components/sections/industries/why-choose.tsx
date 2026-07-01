@@ -16,7 +16,7 @@ const reasons: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: Network,
     title: "Strategic Partnerships",
-    body: "Global CSP and Huawei Enterprise Partner, offering a diverse and resilient technology ecosystem.",
+    body: "Microsoft Cloud Solutions Partner and Huawei Enterprise Partner, offering a diverse and resilient technology ecosystem.",
   },
   {
     icon: ShieldCheck,

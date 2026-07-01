@@ -29,9 +29,9 @@ export function Hero() {
             </span>
           </h1>
           <p className="text-body-lg text-on-surface-variant mb-10 max-w-2xl">
-            As a Microsoft AI Cloud Partner, Cloud Solution Provider (CSP), and
-            Huawei Enterprise Partner, we deliver the global expertise and local
-            market knowledge required to thrive.
+            As a Microsoft AI Cloud Partner, Microsoft Cloud Solutions Partner,
+            and Huawei Enterprise Partner, we deliver the global expertise and
+            local market knowledge required to thrive.
           </p>
           <div className="flex flex-wrap gap-4">
             <Button

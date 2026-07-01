@@ -4,7 +4,7 @@ import { SectionLabel } from "@/components/shared/section-label";
 
 const partners = [
   { icon: CloudCheck, label: "Microsoft AI Cloud Partner" },
-  { icon: BadgeCheck, label: "Cloud Solution Provider (CSP)" },
+  { icon: BadgeCheck, label: "Microsoft Cloud Solutions Partner" },
   { icon: Network, label: "Huawei Enterprise Partner" },
   { icon: Layers, label: "VMware Cloud Verified" },
 ];

@@ -33,7 +33,7 @@ export function CspServices() {
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
           <div>
             <SectionLabel className="mb-4">
-              Cloud Solution Provider (CSP)
+              Microsoft Cloud Solutions Partner
             </SectionLabel>
             <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
               Streamline Your Cloud Operations

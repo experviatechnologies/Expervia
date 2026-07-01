@@ -3,7 +3,7 @@ import { Container } from "@/components/shared/container";
 
 const partners = [
   { icon: CloudCheck, label: "Microsoft AI Cloud Partner" },
-  { icon: BadgeCheck, label: "Cloud Solution Provider (CSP)" },
+  { icon: BadgeCheck, label: "Microsoft Cloud Solutions Partner" },
   { icon: Network, label: "Huawei Enterprise Partner" },
 ];
 

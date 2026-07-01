@@ -10,7 +10,7 @@ import { MicrosoftCta } from "@/components/sections/solutions/microsoft/microsof
 export const metadata: Metadata = {
   title: "Microsoft Solutions",
   description:
-    "Accelerate innovation with Microsoft technologies. As a Microsoft AI Cloud Partner and CSP, Expervia delivers Azure, Microsoft 365, Copilot, Dynamics 365, Power Platform, and Security solutions with unified licensing and support.",
+    "Accelerate innovation with Microsoft technologies. As a Microsoft AI Cloud Partner and Microsoft Cloud Solutions Partner, Expervia delivers Azure, Microsoft 365, Copilot, Dynamics 365, Power Platform, and Security solutions with unified licensing and support.",
 };
 
 export default function MicrosoftSolutionsPage() {

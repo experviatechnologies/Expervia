@@ -13,9 +13,9 @@ const faqs = [
       "Expervia Technologies specializes in serving complex, high-compliance sectors including Government Agencies, Financial Institutions, Healthcare Providers, Large-Scale Utilities, Retail, and Professional Services across Africa and beyond.",
   },
   {
-    question: "How does your Microsoft Licensing (CSP) work?",
+    question: "How does your Microsoft licensing work?",
     answer:
-      "As a Tier 1 Microsoft Cloud Solution Provider, we offer flexible monthly or annual billing, centralized license management, and expert technical support to optimize your Microsoft 365 and Azure investment.",
+      "As a Microsoft Cloud Solutions Partner, we offer flexible monthly or annual billing, centralized license management, and expert technical support to optimize your Microsoft 365 and Azure investment.",
   },
   {
     question: "What is the typical engagement process?",

@@ -46,8 +46,8 @@ export function MicrosoftHero() {
           </h1>
           <p className="text-body-lg text-on-surface-variant mb-8 max-w-xl">
             AI. Cloud. Security. Productivity. Transformation. As a Microsoft AI
-            Cloud Partner and CSP, Expervia helps organizations modernize
-            securely and intelligently.
+            Cloud Partner and Microsoft Cloud Solutions Partner, Expervia helps
+            organizations modernize securely and intelligently.
           </p>
 
           <div className="mb-10 flex flex-wrap gap-2">

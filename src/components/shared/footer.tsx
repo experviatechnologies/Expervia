@@ -8,7 +8,11 @@ const socials = [
   { icon: Share2, label: "Share", href: "#" },
 ];
 
-const partners = ["Microsoft Partner", "Huawei Partner"];
+const partners = [
+  "Microsoft AI Cloud Partner",
+  "Microsoft Cloud Solutions Partner",
+  "Huawei Partner",
+];
 
 const regions = ["Africa", "Europe", "Global"];
 
