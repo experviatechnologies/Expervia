@@ -16,22 +16,24 @@ export function IndustriesCta() {
           </p>
           <div className="flex w-full flex-col gap-6 md:w-auto md:flex-row">
             <Button
+              asChild
               variant="brand"
               size="pill"
               className="primary-glow text-lg font-bold"
             >
-              Book an Industry Consultation
+              <Link href="/contact">Book an Industry Consultation</Link>
             </Button>
             <Button
+              asChild
               variant="brandOutline"
               size="pill"
               className="text-lg font-bold"
             >
-              Speak with an Expert
+              <Link href="/contact">Speak with an Expert</Link>
             </Button>
           </div>
           <Link
-            href="#"
+            href="/contact"
             className="text-on-surface-variant hover:text-primary text-label-sm mt-8 font-mono tracking-widest uppercase transition-colors"
           >
             Request an Assessment

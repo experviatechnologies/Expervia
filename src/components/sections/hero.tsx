@@ -1,6 +1,7 @@
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -38,11 +39,11 @@ export function Hero() {
               size="pill"
               className="primary-glow font-bold"
             >
-              Book a Consultation
+              <Link href="/contact">Book a Consultation</Link>
               <CalendarDays />
             </Button>
             <Button variant="brandOutline" size="pill" className="font-bold">
-              Explore Solutions
+              <Link href="/services">Explore Solutions</Link>
             </Button>
           </div>
         </div>

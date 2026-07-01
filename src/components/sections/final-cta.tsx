@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
 
@@ -19,10 +20,11 @@ export function FinalCta() {
             </p>
           </div>
           <Button
+            asChild
             size="pill"
             className="bg-surface text-on-surface shrink-0 text-lg font-bold shadow-2xl hover:scale-105"
           >
-            Talk to an Expert
+            <Link href="/contact">Talk to an Expert</Link>
           </Button>
         </div>
       </Container>

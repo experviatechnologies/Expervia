@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
 
@@ -17,11 +18,12 @@ export function AboutCta() {
             success story together.
           </p>
           <Button
+            asChild
             variant="brand"
             size="pill"
             className="primary-glow font-bold"
           >
-            Schedule an Architecture Review
+            <Link href="/contact">Schedule an Architecture Review</Link>
           </Button>
         </div>
       </Container>

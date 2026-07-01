@@ -2,6 +2,7 @@ import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
 import { SectionLabel } from "@/components/shared/section-label";
+import Link from "next/link";
 
 export function Community() {
   return (
@@ -27,11 +28,11 @@ export function Community() {
               size="pill"
               className="primary-glow font-bold"
             >
-              Join the Community
+              <Link href="/contact">Join the Community</Link>
               <Users />
             </Button>
             <Button variant="brandOutline" size="pill" className="font-bold">
-              View Training Programs
+              <Link href="/contact">View Training Programs</Link>
             </Button>
           </div>
         </div>

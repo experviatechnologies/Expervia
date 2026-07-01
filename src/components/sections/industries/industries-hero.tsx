@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
@@ -25,9 +26,11 @@ export function IndustriesHero() {
             aren&apos;t just buzzwords, but tools leveraged to deliver
             measurable business outcomes and operational resilience.
           </p>
-          <Button variant="brand" size="pill" className="font-semibold">
-            Explore Solutions
-            <ArrowRight />
+          <Button asChild variant="brand" size="pill" className="font-semibold">
+            <Link href="/services">
+              Explore Solutions
+              <ArrowRight />
+            </Link>
           </Button>
         </div>
       </Container>
