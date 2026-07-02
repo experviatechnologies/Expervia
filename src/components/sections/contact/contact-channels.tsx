@@ -29,21 +29,21 @@ const channels: {
     title: "Sales Enquiries",
     description:
       "Speak with our consultants about AI, Cloud, Cybersecurity, Microsoft & Huawei Solutions, Managed Services, and Digital Transformation projects.",
-    email: siteConfig.contact.emails.sales,
+    email: siteConfig.contact.emails.general,
   },
   {
     icon: Handshake,
     title: "Partnerships",
     description:
       "Interested in strategic partnerships, technology alliances, channel relationships, or ecosystem collaborations? We'd love to hear from you.",
-    email: siteConfig.contact.emails.partnerships,
+    email: siteConfig.contact.emails.general,
   },
   {
     icon: Headset,
     title: "Support",
     description:
       "For existing customers needing technical assistance, service requests, or help with an active engagement.",
-    email: siteConfig.contact.emails.support,
+    email: siteConfig.contact.emails.general,
   },
 ];
 

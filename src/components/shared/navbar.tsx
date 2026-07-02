@@ -3,13 +3,66 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  BrainCircuit,
+  CloudCheck,
+  ShieldCheck,
+  BarChart3,
+  LayoutGrid,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
+type SolutionLink = {
+  title: string;
+  href: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+// Detail pages surfaced in the "Solutions" mega-menu. Order mirrors the
+// homepage solutions section.
+const solutionsMenu: SolutionLink[] = [
+  {
+    title: "Artificial Intelligence",
+    href: "/solutions/ai",
+    description: "Generative & predictive AI",
+    icon: BrainCircuit,
+  },
+  {
+    title: "Cloud Services",
+    href: "/solutions/cloud",
+    description: "Migration, hybrid & multi-cloud",
+    icon: CloudCheck,
+  },
+  {
+    title: "Cybersecurity",
+    href: "/solutions/cybersecurity",
+    description: "Zero-Trust & managed SOC",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Data & Analytics",
+    href: "/solutions/data",
+    description: "Modern data platform & BI",
+    icon: BarChart3,
+  },
+  {
+    title: "Microsoft Solutions",
+    href: "/solutions/microsoft",
+    description: "Azure, M365 & Copilot",
+    icon: LayoutGrid,
+  },
+];
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [solutionsOpen, setSolutionsOpen] = useState(false);
   const pathname = usePathname();
 
   // Homepage-section links (/#solutions…) highlight the first item while on the
@@ -18,7 +71,10 @@ export function Navbar() {
     href.includes("#") ? pathname === "/" && index === 0 : pathname === href;
 
   return (
-    <nav className="bg-surface/60 fixed top-0 z-50 w-full border-b border-white/10 shadow-sm backdrop-blur-xl">
+    <nav
+      onMouseLeave={() => setSolutionsOpen(false)}
+      className="bg-surface/60 fixed top-0 z-50 w-full border-b border-white/10 shadow-sm backdrop-blur-xl"
+    >
       <div className="px-margin-mobile md:px-margin-desktop mx-auto flex h-20 max-w-7xl items-center justify-between">
         <Link
           href="/"
@@ -29,20 +85,56 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-8 md:flex">
-          {siteConfig.navLinks.map((link, i) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-body-md transition-colors",
-                isActive(link.href, i)
-                  ? "text-primary border-primary border-b-2 pb-1 font-bold"
-                  : "text-on-surface/80 hover:text-primary",
-              )}
-            >
-              {link.title}
-            </Link>
-          ))}
+          {siteConfig.navLinks.map((link, i) => {
+            const active = isActive(link.href, i);
+
+            // "Solutions" opens the full-width mega-menu below the bar on hover.
+            if (link.title === "Solutions") {
+              const solutionsActive =
+                active || pathname.startsWith("/solutions/");
+              return (
+                <div
+                  key={link.href}
+                  onMouseEnter={() => setSolutionsOpen(true)}
+                  onFocus={() => setSolutionsOpen(true)}
+                >
+                  <Link
+                    href={link.href}
+                    className={cn(
+                      "text-body-md flex items-center gap-1 transition-colors",
+                      solutionsActive || solutionsOpen
+                        ? "text-primary font-bold"
+                        : "text-on-surface/80 hover:text-primary",
+                    )}
+                  >
+                    {link.title}
+                    <ChevronDown
+                      className={cn(
+                        "size-4 transition-transform duration-200",
+                        solutionsOpen && "rotate-180",
+                      )}
+                    />
+                  </Link>
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onMouseEnter={() => setSolutionsOpen(false)}
+                className={cn(
+                  "text-body-md transition-colors",
+                  active
+                    ? "text-primary border-primary border-b-2 pb-1 font-bold"
+                    : "text-on-surface/80 hover:text-primary",
+                )}
+              >
+                {link.title}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-2">
@@ -68,20 +160,86 @@ export function Navbar() {
         </div>
       </div>
 
+      {/* Desktop mega-menu: the navbar itself expands downward on hover. */}
+      <div
+        className={cn(
+          "hidden overflow-hidden transition-all duration-300 ease-out md:block",
+          solutionsOpen
+            ? "max-h-[32rem] border-t border-white/10 opacity-100"
+            : "max-h-0 opacity-0",
+        )}
+      >
+        <div className="px-margin-mobile md:px-margin-desktop mx-auto max-w-7xl py-6">
+          <p className="text-label-sm text-on-surface-variant mb-4 font-mono tracking-widest uppercase">
+            Our Solutions
+          </p>
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+            {solutionsMenu.map(({ title, href, description, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setSolutionsOpen(false)}
+                className="hover:bg-surface-container-high group/item flex flex-col gap-3 rounded-xl p-4 transition-colors"
+              >
+                <span className="bg-primary/10 text-primary group-hover/item:bg-primary/20 flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors">
+                  <Icon className="size-5" />
+                </span>
+                <span className="flex flex-col gap-1">
+                  <span className="text-on-surface text-body-md font-semibold">
+                    {title}
+                  </span>
+                  <span className="text-on-surface-variant text-sm">
+                    {description}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Mobile menu */}
       {open && (
         <div className="bg-surface/95 px-margin-mobile border-t border-white/10 py-6 backdrop-blur-xl md:hidden">
           <div className="flex flex-col gap-4">
-            {siteConfig.navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="text-on-surface/80 hover:text-primary text-body-md transition-colors"
-              >
-                {link.title}
-              </Link>
-            ))}
+            {siteConfig.navLinks.map((link) => {
+              if (link.title === "Solutions") {
+                return (
+                  <div key={link.href} className="flex flex-col gap-3">
+                    <Link
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="text-on-surface/80 hover:text-primary text-body-md transition-colors"
+                    >
+                      {link.title}
+                    </Link>
+                    <div className="border-outline-variant/40 ml-2 flex flex-col gap-3 border-l pl-4">
+                      {solutionsMenu.map(({ title, href }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setOpen(false)}
+                          className="text-on-surface-variant hover:text-primary text-sm transition-colors"
+                        >
+                          {title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className="text-on-surface/80 hover:text-primary text-body-md transition-colors"
+                >
+                  {link.title}
+                </Link>
+              );
+            })}
             <Button
               asChild
               variant="brand"

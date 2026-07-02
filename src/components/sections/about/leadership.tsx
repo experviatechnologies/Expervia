@@ -1,12 +1,28 @@
+import Image from "next/image";
 import Link from "next/link";
-import { UserRound } from "lucide-react";
 import { Container } from "@/components/shared/container";
 
 const leaders = [
-  { name: "David Chen", role: "Chief Executive Officer" },
-  { name: "Sarah Al-Fayed", role: "Chief Technology Officer" },
-  { name: "Marcus Thorne", role: "Head of Cybersecurity" },
-  { name: "Elena Rodriguez", role: "VP, Customer Success" },
+  {
+    name: "Adeleke Adeyemi",
+    role: "Chief Executive Officer",
+    photo: "/Adeleke_Adeyemi_CEO.png",
+  },
+  {
+    name: "Mobolaji Soyebo",
+    role: "Chief Technology Officer",
+    photo: "/Mobolaji_Soyebo_Chief_Technology_Officer.png",
+  },
+  {
+    name: "Michael Ezeadichie",
+    role: "Chief Marketing Officer",
+    photo: "/Michael_Ezeadichie_Chief_Marketing_Officer.png",
+  },
+  {
+    name: "Samuel Ladokun",
+    role: "Chief Legal Officer",
+    photo: "/Samuel_Ladokun_Chief_Legal_Officer.png",
+  },
 ];
 
 export function Leadership() {
@@ -27,13 +43,16 @@ export function Leadership() {
               key={leader.name}
               className="group relative aspect-[3/4] overflow-hidden rounded-xl"
             >
-              {/* Headshot placeholder — TODO: swap to next/image with real photo */}
-              <div className="bg-surface-container-high flex size-full items-center justify-center">
-                <UserRound className="text-on-surface-variant/20 size-24" />
-              </div>
+              <Image
+                src={leader.photo}
+                alt={`${leader.name}, ${leader.role} at Expervia`}
+                fill
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
+              />
               <div className="from-background via-background/20 absolute inset-0 bg-gradient-to-t to-transparent opacity-90" />
               <div className="absolute bottom-0 left-0 w-full p-6">
-                <p className="text-label-sm text-primary mb-1 font-mono uppercase">
+                <p className="text-label-sm mb-1 font-mono text-[#e1d6ff] uppercase">
                   {leader.role}
                 </p>
                 <h4 className="font-display text-on-surface text-headline-md font-semibold">
