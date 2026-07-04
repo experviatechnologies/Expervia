@@ -24,14 +24,22 @@ export function Community() {
           </p>
           <div className="flex flex-col justify-center gap-6 sm:flex-row">
             <Button
+              asChild
               variant="brand"
               size="pill"
               className="primary-glow font-bold"
             >
-              <Link href="/contact">Join the Community</Link>
-              <Users />
+              <Link href="/contact">
+                Join the Community
+                <Users />
+              </Link>
             </Button>
-            <Button variant="brandOutline" size="pill" className="font-bold">
+            <Button
+              asChild
+              variant="brandOutline"
+              size="pill"
+              className="font-bold"
+            >
               <Link href="/contact">View Training Programs</Link>
             </Button>
           </div>

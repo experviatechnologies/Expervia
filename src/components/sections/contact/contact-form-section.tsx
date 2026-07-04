@@ -4,7 +4,7 @@ import { ContactForm } from "./contact-form";
 
 export function ContactFormSection() {
   return (
-    <section className="py-section">
+    <section id="contact-form" className="py-section scroll-mt-24">
       <Container>
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
           <div className="lg:col-span-5">

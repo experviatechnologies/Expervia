@@ -35,14 +35,22 @@ export function Hero() {
           </p>
           <div className="flex flex-wrap gap-4">
             <Button
+              asChild
               variant="brand"
               size="pill"
               className="primary-glow font-bold"
             >
-              <Link href="/contact">Book a Consultation</Link>
-              <CalendarDays />
+              <Link href="/contact">
+                Book a Consultation
+                <CalendarDays />
+              </Link>
             </Button>
-            <Button variant="brandOutline" size="pill" className="font-bold">
+            <Button
+              asChild
+              variant="brandOutline"
+              size="pill"
+              className="font-bold"
+            >
               <Link href="/services">Explore Solutions</Link>
             </Button>
           </div>

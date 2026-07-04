@@ -36,12 +36,11 @@ export const siteConfig = {
   // footer, etc). NOTE: address differs between the original Stitch exports —
   // this is the Contact page's "Global Head Office"; confirm it's correct.
   contact: {
-    address:
-      "Plot 21A Olubunmi Rotimi Street, Off Abike Sulaiman Street, Lekki Phase 1, Lagos 106104, Nigeria",
+    address: "Lakowe Lakes Golf & Country Estate, Lekki, Lagos, Nigeria",
     // Used to center the embedded map. For an EXACT pin, replace this with
     // "latitude,longitude" coordinates (right-click the spot in Google Maps →
     // copy the coords). A text address geocodes to an approximate location.
-    mapQuery: "Plot 21A Olubunmi Rotimi Street, Lekki Phase 1, Lagos, Nigeria",
+    mapQuery: "Lakowe Lakes Golf & Country Estate, Lekki, Lagos, Nigeria",
     phones: ["+234 907 224 1432", "+234 806 033 5189"],
     website: "www.experviatechnologies.com",
     emails: {

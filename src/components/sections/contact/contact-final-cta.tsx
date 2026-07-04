@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
 
@@ -9,11 +10,16 @@ export function ContactFinalCta() {
           Ready to Start Your Transformation Journey?
         </h2>
         <div className="flex flex-col justify-center gap-6 sm:flex-row">
-          <Button variant="brand" size="pill" className="font-bold">
-            Book a Consultation
+          <Button asChild variant="brand" size="pill" className="font-bold">
+            <Link href="#contact-form">Book a Consultation</Link>
           </Button>
-          <Button variant="brandOutline" size="pill" className="font-bold">
-            Request an Assessment
+          <Button
+            asChild
+            variant="brandOutline"
+            size="pill"
+            className="font-bold"
+          >
+            <Link href="#contact-form">Request an Assessment</Link>
           </Button>
         </div>
       </Container>
