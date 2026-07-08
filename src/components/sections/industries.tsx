@@ -39,14 +39,14 @@ export function Industries() {
             unique challenges of major sectors across Africa.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {industries.map(({ icon: Icon, label }) => (
             <div
               key={label}
               className="border-outline-variant/20 hover:border-primary/50 bg-surface-container-low flex items-center gap-4 rounded-xl border p-6 transition-colors"
             >
               <Icon className="text-primary size-6 shrink-0" />
-              <span className="font-bold">{label}</span>
+              <span className="min-w-0 font-bold break-words">{label}</span>
             </div>
           ))}
         </div>

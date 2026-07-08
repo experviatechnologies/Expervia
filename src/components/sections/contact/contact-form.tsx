@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 const textFields = [
   {
@@ -74,11 +74,40 @@ const fieldClasses =
 
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // TODO: wire to a real handler (email service / API route / form backend).
-    setSubmitted(true);
+    setError(null);
+    setSubmitting(true);
+
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(
+          body?.error ?? "Something went wrong. Please try again.",
+        );
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -168,11 +197,18 @@ export function ContactForm() {
           </div>
 
           <div className="pt-4 md:col-span-2">
+            {error && (
+              <p role="alert" className="text-destructive mb-4 text-sm">
+                {error}
+              </p>
+            )}
             <button
               type="submit"
-              className="bg-brand text-brand-foreground primary-glow w-full rounded-xl py-4 font-bold transition-all hover:brightness-110 active:scale-[0.99]"
+              disabled={submitting}
+              className="bg-brand text-brand-foreground primary-glow flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Submit Request
+              {submitting && <Loader2 className="size-4 animate-spin" />}
+              {submitting ? "Sending…" : "Submit Request"}
             </button>
           </div>
         </form>
