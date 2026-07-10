@@ -3,8 +3,8 @@ import { Container } from "@/components/shared/container";
 import { SectionLabel } from "@/components/shared/section-label";
 
 const stats = [
-  { value: "15+", label: "Years Combined Expertise" },
-  { value: "50+", label: "Enterprise Partners" },
+  { value: "40+", label: "Years Combined Expertise" },
+  { value: "2+", label: "Enterprise Partners" },
 ];
 
 export function WhoWeAre() {
