@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   BarChart3,
   LayoutGrid,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -60,9 +61,21 @@ const solutionsMenu: SolutionLink[] = [
   },
 ];
 
+// Membership tracks surfaced in the "Community" mega-menu. Add the Microsoft
+// track here once its page is built.
+const communityMenu: SolutionLink[] = [
+  {
+    title: "Huawei Professionals",
+    href: "/community/huawei",
+    description: "Cloud, networking & infrastructure experts",
+    icon: Users,
+  },
+];
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [communityOpen, setCommunityOpen] = useState(false);
   const pathname = usePathname();
 
   // Homepage-section links (/#solutions…) highlight the first item while on the
@@ -72,7 +85,10 @@ export function Navbar() {
 
   return (
     <nav
-      onMouseLeave={() => setSolutionsOpen(false)}
+      onMouseLeave={() => {
+        setSolutionsOpen(false);
+        setCommunityOpen(false);
+      }}
       className="bg-surface/60 fixed top-0 z-50 w-full border-b border-white/10 shadow-sm backdrop-blur-xl"
     >
       <div className="px-margin-mobile md:px-margin-desktop mx-auto flex h-20 max-w-7xl items-center justify-between">
@@ -95,7 +111,10 @@ export function Navbar() {
               return (
                 <div
                   key={link.href}
-                  onMouseEnter={() => setSolutionsOpen(true)}
+                  onMouseEnter={() => {
+                    setCommunityOpen(false);
+                    setSolutionsOpen(true);
+                  }}
                   onFocus={() => setSolutionsOpen(true)}
                 >
                   <Link
@@ -119,11 +138,48 @@ export function Navbar() {
               );
             }
 
+            // "Community" opens its own mega-menu of membership tracks.
+            if (link.title === "Community") {
+              const communityActive =
+                active || pathname.startsWith("/community/");
+              return (
+                <div
+                  key={link.href}
+                  onMouseEnter={() => {
+                    setSolutionsOpen(false);
+                    setCommunityOpen(true);
+                  }}
+                  onFocus={() => setCommunityOpen(true)}
+                >
+                  <Link
+                    href={link.href}
+                    className={cn(
+                      "text-body-md flex items-center gap-1 transition-colors",
+                      communityActive || communityOpen
+                        ? "text-primary font-bold"
+                        : "text-on-surface/80 hover:text-primary",
+                    )}
+                  >
+                    {link.title}
+                    <ChevronDown
+                      className={cn(
+                        "size-4 transition-transform duration-200",
+                        communityOpen && "rotate-180",
+                      )}
+                    />
+                  </Link>
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                onMouseEnter={() => setSolutionsOpen(false)}
+                onMouseEnter={() => {
+                  setSolutionsOpen(false);
+                  setCommunityOpen(false);
+                }}
                 className={cn(
                   "text-body-md transition-colors",
                   active
@@ -198,6 +254,44 @@ export function Navbar() {
         </div>
       </div>
 
+      {/* Desktop mega-menu: Community membership tracks. */}
+      <div
+        className={cn(
+          "hidden overflow-hidden transition-all duration-300 ease-out md:block",
+          communityOpen
+            ? "max-h-[32rem] border-t border-white/10 opacity-100"
+            : "max-h-0 opacity-0",
+        )}
+      >
+        <div className="px-margin-mobile md:px-margin-desktop mx-auto max-w-7xl py-6">
+          <p className="text-label-sm text-on-surface-variant mb-4 font-mono tracking-widest uppercase">
+            Membership Tracks
+          </p>
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+            {communityMenu.map(({ title, href, description, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setCommunityOpen(false)}
+                className="hover:bg-surface-container-high group/item flex flex-col gap-3 rounded-xl p-4 transition-colors"
+              >
+                <span className="bg-primary/10 text-primary group-hover/item:bg-primary/20 flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors">
+                  <Icon className="size-5" />
+                </span>
+                <span className="flex flex-col gap-1">
+                  <span className="text-on-surface text-body-md font-semibold">
+                    {title}
+                  </span>
+                  <span className="text-on-surface-variant text-sm">
+                    {description}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Mobile menu */}
       {open && (
         <div className="bg-surface/95 px-margin-mobile border-t border-white/10 py-6 backdrop-blur-xl md:hidden">
@@ -215,6 +309,32 @@ export function Navbar() {
                     </Link>
                     <div className="border-outline-variant/40 ml-2 flex flex-col gap-3 border-l pl-4">
                       {solutionsMenu.map(({ title, href }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setOpen(false)}
+                          className="text-on-surface-variant hover:text-primary text-sm transition-colors"
+                        >
+                          {title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (link.title === "Community") {
+                return (
+                  <div key={link.href} className="flex flex-col gap-3">
+                    <Link
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="text-on-surface/80 hover:text-primary text-body-md transition-colors"
+                    >
+                      {link.title}
+                    </Link>
+                    <div className="border-outline-variant/40 ml-2 flex flex-col gap-3 border-l pl-4">
+                      {communityMenu.map(({ title, href }) => (
                         <Link
                           key={href}
                           href={href}

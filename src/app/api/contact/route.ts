@@ -1,17 +1,6 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { getResendClient, escapeHtml } from "@/lib/email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 type ContactPayload = {
   fullName: string;
@@ -82,7 +71,7 @@ export async function POST(request: Request) {
     .join("");
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await getResendClient().emails.send({
       from: process.env.CONTACT_FROM_EMAIL!,
       to: process.env.CONTACT_TO_EMAIL!,
       replyTo: email.trim(),

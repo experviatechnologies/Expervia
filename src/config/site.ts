@@ -13,6 +13,7 @@ export const siteConfig = {
     { title: "Solutions", href: "/#solutions" },
     { title: "Industries", href: "/industries" },
     { title: "Services", href: "/services" },
+    { title: "Community", href: "/community/huawei" },
     { title: "About Us", href: "/about" },
   ],
   // Footer link columns.
