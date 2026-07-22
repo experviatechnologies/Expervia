@@ -61,14 +61,19 @@ const solutionsMenu: SolutionLink[] = [
   },
 ];
 
-// Membership tracks surfaced in the "Community" mega-menu. Add the Microsoft
-// track here once its page is built.
+// Membership tracks surfaced in the "Community" mega-menu.
 const communityMenu: SolutionLink[] = [
   {
     title: "Huawei Professionals",
     href: "/community/huawei",
     description: "Cloud, networking & infrastructure experts",
     icon: Users,
+  },
+  {
+    title: "Microsoft Professionals",
+    href: "/community/microsoft",
+    description: "Azure, Security, Data & AI experts",
+    icon: LayoutGrid,
   },
 ];
 
