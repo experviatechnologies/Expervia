@@ -1,4 +1,5 @@
 import { getResendClient, escapeHtml } from "@/lib/email";
+import { saveApplication } from "@/lib/supabase";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_BYTES = 4 * 1024 * 1024; // keep under Vercel's serverless request body limit
@@ -58,6 +59,31 @@ export async function POST(request: Request) {
     );
   }
 
+  const certList = certifications
+    .filter((c): c is string => typeof c === "string")
+    .join(", ");
+
+  // Durable record first — Supabase is the source of truth. If this fails we
+  // stop and surface an error so the applicant can retry.
+  try {
+    await saveApplication(
+      {
+        vendor: "huawei",
+        fullName: fullName.trim(),
+        email: email.trim(),
+        solutionArea: typeof solutionArea === "string" ? solutionArea : null,
+        certifications: certList || null,
+      },
+      resume,
+    );
+  } catch (err) {
+    console.error("Huawei application persist failed:", err);
+    return Response.json(
+      { error: "Failed to submit your application. Please try again." },
+      { status: 500 },
+    );
+  }
+
   const attachmentContent = Buffer.from(await resume.arrayBuffer()).toString(
     "base64",
   );
@@ -94,18 +120,16 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error("Resend error:", error.name, error.message);
-      return Response.json(
-        { error: "Failed to submit your application. Please try again." },
-        { status: 502 },
+      // Record is already saved in Supabase; a failed notification email must
+      // not fail the request (that would trigger a duplicate re-submission).
+      console.error(
+        "Resend error (notification only):",
+        error.name,
+        error.message,
       );
     }
   } catch (err) {
-    console.error("Huawei community application send failed:", err);
-    return Response.json(
-      { error: "Failed to submit your application. Please try again." },
-      { status: 500 },
-    );
+    console.error("Huawei notification email failed (record saved):", err);
   }
 
   return Response.json({ success: true });
