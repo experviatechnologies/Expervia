@@ -159,6 +159,22 @@ export function ApplicationForm() {
                   </div>
                   <div className="space-y-2">
                     <label
+                      htmlFor="phone"
+                      className="text-label-sm text-on-surface-variant font-mono uppercase"
+                    >
+                      Phone Number
+                    </label>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      placeholder="+234 800 000 0000"
+                      className={fieldClasses}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
                       htmlFor="linkedin"
                       className="text-label-sm text-on-surface-variant font-mono uppercase"
                     >

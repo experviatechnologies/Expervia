@@ -15,6 +15,7 @@ type ApplicationRow = {
   vendor: "huawei" | "microsoft";
   full_name: string;
   email: string;
+  phone: string | null;
   linkedin: string | null;
   location: string | null;
   solution_area: string | null;
@@ -149,10 +150,18 @@ export default async function ApplicationsPage({
                       </div>
                       <a
                         href={`mailto:${row.email}`}
-                        className="text-on-surface-variant hover:text-primary text-xs"
+                        className="text-on-surface-variant hover:text-primary block text-xs"
                       >
                         {row.email}
                       </a>
+                      {row.phone && (
+                        <a
+                          href={`tel:${row.phone}`}
+                          className="text-on-surface-variant hover:text-primary block text-xs"
+                        >
+                          {row.phone}
+                        </a>
+                      )}
                       {row.linkedin && (
                         <a
                           href={row.linkedin}

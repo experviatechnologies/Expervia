@@ -33,6 +33,7 @@ export type CommunityApplication = {
   vendor: "huawei" | "microsoft";
   fullName: string;
   email: string;
+  phone?: string | null;
   linkedin?: string | null;
   location?: string | null;
   solutionArea?: string | null;
@@ -75,6 +76,7 @@ export async function saveApplication(
       vendor: application.vendor,
       full_name: application.fullName,
       email: application.email,
+      phone: application.phone ?? null,
       linkedin: application.linkedin ?? null,
       location: application.location ?? null,
       solution_area: application.solutionArea ?? null,

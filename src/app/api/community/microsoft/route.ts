@@ -18,6 +18,7 @@ export async function POST(request: Request) {
 
   const fullName = formData.get("fullName");
   const email = formData.get("email");
+  const phone = formData.get("phone");
   const linkedin = formData.get("linkedin");
   const location = formData.get("location");
   const solutionArea = formData.get("solutionArea");
@@ -29,10 +30,12 @@ export async function POST(request: Request) {
     typeof fullName !== "string" ||
     !fullName.trim() ||
     typeof email !== "string" ||
-    !email.trim()
+    !email.trim() ||
+    typeof phone !== "string" ||
+    !phone.trim()
   ) {
     return Response.json(
-      { error: "Full name and email are required." },
+      { error: "Full name, email, and phone number are required." },
       { status: 400 },
     );
   }
@@ -75,6 +78,7 @@ export async function POST(request: Request) {
         vendor: "microsoft",
         fullName: fullName.trim(),
         email: email.trim(),
+        phone: phone.trim(),
         linkedin: asString(linkedin),
         location: asString(location),
         solutionArea: asString(solutionArea),
@@ -96,6 +100,7 @@ export async function POST(request: Request) {
   );
 
   const detailRows = [
+    ["Phone", phone],
     ["LinkedIn", linkedin],
     ["Location", location],
     ["Solution Area", solutionArea],

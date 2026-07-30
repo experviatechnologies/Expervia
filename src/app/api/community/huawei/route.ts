@@ -15,6 +15,7 @@ export async function POST(request: Request) {
 
   const fullName = formData.get("fullName");
   const email = formData.get("email");
+  const phone = formData.get("phone");
   const solutionArea = formData.get("solutionArea");
   const certifications = formData.getAll("certifications");
   const resume = formData.get("resume");
@@ -23,10 +24,12 @@ export async function POST(request: Request) {
     typeof fullName !== "string" ||
     !fullName.trim() ||
     typeof email !== "string" ||
-    !email.trim()
+    !email.trim() ||
+    typeof phone !== "string" ||
+    !phone.trim()
   ) {
     return Response.json(
-      { error: "Full name and email are required." },
+      { error: "Full name, email, and phone number are required." },
       { status: 400 },
     );
   }
@@ -71,6 +74,7 @@ export async function POST(request: Request) {
         vendor: "huawei",
         fullName: fullName.trim(),
         email: email.trim(),
+        phone: phone.trim(),
         solutionArea: typeof solutionArea === "string" ? solutionArea : null,
         certifications: certList || null,
       },
@@ -105,6 +109,7 @@ export async function POST(request: Request) {
         <table cellspacing="0" cellpadding="0">
           <tr><td style="padding:4px 12px 4px 0;color:#8a8a8a;">Name</td><td>${escapeHtml(fullName.trim())}</td></tr>
           <tr><td style="padding:4px 12px 4px 0;color:#8a8a8a;">Email</td><td>${escapeHtml(email.trim())}</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:#8a8a8a;">Phone</td><td>${escapeHtml(phone.trim())}</td></tr>
           <tr><td style="padding:4px 12px 4px 0;color:#8a8a8a;">Solution Area</td><td>${escapeHtml(
             typeof solutionArea === "string" ? solutionArea : "—",
           )}</td></tr>
