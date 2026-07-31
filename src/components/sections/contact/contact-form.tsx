@@ -19,6 +19,13 @@ const textFields = [
     required: true,
   },
   {
+    id: "phone",
+    label: "Phone Number",
+    type: "tel",
+    placeholder: "+234 800 000 0000",
+    required: true,
+  },
+  {
     id: "organization",
     label: "Organization",
     type: "text",

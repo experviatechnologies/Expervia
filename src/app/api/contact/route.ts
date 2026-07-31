@@ -5,6 +5,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type ContactPayload = {
   fullName: string;
   email: string;
+  phone: string;
   organization: string;
   jobTitle?: string;
   industry?: string;
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   const {
     fullName,
     email,
+    phone,
     organization,
     jobTitle,
     industry,
@@ -37,11 +39,15 @@ export async function POST(request: Request) {
   if (
     !fullName?.trim() ||
     !email?.trim() ||
+    !phone?.trim() ||
     !organization?.trim() ||
     !message?.trim()
   ) {
     return Response.json(
-      { error: "Full name, email, organization, and message are required." },
+      {
+        error:
+          "Full name, email, phone number, organization, and message are required.",
+      },
       { status: 400 },
     );
   }
@@ -54,6 +60,7 @@ export async function POST(request: Request) {
   }
 
   const detailRows = [
+    ["Phone", phone],
     ["Organization", organization],
     ["Job Title", jobTitle],
     ["Industry", industry],
