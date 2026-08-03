@@ -26,14 +26,14 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <Footer />
       <ConsultFab />
       <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-HX16TY9Q02"
+        src="https://www.googletagmanager.com/gtag/js?id=G-RD0N0P90EZ"
         strategy="afterInteractive"
       />
       <Script id="google-analytics" strategy="afterInteractive">
         {`window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-HX16TY9Q02');`}
+        gtag('config', 'G-RD0N0P90EZ');`}
       </Script>
       <Script id="microsoft-clarity" strategy="afterInteractive">
         {`(function(c,l,a,r,i,t,y){
