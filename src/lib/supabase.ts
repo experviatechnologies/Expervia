@@ -91,3 +91,53 @@ export async function saveApplication(
 
   return objectPath;
 }
+
+// --- Event registrations (ETEN) --------------------------------------------
+// Stored in a DEDICATED table, separate from `community_applications` and from
+// the contact form (which is email-only). This keeps event sign-ups instantly
+// distinguishable for the admin — a different table with an obvious name.
+export const EVENT_REGISTRATIONS_TABLE = "event_registrations";
+
+export type EventRegistration = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  country?: string | null;
+  city?: string | null;
+  jobTitle?: string | null;
+  organization?: string | null;
+  areaOfExpertise?: string | null;
+  membershipStatus?: string | null;
+  /** Comma-joined list of the channels the registrant heard about us through. */
+  heardFrom?: string | null;
+  learningGoals?: string | null;
+  consent: boolean;
+};
+
+// Inserts a row into `event_registrations`. Called from Route Handlers only.
+export async function saveEventRegistration(
+  reg: EventRegistration,
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase.from(EVENT_REGISTRATIONS_TABLE).insert({
+    first_name: reg.firstName,
+    last_name: reg.lastName,
+    email: reg.email,
+    phone: reg.phone ?? null,
+    country: reg.country ?? null,
+    city: reg.city ?? null,
+    job_title: reg.jobTitle ?? null,
+    organization: reg.organization ?? null,
+    area_of_expertise: reg.areaOfExpertise ?? null,
+    membership_status: reg.membershipStatus ?? null,
+    heard_from: reg.heardFrom ?? null,
+    learning_goals: reg.learningGoals ?? null,
+    consent: reg.consent,
+  });
+
+  if (error) {
+    throw new Error(`Event registration insert failed: ${error.message}`);
+  }
+}

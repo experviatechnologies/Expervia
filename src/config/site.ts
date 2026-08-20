@@ -14,6 +14,7 @@ export const siteConfig = {
     { title: "Industries", href: "/industries" },
     { title: "Services", href: "/services" },
     { title: "Community", href: "/community/huawei" },
+    { title: "Events", href: "/events" },
     { title: "About Us", href: "/about" },
   ],
   // Footer link columns.
@@ -22,7 +23,7 @@ export const siteConfig = {
       { title: "About Us", href: "/about" },
       { title: "Careers", href: "#careers" },
       { title: "Newsroom", href: "#newsroom" },
-      { title: "Events", href: "#events" },
+      { title: "Events", href: "/events" },
       { title: "Contact", href: "/contact" },
     ],
     legal: [
