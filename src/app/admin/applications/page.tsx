@@ -4,6 +4,7 @@ import { ExternalLink, FileDown, Inbox } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getSupabaseAdmin, APPLICATIONS_TABLE } from "@/lib/supabase";
 import { SignOutButton } from "./sign-out-button";
+import { AdminTabs } from "../admin-tabs";
 
 export const metadata: Metadata = {
   title: "Community Applications",
@@ -85,6 +86,8 @@ export default async function ApplicationsPage({
         </div>
         <SignOutButton />
       </div>
+
+      <AdminTabs active="applications" />
 
       {/* Vendor filter */}
       <div className="mb-6 flex flex-wrap gap-2">
