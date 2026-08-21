@@ -1,5 +1,5 @@
 import { getResendClient, escapeHtml } from "@/lib/email";
-import { saveApplication } from "@/lib/supabase";
+import { saveApplication, DuplicateRegistrationError } from "@/lib/supabase";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_BYTES = 4 * 1024 * 1024; // keep under Vercel's serverless request body limit
@@ -81,6 +81,9 @@ export async function POST(request: Request) {
       resume,
     );
   } catch (err) {
+    if (err instanceof DuplicateRegistrationError) {
+      return Response.json({ error: err.message }, { status: 409 });
+    }
     console.error("Huawei application persist failed:", err);
     return Response.json(
       { error: "Failed to submit your application. Please try again." },

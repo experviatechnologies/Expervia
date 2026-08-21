@@ -1,5 +1,8 @@
 import { getResendClient, escapeHtml } from "@/lib/email";
-import { saveEventRegistration } from "@/lib/supabase";
+import {
+  saveEventRegistration,
+  DuplicateRegistrationError,
+} from "@/lib/supabase";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -80,6 +83,9 @@ export async function POST(request: Request) {
       consent: Boolean(consent),
     });
   } catch (err) {
+    if (err instanceof DuplicateRegistrationError) {
+      return Response.json({ error: err.message }, { status: 409 });
+    }
     console.error("Event registration persist failed:", err);
     return Response.json(
       { error: "Failed to register. Please try again." },

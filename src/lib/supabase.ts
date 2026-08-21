@@ -29,6 +29,25 @@ export function getSupabaseAdmin(): SupabaseClient {
 export const APPLICATIONS_TABLE = "community_applications";
 export const RESUMES_BUCKET = "resumes";
 
+// Thrown when a submission collides with an existing one (same email — and, for
+// community applications, same vendor track). Route Handlers catch this to
+// return a friendly 409 instead of a generic 500.
+export class DuplicateRegistrationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DuplicateRegistrationError";
+  }
+}
+
+// Postgres unique-violation SQLSTATE. Supabase surfaces it as error.code.
+const PG_UNIQUE_VIOLATION = "23505";
+
+// Canonical form for storage + dedup: trimmed and lower-cased, so "A@x.com"
+// and "a@x.com " can never both slip past the unique constraint.
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 export type CommunityApplication = {
   vendor: "huawei" | "microsoft";
   fullName: string;
@@ -49,6 +68,23 @@ export async function saveApplication(
   resume: File,
 ): Promise<string> {
   const supabase = getSupabaseAdmin();
+  const email = normalizeEmail(application.email);
+
+  // Pre-check before uploading the resume, so a duplicate applicant doesn't
+  // leave an orphaned file in storage. The unique (email, vendor) constraint
+  // below is the real guarantee; this just keeps the common case clean.
+  const { data: existing } = await supabase
+    .from(APPLICATIONS_TABLE)
+    .select("id")
+    .eq("email", email)
+    .eq("vendor", application.vendor)
+    .maybeSingle();
+
+  if (existing) {
+    throw new DuplicateRegistrationError(
+      "You've already applied to this track with this email address.",
+    );
+  }
 
   const safeName = resume.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const objectPath = `${application.vendor}/${crypto.randomUUID()}-${safeName}`;
@@ -75,7 +111,7 @@ export async function saveApplication(
     .insert({
       vendor: application.vendor,
       full_name: application.fullName,
-      email: application.email,
+      email,
       phone: application.phone ?? null,
       linkedin: application.linkedin ?? null,
       location: application.location ?? null,
@@ -86,6 +122,15 @@ export async function saveApplication(
     });
 
   if (insertError) {
+    // Race: another submission for the same (email, vendor) landed between our
+    // pre-check and this insert. The unique constraint stops it here — clean up
+    // the resume we just uploaded, then surface the friendly duplicate message.
+    if (insertError.code === PG_UNIQUE_VIOLATION) {
+      await supabase.storage.from(RESUMES_BUCKET).remove([objectPath]);
+      throw new DuplicateRegistrationError(
+        "You've already applied to this track with this email address.",
+      );
+    }
     throw new Error(`Application insert failed: ${insertError.message}`);
   }
 
@@ -124,7 +169,7 @@ export async function saveEventRegistration(
   const { error } = await supabase.from(EVENT_REGISTRATIONS_TABLE).insert({
     first_name: reg.firstName,
     last_name: reg.lastName,
-    email: reg.email,
+    email: normalizeEmail(reg.email),
     phone: reg.phone ?? null,
     country: reg.country ?? null,
     city: reg.city ?? null,
@@ -138,6 +183,11 @@ export async function saveEventRegistration(
   });
 
   if (error) {
+    if (error.code === PG_UNIQUE_VIOLATION) {
+      throw new DuplicateRegistrationError(
+        "This email is already registered for our events.",
+      );
+    }
     throw new Error(`Event registration insert failed: ${error.message}`);
   }
 }
