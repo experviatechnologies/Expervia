@@ -8,14 +8,34 @@ import { ConsultFab } from "@/components/shared/consult-fab";
 
 /**
  * Wraps page content with the public marketing chrome (navbar, footer, consult
- * FAB) and loads analytics — except on the internal /admin area, which has its
- * own bare layout and is intentionally excluded from analytics tracking.
+ * FAB) and loads analytics — except on internal/app areas (the /admin console
+ * and the ETEN member app + auth screens), which have their own bare layout and
+ * are intentionally excluded from analytics tracking.
  */
+const BARE_PREFIXES = [
+  "/admin",
+  "/dashboard",
+  "/signin",
+  "/join",
+  "/auth",
+  "/onboarding",
+  "/profile",
+  "/feed",
+  "/pods",
+  "/messages",
+  "/notifications",
+  "/forgot-password",
+  "/reset-password",
+  "/suspended",
+];
+
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith("/admin");
+  const isBare = BARE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`),
+  );
 
-  if (isAdmin) {
+  if (isBare) {
     return <main className="flex-1">{children}</main>;
   }
 

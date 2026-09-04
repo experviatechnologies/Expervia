@@ -1,14 +1,36 @@
-import { FileText, CalendarCheck } from "lucide-react";
+import { FileText, CalendarCheck, Tags, Users } from "lucide-react";
 
-// Top-level admin navigation: switch between the two submission streams.
-// Community applications and event registrations live in separate tables, so
-// they get separate pages rather than one merged list.
+// Top-level admin navigation. The submission streams (community applications
+// and event registrations) live in separate tables, so they get separate pages;
+// Members administers ETEN accounts; the skills taxonomy is the platform's
+// shared vocabulary.
 const TABS = [
-  { key: "applications", label: "Community Applications", href: "/admin/applications", Icon: FileText },
-  { key: "events", label: "Event Registrations", href: "/admin/events", Icon: CalendarCheck },
+  {
+    key: "applications",
+    label: "Community Applications",
+    href: "/admin/applications",
+    Icon: FileText,
+  },
+  {
+    key: "events",
+    label: "Event Registrations",
+    href: "/admin/events",
+    Icon: CalendarCheck,
+  },
+  { key: "members", label: "Members", href: "/admin/members", Icon: Users },
+  {
+    key: "taxonomy",
+    label: "Skills Taxonomy",
+    href: "/admin/taxonomy",
+    Icon: Tags,
+  },
 ] as const;
 
-export function AdminTabs({ active }: { active: "applications" | "events" }) {
+export function AdminTabs({
+  active,
+}: {
+  active: "applications" | "events" | "taxonomy" | "members";
+}) {
   return (
     <div className="border-outline-variant mb-6 flex flex-wrap gap-2 border-b pb-3">
       {TABS.map(({ key, label, href, Icon }) => {

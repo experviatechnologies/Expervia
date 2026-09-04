@@ -28,6 +28,10 @@ export function getSupabaseAdmin(): SupabaseClient {
 
 export const APPLICATIONS_TABLE = "community_applications";
 export const RESUMES_BUCKET = "resumes";
+// Private bucket for ETEN member certificate files (FR-PROF-05). Same access
+// model as `resumes`: service_role writes/reads the objects, downloads go out as
+// short-lived signed URLs. Create it as a PRIVATE bucket in Supabase Storage.
+export const CERTIFICATES_BUCKET = "certificates";
 
 // Thrown when a submission collides with an existing one (same email — and, for
 // community applications, same vendor track). Route Handlers catch this to

@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ETEN internal planning doc (keep out of the repo)
+ETEN_Phase1_PRD.pdf
+*:Zone.Identifier
