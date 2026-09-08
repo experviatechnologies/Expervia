@@ -20,6 +20,7 @@ const BARE_PREFIXES = [
   "/auth",
   "/onboarding",
   "/profile",
+  "/members",
   "/feed",
   "/pods",
   "/messages",

@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, BadgeCheck, ChevronRight, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  ChevronRight,
+  Eye,
+  FileText,
+} from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import {
@@ -98,6 +104,13 @@ export default async function ProfilePage() {
           This is your credential-backed identity across ETEN. Keep it current
           so peers and pods can find you.
         </p>
+        <Link
+          href={`/members/${member.id}`}
+          className="text-primary mt-3 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+        >
+          <Eye className="size-4" />
+          View public profile
+        </Link>
       </header>
 
       <Link
