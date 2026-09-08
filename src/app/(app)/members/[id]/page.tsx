@@ -6,6 +6,7 @@ import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { MessageButton } from "./message-button";
+import { BlockButton } from "./block-button";
 
 export const metadata: Metadata = {
   title: "Member Profile",
@@ -82,6 +83,17 @@ export default async function MemberProfilePage({
     )
     .map((s) => s.name);
 
+  // Have I blocked this member? (RLS blocks_select_self scopes to my own list.)
+  const { data: blockRow } = isSelf
+    ? { data: null }
+    : await supabase
+        .from("blocks")
+        .select("blocked_id")
+        .eq("blocker_id", viewer.id)
+        .eq("blocked_id", id)
+        .maybeSingle();
+  const isBlocked = Boolean(blockRow);
+
   const certs = verifiedCerts ?? [];
   const languages = profile.languages ?? [];
   const initials = (profile.full_name ?? "?").trim().charAt(0).toUpperCase();
@@ -105,7 +117,10 @@ export default async function MemberProfilePage({
             Edit profile
           </Link>
         ) : (
-          <MessageButton memberId={id} />
+          <div className="flex flex-col items-end gap-2">
+            {!isBlocked && <MessageButton memberId={id} />}
+            <BlockButton memberId={id} initialBlocked={isBlocked} />
+          </div>
         )}
       </div>
 

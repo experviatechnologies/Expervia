@@ -25,6 +25,7 @@ const BARE_PREFIXES = [
   "/pods",
   "/messages",
   "/notifications",
+  "/settings",
   "/forgot-password",
   "/reset-password",
   "/suspended",

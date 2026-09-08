@@ -57,6 +57,7 @@ export async function proxy(request: NextRequest) {
     "/pods",
     "/messages",
     "/notifications",
+    "/settings",
   ];
   const isMemberArea = MEMBER_PREFIXES.some(
     (p) => path === p || path.startsWith(`${p}/`),
@@ -122,6 +123,8 @@ export const config = {
     "/messages/:path*",
     "/notifications",
     "/notifications/:path*",
+    "/settings",
+    "/settings/:path*",
     "/signin",
     "/join",
     "/forgot-password",
