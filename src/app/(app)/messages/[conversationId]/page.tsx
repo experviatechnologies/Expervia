@@ -109,7 +109,11 @@ export default async function ConversationPage({
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <MessageList messages={messages} memberId={member.id} />
+        <MessageList
+          messages={messages}
+          memberId={member.id}
+          conversationId={conversationId}
+        />
       </div>
 
       <div className="border-outline-variant bg-surface/80 shrink-0 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">

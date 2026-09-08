@@ -18,6 +18,8 @@ type RosterMember = {
   headline: string | null;
   jobTitle: string | null;
   role: "member" | "lead" | "co_lead";
+  /** Whether the viewer can see this member's profile (link + details). */
+  visible: boolean;
 };
 
 const ROLE_RANK = { lead: 0, co_lead: 1, member: 2 } as const;
@@ -59,8 +61,9 @@ export default async function PodDetailPage({
   const memberships = membershipRows ?? [];
   const memberIds = memberships.map((m) => m.member_id);
 
-  // Profiles are RLS-gated to claimed + active members, so the roster naturally
-  // shows only people who can actually be seen.
+  // Some members' profiles may be RLS-hidden from the viewer (not claimed +
+  // active). We still list every member so the count matches the directory —
+  // hidden ones show as a generic entry with no profile link.
   const { data: profileRows } = memberIds.length
     ? await supabase
         .from("profiles")
@@ -73,16 +76,15 @@ export default async function PodDetailPage({
   const roster: RosterMember[] = memberships
     .map((m) => {
       const p = profileById.get(m.member_id);
-      if (!p) return null;
       return {
         memberId: m.member_id,
-        name: p.full_name,
-        headline: p.headline,
-        jobTitle: p.job_title,
+        name: p?.full_name ?? "A member",
+        headline: p?.headline ?? null,
+        jobTitle: p?.job_title ?? null,
         role: m.role_in_pod as RosterMember["role"],
+        visible: Boolean(p),
       };
     })
-    .filter((r): r is RosterMember => r !== null)
     .sort((a, b) => ROLE_RANK[a.role] - ROLE_RANK[b.role]);
 
   const isMember = memberIds.includes(member.id);
@@ -161,29 +163,42 @@ export default async function PodDetailPage({
                 key={r.memberId}
                 className="glass-card flex items-center gap-4 rounded-xl p-4"
               >
-                <Link
-                  href={`/members/${r.memberId}`}
-                  className="flex min-w-0 flex-1 items-center gap-4 transition-opacity hover:opacity-80"
-                >
-                  <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full font-bold">
-                    {(r.name ?? "?").trim().charAt(0).toUpperCase()}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="text-on-surface flex items-center gap-2 font-medium">
-                      {r.name}
-                      {r.role !== "member" && (
-                        <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
-                          {ROLE_LABEL[r.role]}
-                        </span>
-                      )}
-                    </span>
-                    {(r.headline || r.jobTitle) && (
-                      <span className="text-on-surface-variant block truncate text-sm">
-                        {r.headline ?? r.jobTitle}
+                {(() => {
+                  const inner = (
+                    <>
+                      <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full font-bold">
+                        {(r.name ?? "?").trim().charAt(0).toUpperCase()}
                       </span>
-                    )}
-                  </span>
-                </Link>
+                      <span className="min-w-0 flex-1">
+                        <span className="text-on-surface flex items-center gap-2 font-medium">
+                          {r.name}
+                          {r.role !== "member" && (
+                            <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+                              {ROLE_LABEL[r.role]}
+                            </span>
+                          )}
+                        </span>
+                        {(r.headline || r.jobTitle) && (
+                          <span className="text-on-surface-variant block truncate text-sm">
+                            {r.headline ?? r.jobTitle}
+                          </span>
+                        )}
+                      </span>
+                    </>
+                  );
+                  return r.visible ? (
+                    <Link
+                      href={`/members/${r.memberId}`}
+                      className="flex min-w-0 flex-1 items-center gap-4 transition-opacity hover:opacity-80"
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                      {inner}
+                    </div>
+                  );
+                })()}
                 {isOps && (
                   <PodRoleControl
                     podId={pod.id}
