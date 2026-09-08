@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { notify } from "@/lib/eten/notifications";
 
 type StartResult = { conversationId: string } | { error: string };
 type ActionResult = { ok: true } | { error: string };
@@ -125,6 +126,24 @@ export async function sendMessage(input: {
     .update({ last_read_at: new Date().toISOString() })
     .eq("conversation_id", input.conversationId)
     .eq("member_id", me.id);
+
+  // Notify the other participant(s). Service_role read of the roster + writes.
+  const admin = getSupabaseAdmin();
+  const { data: participants } = await admin
+    .from("conversation_participants")
+    .select("member_id")
+    .eq("conversation_id", input.conversationId);
+  for (const p of participants ?? []) {
+    if (p.member_id !== me.id) {
+      await notify({
+        recipientId: p.member_id,
+        actorId: me.id,
+        type: "message",
+        targetType: "conversation",
+        targetId: input.conversationId,
+      });
+    }
+  }
 
   revalidatePath(`/messages/${input.conversationId}`);
   revalidatePath("/messages");

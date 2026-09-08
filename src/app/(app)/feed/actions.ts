@@ -5,6 +5,7 @@ import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin, POST_MEDIA_BUCKET } from "@/lib/supabase";
 import type { ReactionType } from "@/lib/eten/reactions";
+import { notify } from "@/lib/eten/notifications";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -262,6 +263,39 @@ export async function addComment(input: {
     return { error: "Couldn't post your comment. Please try again." };
   }
 
+  // Notify the post author (and, for a reply, the parent comment's author).
+  const admin = getSupabaseAdmin();
+  const { data: post } = await admin
+    .from("posts")
+    .select("author_id")
+    .eq("id", input.postId)
+    .maybeSingle();
+  if (post) {
+    await notify({
+      recipientId: post.author_id,
+      actorId: member.id,
+      type: "comment",
+      targetType: "post",
+      targetId: input.postId,
+    });
+  }
+  if (input.parentCommentId) {
+    const { data: parent } = await admin
+      .from("comments")
+      .select("author_id")
+      .eq("id", input.parentCommentId)
+      .maybeSingle();
+    if (parent && parent.author_id !== post?.author_id) {
+      await notify({
+        recipientId: parent.author_id,
+        actorId: member.id,
+        type: "comment",
+        targetType: "post",
+        targetId: input.postId,
+      });
+    }
+  }
+
   revalidatePath(`/feed/${input.postId}`);
   revalidatePath("/feed");
   return { ok: true };
@@ -406,6 +440,7 @@ export async function toggleReaction(input: {
     .maybeSingle();
 
   let error;
+  let notifyAuthor = false; // only when adding or changing, not retracting
   if (!existing) {
     ({ error } = await supabase.from("reactions").insert({
       member_id: member.id,
@@ -413,6 +448,7 @@ export async function toggleReaction(input: {
       target_id: input.targetId,
       reaction_type: input.reactionType,
     }));
+    notifyAuthor = true;
   } else if (existing.reaction_type === input.reactionType) {
     ({ error } = await supabase
       .from("reactions")
@@ -423,10 +459,30 @@ export async function toggleReaction(input: {
       .from("reactions")
       .update({ reaction_type: input.reactionType })
       .eq("id", existing.id));
+    notifyAuthor = true;
   }
 
   if (error) {
     return { error: "Couldn't save your reaction. Please try again." };
+  }
+
+  if (notifyAuthor) {
+    const admin = getSupabaseAdmin();
+    const table = input.targetType === "post" ? "posts" : "comments";
+    const { data: target } = await admin
+      .from(table)
+      .select("author_id")
+      .eq("id", input.targetId)
+      .maybeSingle();
+    if (target) {
+      await notify({
+        recipientId: target.author_id,
+        actorId: member.id,
+        type: "reaction",
+        targetType: "post",
+        targetId: input.postId,
+      });
+    }
   }
 
   revalidatePath(`/feed/${input.postId}`);

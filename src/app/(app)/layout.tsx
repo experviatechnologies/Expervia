@@ -25,8 +25,9 @@ export default async function AppLayout({
   // Suspended / deactivated members can't use the app — they see the notice.
   if (member.status !== "active") redirect("/suspended");
 
+  const supabase = await createSupabaseServerClient();
+
   if (member.role !== "operations" && member.emailConfirmed) {
-    const supabase = await createSupabaseServerClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("primary_specialization_pod_id")
@@ -35,12 +36,25 @@ export default async function AppLayout({
     if (!profile?.primary_specialization_pod_id) redirect("/onboarding");
   }
 
+  // Unread badges for the nav.
+  const { count: unreadNotifications } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("recipient_id", member.id)
+    .eq("is_read", false);
+
+  const badges: Record<string, number> = {};
+  if (unreadNotifications && unreadNotifications > 0) {
+    badges["/notifications"] = unreadNotifications;
+  }
+
   return (
     <div className="min-h-screen">
       <AppNav
         memberName={member.fullName}
         email={member.email}
         isOps={member.role === "operations"}
+        badges={badges}
       />
       <div className="md:pl-60">
         <div className="pb-24 md:pb-0">{children}</div>

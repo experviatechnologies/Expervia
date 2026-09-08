@@ -37,10 +37,12 @@ export function AppNav({
   memberName,
   email,
   isOps,
+  badges = {},
 }: {
   memberName: string | null;
   email: string | null;
   isOps: boolean;
+  badges?: Record<string, number>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -69,6 +71,7 @@ export function AppNav({
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.map(({ href, label, Icon }) => {
             const active = isActive(pathname, href);
+            const count = badges[href] ?? 0;
             return (
               <Link
                 key={href}
@@ -81,7 +84,12 @@ export function AppNav({
                 }`}
               >
                 <Icon className="size-5 shrink-0" />
-                {label}
+                <span className="flex-1">{label}</span>
+                {count > 0 && (
+                  <span className="bg-primary text-primary-foreground inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-semibold">
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -149,16 +157,22 @@ export function AppNav({
       <nav className="border-outline-variant bg-surface/90 fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t backdrop-blur md:hidden">
         {NAV.map(({ href, label, Icon }) => {
           const active = isActive(pathname, href);
+          const count = badges[href] ?? 0;
           return (
             <Link
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors ${
+              className={`relative flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors ${
                 active ? "text-primary" : "text-on-surface-variant"
               }`}
             >
-              <Icon className="size-5" />
+              <span className="relative">
+                <Icon className="size-5" />
+                {count > 0 && (
+                  <span className="bg-primary absolute -top-1 -right-1.5 size-2 rounded-full" />
+                )}
+              </span>
               <span className="max-w-full truncate px-0.5">
                 {label.replace("Explore ", "")}
               </span>
