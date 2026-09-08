@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, BadgeCheck, ChevronRight } from "lucide-react";
+import { ArrowLeft, BadgeCheck, ChevronRight, FileText } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import {
@@ -31,7 +31,7 @@ export default async function ProfilePage() {
     supabase
       .from("profiles")
       .select(
-        "full_name, headline, job_title, location, industry_experience, availability_status, bio, languages, years_experience, primary_specialization_pod_id",
+        "full_name, headline, job_title, location, industry_experience, availability_status, bio, languages, years_experience, primary_specialization_pod_id, resume_path",
       )
       .eq("member_id", member.id)
       .maybeSingle(),
@@ -76,6 +76,7 @@ export default async function ProfilePage() {
   };
 
   const initialSkillIds = (mySkillRows ?? []).map((r) => r.skill_id);
+  const hasResume = Boolean(profile?.resume_path);
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
@@ -116,6 +117,29 @@ export default async function ProfilePage() {
         </span>
         <ChevronRight className="text-on-surface-variant size-5 shrink-0" />
       </Link>
+
+      {hasResume && (
+        <a
+          href="/api/member/resume"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="glass-card mb-8 flex items-center gap-4 rounded-2xl p-5 transition-colors hover:bg-white/5"
+        >
+          <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
+            <FileText className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="text-on-surface block font-semibold">
+              Your résumé
+            </span>
+            <span className="text-on-surface-variant block text-sm">
+              The résumé you submitted when you registered — on file with your
+              profile. Opens in a new tab.
+            </span>
+          </span>
+          <ChevronRight className="text-on-surface-variant size-5 shrink-0" />
+        </a>
+      )}
 
       <ProfileForm
         initial={initial}
