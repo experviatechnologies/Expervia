@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getSupabaseAdmin, POST_MEDIA_BUCKET } from "@/lib/supabase";
 import type { ReactionType } from "@/lib/eten/reactions";
 
 type ActionResult = { ok: true } | { error: string };
@@ -15,33 +16,53 @@ const REACTION_TYPES: ReactionType[] = [
 ];
 
 const MAX_BODY = 5000;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
 
 /**
- * Publish a post to one destination (the Main Community feed or a specific pod).
+ * Publish a post to one destination (the Main Community feed or a specific pod),
+ * optionally with one image attachment.
  *
  * A post is a `posts` row plus a `post_targets` row per destination. Both writes
  * go through the member's OWN session client so RLS enforces authorship:
  * posts_insert_self requires author_id = auth.uid() + is_active_member, and
- * post_targets_insert requires the caller to own the post. If the target insert
- * fails we delete the just-created post so we never leave an untargeted (and
- * therefore invisible) orphan.
+ * post_targets_insert requires the caller to own the post (owns_post helper).
+ * The image file goes to a private bucket via service_role (no member storage
+ * policies), and the attachment row via the session client. Any failure after
+ * the post exists rolls the whole post back, so a post is all-or-nothing.
  */
-export async function createPost(input: {
-  body: string;
-  targetPodId: string;
-}): Promise<ActionResult> {
+export async function createPost(formData: FormData): Promise<ActionResult> {
   const member = await getCurrentMember();
   if (!member) return { error: "You need to sign in." };
   if (member.status !== "active") {
     return { error: "Your account isn't active." };
   }
 
-  const body = input.body.trim();
+  const body = ((formData.get("body") as string) ?? "").trim();
+  const targetPodId = (formData.get("targetPodId") as string) ?? "";
   if (!body) return { error: "Write something before posting." };
   if (body.length > MAX_BODY) {
     return { error: `Posts are limited to ${MAX_BODY} characters.` };
   }
-  if (!input.targetPodId) return { error: "Choose where to post." };
+  if (!targetPodId) return { error: "Choose where to post." };
+
+  const entry = formData.get("image");
+  const image = entry instanceof File && entry.size > 0 ? entry : null;
+  if (image) {
+    if (image.size > MAX_IMAGE_BYTES) {
+      return {
+        error: "That image is over 10 MB. Please choose a smaller one.",
+      };
+    }
+    if (!ALLOWED_IMAGE_TYPES.has(image.type)) {
+      return { error: "Attach an image (PNG, JPG, WebP, or GIF)." };
+    }
+  }
 
   const supabase = await createSupabaseServerClient();
 
@@ -62,13 +83,51 @@ export async function createPost(input: {
 
   const { error: targetError } = await supabase
     .from("post_targets")
-    .insert({ post_id: postId, pod_id: input.targetPodId });
+    .insert({ post_id: postId, pod_id: targetPodId });
 
   if (targetError) {
     console.error("createPost: target insert failed", targetError);
     // Roll back the orphaned post so it can't linger invisibly.
     await supabase.from("posts").delete().eq("id", postId);
     return { error: "Couldn't publish your post. Please try again." };
+  }
+
+  if (image) {
+    const safeName = image.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const objectPath = `${postId}/${crypto.randomUUID()}-${safeName}`;
+    // Buffer (not the File) — a streaming body fails opaquely under Node/undici.
+    const bytes = Buffer.from(await image.arrayBuffer());
+    const { error: uploadError } = await getSupabaseAdmin()
+      .storage.from(POST_MEDIA_BUCKET)
+      .upload(objectPath, bytes, {
+        contentType: image.type || "application/octet-stream",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("createPost: image upload failed", uploadError);
+      await supabase.from("posts").delete().eq("id", postId);
+      return { error: "Couldn't upload your image. Please try again." };
+    }
+
+    const { error: attachError } = await supabase
+      .from("post_attachments")
+      .insert({
+        post_id: postId,
+        kind: "image",
+        storage_path: objectPath,
+        filename: image.name.slice(0, 200),
+        mime: image.type || null,
+      });
+
+    if (attachError) {
+      console.error("createPost: attachment insert failed", attachError);
+      await getSupabaseAdmin()
+        .storage.from(POST_MEDIA_BUCKET)
+        .remove([objectPath]);
+      await supabase.from("posts").delete().eq("id", postId);
+      return { error: "Couldn't attach your image. Please try again." };
+    }
   }
 
   revalidatePath("/feed");

@@ -10,6 +10,7 @@ import {
   type ReactionCounts,
   type ReactionType,
 } from "@/lib/eten/reactions";
+import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
 import { ReactionBar } from "../reaction-bar";
 import { CommentComposer } from "./comment-composer";
 import { CommentsThread, type CommentNode } from "./comments-thread";
@@ -122,6 +123,10 @@ export default async function PostDetailPage({
     if (r.member_id === member.id) myReaction = r.reaction_type as ReactionType;
   }
 
+  const images = (await imageAttachmentsByPost(supabase, [post.id])).get(
+    post.id,
+  );
+
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
       <Link
@@ -166,6 +171,16 @@ export default async function PostDetailPage({
         <p className="text-on-surface mt-4 text-sm whitespace-pre-line">
           {post.body}
         </p>
+
+        {(images ?? []).map((img) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={img.url}
+            src={img.url}
+            alt={img.filename ?? "Post image"}
+            className="border-outline-variant mt-4 max-h-[32rem] w-full rounded-xl border object-contain"
+          />
+        ))}
 
         <div className="mt-4">
           <ReactionBar

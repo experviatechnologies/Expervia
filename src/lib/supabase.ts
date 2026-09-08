@@ -32,6 +32,10 @@ export const RESUMES_BUCKET = "resumes";
 // model as `resumes`: service_role writes/reads the objects, downloads go out as
 // short-lived signed URLs. Create it as a PRIVATE bucket in Supabase Storage.
 export const CERTIFICATES_BUCKET = "certificates";
+// Private bucket for images attached to feed posts (M2.8). Same access model:
+// service_role uploads the object, and the feed renders it via a short-lived
+// signed URL. Create it as a PRIVATE bucket in Supabase Storage.
+export const POST_MEDIA_BUCKET = "post-media";
 
 // Thrown when a submission collides with an existing one (same email — and, for
 // community applications, same vendor track). Route Handlers catch this to

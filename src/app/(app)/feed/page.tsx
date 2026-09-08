@@ -10,6 +10,7 @@ import {
   type ReactionCounts,
   type ReactionType,
 } from "@/lib/eten/reactions";
+import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
 import { PostComposer, type ComposerTarget } from "./post-composer";
 import { ReactionBar } from "./reaction-bar";
 
@@ -109,6 +110,8 @@ export default async function FeedPage() {
     if (r.member_id === member.id) entry.mine = r.reaction_type as ReactionType;
   }
 
+  const imagesByPost = await imageAttachmentsByPost(supabase, postIds);
+
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
       <header className="mb-8">
@@ -174,6 +177,16 @@ export default async function FeedPage() {
                 <p className="text-on-surface mt-3 text-sm whitespace-pre-line">
                   {post.body}
                 </p>
+
+                {(imagesByPost.get(post.id) ?? []).map((img) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={img.url}
+                    src={img.url}
+                    alt={img.filename ?? "Post image"}
+                    className="border-outline-variant mt-3 max-h-[28rem] w-full rounded-xl border object-cover"
+                  />
+                ))}
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <ReactionBar
