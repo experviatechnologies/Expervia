@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Check, Loader2, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { joinPod, leavePod } from "./actions";
@@ -49,9 +50,12 @@ export function PodsDirectory({ pods }: { pods: PodCard[] }) {
               className="glass-card flex flex-col gap-3 rounded-2xl p-5"
             >
               <div className="flex items-start justify-between gap-3">
-                <h2 className="text-on-surface font-display text-body-lg font-bold">
+                <Link
+                  href={`/pods/${pod.slug}`}
+                  className="text-on-surface font-display text-body-lg font-bold hover:underline"
+                >
                   {pod.name}
-                </h2>
+                </Link>
                 {pod.isPrimary && (
                   <span className="bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
                     <Star className="size-3.5" />

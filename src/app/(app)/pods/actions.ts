@@ -32,6 +32,7 @@ export async function joinPod(input: { podId: string }): Promise<ActionResult> {
   }
 
   revalidatePath("/pods");
+  revalidatePath("/pods/[slug]", "page");
   return { ok: true };
 }
 
@@ -73,5 +74,6 @@ export async function leavePod(input: {
   }
 
   revalidatePath("/pods");
+  revalidatePath("/pods/[slug]", "page");
   return { ok: true };
 }
