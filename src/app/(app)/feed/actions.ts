@@ -45,23 +45,29 @@ export async function createPost(input: {
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: post, error } = await supabase
-    .from("posts")
-    .insert({ author_id: member.id, body })
-    .select("id")
-    .single();
+  // Generate the id ourselves rather than reading it back with .select(): the
+  // posts SELECT policy is can_see_post(), which returns false until the post
+  // has a target in a visible pod — so a select-after-insert would find zero
+  // rows here (the target doesn't exist yet) and look like a failure.
+  const postId = crypto.randomUUID();
 
-  if (error || !post) {
+  const { error: postError } = await supabase
+    .from("posts")
+    .insert({ id: postId, author_id: member.id, body });
+
+  if (postError) {
+    console.error("createPost: post insert failed", postError);
     return { error: "Couldn't publish your post. Please try again." };
   }
 
   const { error: targetError } = await supabase
     .from("post_targets")
-    .insert({ post_id: post.id, pod_id: input.targetPodId });
+    .insert({ post_id: postId, pod_id: input.targetPodId });
 
   if (targetError) {
+    console.error("createPost: target insert failed", targetError);
     // Roll back the orphaned post so it can't linger invisibly.
-    await supabase.from("posts").delete().eq("id", post.id);
+    await supabase.from("posts").delete().eq("id", postId);
     return { error: "Couldn't publish your post. Please try again." };
   }
 
