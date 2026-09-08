@@ -5,6 +5,12 @@ import { ArrowLeft } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { timeAgo } from "@/lib/time";
+import {
+  emptyReactionCounts,
+  type ReactionCounts,
+  type ReactionType,
+} from "@/lib/eten/reactions";
+import { ReactionBar } from "../reaction-bar";
 import { CommentComposer } from "./comment-composer";
 import { CommentsThread, type CommentNode } from "./comments-thread";
 
@@ -102,6 +108,20 @@ export default async function PostDetailPage({
     .map((t) => t.pods)
     .filter((p): p is { name: string; slug: string } => Boolean(p));
 
+  // Reaction tallies + the viewer's own reaction for this post.
+  const { data: reactionRows } = await supabase
+    .from("reactions")
+    .select("reaction_type, member_id")
+    .eq("target_type", "post")
+    .eq("target_id", post.id);
+
+  const counts: ReactionCounts = emptyReactionCounts();
+  let myReaction: ReactionType | null = null;
+  for (const r of reactionRows ?? []) {
+    counts[r.reaction_type as ReactionType] += 1;
+    if (r.member_id === member.id) myReaction = r.reaction_type as ReactionType;
+  }
+
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
       <Link
@@ -146,6 +166,16 @@ export default async function PostDetailPage({
         <p className="text-on-surface mt-4 text-sm whitespace-pre-line">
           {post.body}
         </p>
+
+        <div className="mt-4">
+          <ReactionBar
+            targetType="post"
+            targetId={post.id}
+            postId={post.id}
+            counts={counts}
+            mine={myReaction}
+          />
+        </div>
       </article>
 
       {/* New comment */}

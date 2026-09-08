@@ -3,8 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import type { ReactionType } from "@/lib/eten/reactions";
 
 type ActionResult = { ok: true } | { error: string };
+
+const REACTION_TYPES: ReactionType[] = [
+  "like",
+  "insightful",
+  "celebrate",
+  "support",
+];
 
 const MAX_BODY = 5000;
 
@@ -101,6 +109,70 @@ export async function addComment(input: {
       return { error: "You can only reply to a top-level comment." };
     }
     return { error: "Couldn't post your comment. Please try again." };
+  }
+
+  revalidatePath(`/feed/${input.postId}`);
+  revalidatePath("/feed");
+  return { ok: true };
+}
+
+/**
+ * Toggle the caller's reaction on a post or comment. One reaction per member per
+ * item (enforced by a unique constraint), so:
+ *   - no current reaction        → insert this type
+ *   - same type already          → remove it (toggle off)
+ *   - a different type            → change it to this type
+ * All writes go through the member's session; reactions_*_self RLS scopes them
+ * to the caller and checks the target is visible. `postId` is only for
+ * revalidation (a comment reaction still refreshes the post it lives on).
+ */
+export async function toggleReaction(input: {
+  targetType: "post" | "comment";
+  targetId: string;
+  reactionType: ReactionType;
+  postId: string;
+}): Promise<ActionResult> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "You need to sign in." };
+  if (member.status !== "active") {
+    return { error: "Your account isn't active." };
+  }
+  if (!REACTION_TYPES.includes(input.reactionType)) {
+    return { error: "Unknown reaction." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const { data: existing } = await supabase
+    .from("reactions")
+    .select("id, reaction_type")
+    .eq("member_id", member.id)
+    .eq("target_type", input.targetType)
+    .eq("target_id", input.targetId)
+    .maybeSingle();
+
+  let error;
+  if (!existing) {
+    ({ error } = await supabase.from("reactions").insert({
+      member_id: member.id,
+      target_type: input.targetType,
+      target_id: input.targetId,
+      reaction_type: input.reactionType,
+    }));
+  } else if (existing.reaction_type === input.reactionType) {
+    ({ error } = await supabase
+      .from("reactions")
+      .delete()
+      .eq("id", existing.id));
+  } else {
+    ({ error } = await supabase
+      .from("reactions")
+      .update({ reaction_type: input.reactionType })
+      .eq("id", existing.id));
+  }
+
+  if (error) {
+    return { error: "Couldn't save your reaction. Please try again." };
   }
 
   revalidatePath(`/feed/${input.postId}`);

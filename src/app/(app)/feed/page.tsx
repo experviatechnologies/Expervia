@@ -5,7 +5,13 @@ import { MessageSquare } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { timeAgo } from "@/lib/time";
+import {
+  emptyReactionCounts,
+  type ReactionCounts,
+  type ReactionType,
+} from "@/lib/eten/reactions";
 import { PostComposer, type ComposerTarget } from "./post-composer";
+import { ReactionBar } from "./reaction-bar";
 
 export const metadata: Metadata = {
   title: "Feed",
@@ -79,6 +85,30 @@ export default async function FeedPage() {
     : { data: [] };
   const authorById = new Map((authorRows ?? []).map((a) => [a.member_id, a]));
 
+  // Reaction tallies + the viewer's own reaction, per post.
+  const postIds = posts.map((p) => p.id);
+  const { data: reactionRows } = postIds.length
+    ? await supabase
+        .from("reactions")
+        .select("target_id, reaction_type, member_id")
+        .eq("target_type", "post")
+        .in("target_id", postIds)
+    : { data: [] };
+
+  const reactionsByPost = new Map<
+    string,
+    { counts: ReactionCounts; mine: ReactionType | null }
+  >();
+  for (const id of postIds) {
+    reactionsByPost.set(id, { counts: emptyReactionCounts(), mine: null });
+  }
+  for (const r of reactionRows ?? []) {
+    const entry = reactionsByPost.get(r.target_id);
+    if (!entry) continue;
+    entry.counts[r.reaction_type as ReactionType] += 1;
+    if (r.member_id === member.id) entry.mine = r.reaction_type as ReactionType;
+  }
+
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
       <header className="mb-8">
@@ -145,16 +175,28 @@ export default async function FeedPage() {
                   {post.body}
                 </p>
 
-                <Link
-                  href={`/feed/${post.id}`}
-                  className="text-on-surface-variant hover:text-on-surface mt-3 inline-flex items-center gap-1.5 text-xs font-medium"
-                >
-                  <MessageSquare className="size-3.5" />
-                  {post.comments?.[0]?.count ?? 0}{" "}
-                  {(post.comments?.[0]?.count ?? 0) === 1
-                    ? "comment"
-                    : "comments"}
-                </Link>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <ReactionBar
+                    targetType="post"
+                    targetId={post.id}
+                    postId={post.id}
+                    counts={
+                      reactionsByPost.get(post.id)?.counts ??
+                      emptyReactionCounts()
+                    }
+                    mine={reactionsByPost.get(post.id)?.mine ?? null}
+                  />
+                  <Link
+                    href={`/feed/${post.id}`}
+                    className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-xs font-medium"
+                  >
+                    <MessageSquare className="size-3.5" />
+                    {post.comments?.[0]?.count ?? 0}{" "}
+                    {(post.comments?.[0]?.count ?? 0) === 1
+                      ? "comment"
+                      : "comments"}
+                  </Link>
+                </div>
               </li>
             );
           })}
