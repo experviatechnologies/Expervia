@@ -11,15 +11,22 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
  * signed-in member onward. Confirming the email also stamps members.claimed_at
  * (the on_auth_user_confirmed trigger), activating the account.
  *
- * Only relative `next` paths are honoured, so this can't be used as an open
- * redirect.
+ * Only same-origin relative `next` paths are honoured, so this can't be used as
+ * an open redirect. A leading "//" or "/\" is a protocol-relative URL (e.g.
+ * "//evil.com" → https://evil.com/), so those are rejected too — a plain
+ * `startsWith("/")` check is not sufficient.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const nextParam = searchParams.get("next") ?? "/dashboard";
-  const next = nextParam.startsWith("/") ? nextParam : "/dashboard";
+  const next =
+    nextParam.startsWith("/") &&
+    !nextParam.startsWith("//") &&
+    !nextParam.startsWith("/\\")
+      ? nextParam
+      : "/dashboard";
 
   if (token_hash && type) {
     const supabase = await createSupabaseServerClient();
