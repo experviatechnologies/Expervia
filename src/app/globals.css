@@ -272,4 +272,18 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4's reset drops the default pointer cursor on buttons. Restore it
+     for anything interactive that isn't disabled; disabled controls read as
+     not-allowed. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  label[for],
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
