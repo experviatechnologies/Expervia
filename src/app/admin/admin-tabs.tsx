@@ -5,6 +5,7 @@ import {
   Users,
   UserPlus,
   BadgeCheck,
+  ShieldAlert,
 } from "lucide-react";
 
 // Top-level admin navigation. The submission streams (community applications
@@ -32,6 +33,12 @@ const TABS = [
     Icon: BadgeCheck,
   },
   {
+    key: "reports",
+    label: "Reports",
+    href: "/admin/reports",
+    Icon: ShieldAlert,
+  },
+  {
     key: "migration",
     label: "Migration",
     href: "/admin/migration",
@@ -54,7 +61,8 @@ export function AdminTabs({
     | "taxonomy"
     | "members"
     | "migration"
-    | "certifications";
+    | "certifications"
+    | "reports";
 }) {
   return (
     <div className="border-outline-variant mb-6 flex flex-wrap gap-2 border-b pb-3">

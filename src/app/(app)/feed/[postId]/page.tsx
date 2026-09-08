@@ -12,6 +12,7 @@ import {
 } from "@/lib/eten/reactions";
 import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
 import { ReactionBar } from "../reaction-bar";
+import { PostActions } from "../post-actions";
 import { CommentComposer } from "./comment-composer";
 import { CommentsThread, type CommentNode } from "./comments-thread";
 
@@ -182,13 +183,20 @@ export default async function PostDetailPage({
           />
         ))}
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <ReactionBar
             targetType="post"
             targetId={post.id}
             postId={post.id}
             counts={counts}
             mine={myReaction}
+          />
+          <PostActions
+            postId={post.id}
+            canRemove={
+              member.role === "operations" || post.author_id === member.id
+            }
+            isAuthor={post.author_id === member.id}
           />
         </div>
       </article>
@@ -203,7 +211,12 @@ export default async function PostDetailPage({
         <h2 className="font-display text-body-lg text-on-surface mb-4 font-bold">
           {comments.length} {comments.length === 1 ? "comment" : "comments"}
         </h2>
-        <CommentsThread postId={post.id} comments={roots} />
+        <CommentsThread
+          postId={post.id}
+          comments={roots}
+          viewerId={member.id}
+          isOps={member.role === "operations"}
+        />
       </section>
     </div>
   );

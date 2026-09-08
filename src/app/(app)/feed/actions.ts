@@ -181,6 +181,109 @@ export async function addComment(input: {
   return { ok: true };
 }
 
+const MAX_REASON = 1000;
+
+/**
+ * File a report on a post or comment. Any active member may report; the report
+ * lands in the ops queue (/admin/reports). RLS reports_insert_self requires
+ * reporter_id = auth.uid() and is_active_member.
+ */
+export async function reportContent(input: {
+  targetType: "post" | "comment";
+  targetId: string;
+  reason: string;
+}): Promise<ActionResult> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "You need to sign in." };
+  if (member.status !== "active") {
+    return { error: "Your account isn't active." };
+  }
+
+  const reason = input.reason.trim();
+  if (!reason) return { error: "Please add a reason." };
+  if (reason.length > MAX_REASON) {
+    return { error: `Keep the reason under ${MAX_REASON} characters.` };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("reports").insert({
+    reporter_id: member.id,
+    target_type: input.targetType,
+    target_id: input.targetId,
+    reason,
+  });
+
+  if (error) {
+    return { error: "Couldn't file your report. Please try again." };
+  }
+  return { ok: true };
+}
+
+/**
+ * Soft-remove (or restore) a post. RLS posts_update allows the author, ops, or a
+ * lead of a target pod. Removed posts drop out of everyone's view via
+ * can_see_post() except the author / ops / pod lead.
+ */
+export async function setPostRemoved(input: {
+  postId: string;
+  removed: boolean;
+  reason?: string;
+}): Promise<ActionResult> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "You need to sign in." };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("posts")
+    .update({
+      is_removed: input.removed,
+      removed_by: input.removed ? member.id : null,
+      removed_reason: input.removed ? (input.reason ?? null) : null,
+    })
+    .eq("id", input.postId);
+
+  if (error) {
+    return { error: "Couldn't update the post. Please try again." };
+  }
+
+  revalidatePath("/feed");
+  revalidatePath(`/feed/${input.postId}`);
+  revalidatePath("/pods/[slug]", "page");
+  return { ok: true };
+}
+
+/**
+ * Soft-remove (or restore) a comment. RLS comments_update allows the author,
+ * ops, or a lead of a target pod.
+ */
+export async function setCommentRemoved(input: {
+  commentId: string;
+  postId: string;
+  removed: boolean;
+  reason?: string;
+}): Promise<ActionResult> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "You need to sign in." };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("comments")
+    .update({
+      is_removed: input.removed,
+      removed_by: input.removed ? member.id : null,
+      removed_reason: input.removed ? (input.reason ?? null) : null,
+    })
+    .eq("id", input.commentId);
+
+  if (error) {
+    return { error: "Couldn't update the comment. Please try again." };
+  }
+
+  revalidatePath(`/feed/${input.postId}`);
+  revalidatePath("/feed");
+  return { ok: true };
+}
+
 /**
  * Toggle the caller's reaction on a post or comment. One reaction per member per
  * item (enforced by a unique constraint), so:

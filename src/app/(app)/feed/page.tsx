@@ -13,6 +13,7 @@ import {
 import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
 import { PostComposer, type ComposerTarget } from "./post-composer";
 import { ReactionBar } from "./reaction-bar";
+import { PostActions } from "./post-actions";
 
 export const metadata: Metadata = {
   title: "Feed",
@@ -111,6 +112,7 @@ export default async function FeedPage() {
   }
 
   const imagesByPost = await imageAttachmentsByPost(supabase, postIds);
+  const isOps = member.role === "operations";
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
@@ -199,16 +201,23 @@ export default async function FeedPage() {
                     }
                     mine={reactionsByPost.get(post.id)?.mine ?? null}
                   />
-                  <Link
-                    href={`/feed/${post.id}`}
-                    className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-xs font-medium"
-                  >
-                    <MessageSquare className="size-3.5" />
-                    {post.comments?.[0]?.count ?? 0}{" "}
-                    {(post.comments?.[0]?.count ?? 0) === 1
-                      ? "comment"
-                      : "comments"}
-                  </Link>
+                  <div className="flex items-center gap-4">
+                    <Link
+                      href={`/feed/${post.id}`}
+                      className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-xs font-medium"
+                    >
+                      <MessageSquare className="size-3.5" />
+                      {post.comments?.[0]?.count ?? 0}{" "}
+                      {(post.comments?.[0]?.count ?? 0) === 1
+                        ? "comment"
+                        : "comments"}
+                    </Link>
+                    <PostActions
+                      postId={post.id}
+                      canRemove={isOps || post.author_id === member.id}
+                      isAuthor={post.author_id === member.id}
+                    />
+                  </div>
                 </div>
               </li>
             );
