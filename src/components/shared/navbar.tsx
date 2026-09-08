@@ -201,6 +201,14 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <Button
             asChild
+            variant="brandOutline"
+            size="pill-sm"
+            className="hidden md:inline-flex"
+          >
+            <Link href="/join">Join ETEN</Link>
+          </Button>
+          <Button
+            asChild
             variant="brand"
             size="pill-sm"
             className="hidden md:inline-flex"
@@ -367,10 +375,15 @@ export function Navbar() {
             })}
             <Button
               asChild
-              variant="brand"
+              variant="brandOutline"
               size="pill-sm"
               className="mt-2 w-full"
             >
+              <Link href="/join" onClick={() => setOpen(false)}>
+                Join ETEN
+              </Link>
+            </Button>
+            <Button asChild variant="brand" size="pill-sm" className="w-full">
               <Link href="/contact" onClick={() => setOpen(false)}>
                 Book a Consultation
               </Link>
