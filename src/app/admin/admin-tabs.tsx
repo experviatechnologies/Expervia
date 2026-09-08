@@ -1,4 +1,11 @@
-import { FileText, CalendarCheck, Tags, Users, UserPlus } from "lucide-react";
+import {
+  FileText,
+  CalendarCheck,
+  Tags,
+  Users,
+  UserPlus,
+  BadgeCheck,
+} from "lucide-react";
 
 // Top-level admin navigation. The submission streams (community applications
 // and event registrations) live in separate tables, so they get separate pages;
@@ -19,6 +26,12 @@ const TABS = [
   },
   { key: "members", label: "Members", href: "/admin/members", Icon: Users },
   {
+    key: "certifications",
+    label: "Certifications",
+    href: "/admin/certifications",
+    Icon: BadgeCheck,
+  },
+  {
     key: "migration",
     label: "Migration",
     href: "/admin/migration",
@@ -35,7 +48,13 @@ const TABS = [
 export function AdminTabs({
   active,
 }: {
-  active: "applications" | "events" | "taxonomy" | "members" | "migration";
+  active:
+    | "applications"
+    | "events"
+    | "taxonomy"
+    | "members"
+    | "migration"
+    | "certifications";
 }) {
   return (
     <div className="border-outline-variant mb-6 flex flex-wrap gap-2 border-b pb-3">
