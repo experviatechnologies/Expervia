@@ -57,7 +57,10 @@ export async function createPost(input: {
 
   if (postError) {
     console.error("createPost: post insert failed", postError);
-    return { error: "Couldn't publish your post. Please try again." };
+    // TEMP DIAGNOSTIC: surface the real cause to the browser.
+    return {
+      error: `POST insert failed: ${postError.message} [code ${postError.code}]`,
+    };
   }
 
   const { error: targetError } = await supabase
@@ -68,7 +71,10 @@ export async function createPost(input: {
     console.error("createPost: target insert failed", targetError);
     // Roll back the orphaned post so it can't linger invisibly.
     await supabase.from("posts").delete().eq("id", postId);
-    return { error: "Couldn't publish your post. Please try again." };
+    // TEMP DIAGNOSTIC: surface the real cause to the browser.
+    return {
+      error: `TARGET insert failed: ${targetError.message} [code ${targetError.code}] (podId=${input.targetPodId})`,
+    };
   }
 
   revalidatePath("/feed");
