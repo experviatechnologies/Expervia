@@ -148,8 +148,76 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
     }
   }
 
+  // Optional poll: 2–6 non-empty options make the post a poll. The post exists,
+  // so owns_post() lets these through. Non-fatal on failure (keep the post).
+  const pollOptions = formData
+    .getAll("pollOptions")
+    .filter((o): o is string => typeof o === "string")
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+  if (pollOptions.length >= 2) {
+    const { error: pollError } = await supabase.from("poll_options").insert(
+      pollOptions.map((label, i) => ({
+        post_id: postId,
+        label: label.slice(0, 200),
+        sort: i,
+      })),
+    );
+    if (pollError) console.error("createPost: poll insert failed", pollError);
+  }
+
   revalidatePath("/feed");
   revalidatePath("/pods/[slug]", "page");
+  return { ok: true };
+}
+
+/**
+ * Cast, change, or retract the caller's vote on a poll. One vote per member per
+ * poll (unique constraint): no vote → insert; same option → retract; different
+ * option → move the vote. All via the member session (poll_votes_*_self RLS).
+ */
+export async function votePoll(input: {
+  postId: string;
+  optionId: string;
+}): Promise<ActionResult> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "You need to sign in." };
+  if (member.status !== "active") {
+    return { error: "Your account isn't active." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: existing } = await supabase
+    .from("poll_votes")
+    .select("id, option_id")
+    .eq("post_id", input.postId)
+    .eq("member_id", member.id)
+    .maybeSingle();
+
+  let error;
+  if (!existing) {
+    ({ error } = await supabase.from("poll_votes").insert({
+      post_id: input.postId,
+      option_id: input.optionId,
+      member_id: member.id,
+    }));
+  } else if (existing.option_id === input.optionId) {
+    ({ error } = await supabase
+      .from("poll_votes")
+      .delete()
+      .eq("id", existing.id));
+  } else {
+    ({ error } = await supabase
+      .from("poll_votes")
+      .update({ option_id: input.optionId })
+      .eq("id", existing.id));
+  }
+
+  if (error) return { error: "Couldn't record your vote. Please try again." };
+
+  revalidatePath("/feed");
+  revalidatePath(`/feed/${input.postId}`);
   return { ok: true };
 }
 

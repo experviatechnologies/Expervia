@@ -12,9 +12,11 @@ import {
 } from "@/lib/eten/reactions";
 import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
 import { tagsByPost } from "@/lib/eten/post-tags";
+import { pollsByPost } from "@/lib/eten/polls";
 import { PostComposer, type ComposerTarget } from "./post-composer";
 import { ReactionBar } from "./reaction-bar";
 import { PostActions } from "./post-actions";
+import { PollView } from "./poll-view";
 
 export const metadata: Metadata = {
   title: "Feed",
@@ -144,6 +146,7 @@ export default async function FeedPage({
 
   const imagesByPost = await imageAttachmentsByPost(supabase, postIds);
   const tagsMap = await tagsByPost(supabase, postIds);
+  const pollsMap = await pollsByPost(supabase, postIds, member.id);
   const isOps = member.role === "operations";
 
   return (
@@ -240,6 +243,10 @@ export default async function FeedPage({
                     className="border-outline-variant mt-3 max-h-[28rem] w-full rounded-xl border object-cover"
                   />
                 ))}
+
+                {pollsMap.get(post.id) && (
+                  <PollView postId={post.id} poll={pollsMap.get(post.id)!} />
+                )}
 
                 {(tagsMap.get(post.id) ?? []).length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">

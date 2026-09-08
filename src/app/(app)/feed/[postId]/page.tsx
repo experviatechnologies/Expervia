@@ -12,8 +12,10 @@ import {
 } from "@/lib/eten/reactions";
 import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
 import { tagsByPost } from "@/lib/eten/post-tags";
+import { pollsByPost } from "@/lib/eten/polls";
 import { ReactionBar } from "../reaction-bar";
 import { PostActions } from "../post-actions";
+import { PollView } from "../poll-view";
 import { CommentComposer } from "./comment-composer";
 import { CommentsThread, type CommentNode } from "./comments-thread";
 
@@ -155,6 +157,7 @@ export default async function PostDetailPage({
     post.id,
   );
   const tags = (await tagsByPost(supabase, [post.id])).get(post.id) ?? [];
+  const poll = (await pollsByPost(supabase, [post.id], member.id)).get(post.id);
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
@@ -210,6 +213,8 @@ export default async function PostDetailPage({
             className="border-outline-variant mt-4 max-h-[32rem] w-full rounded-xl border object-contain"
           />
         ))}
+
+        {poll && <PollView postId={post.id} poll={poll} />}
 
         {tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { ImagePlus, Loader2, Send, X } from "lucide-react";
+import { BarChart3, ImagePlus, Loader2, Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPost } from "./actions";
 
@@ -22,6 +22,7 @@ export function PostComposer({
   const [targetId, setTargetId] = useState(targets[0]?.id ?? "");
   const [image, setImage] = useState<File | null>(null);
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [pollOptions, setPollOptions] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -44,6 +45,11 @@ export function PostComposer({
     formData.set("targetPodId", targetId);
     if (image) formData.set("image", image);
     for (const id of tagIds) formData.append("tags", id);
+    if (pollOptions) {
+      for (const opt of pollOptions) {
+        if (opt.trim()) formData.append("pollOptions", opt);
+      }
+    }
     startTransition(async () => {
       const res = await createPost(formData);
       if ("error" in res) setError(res.error);
@@ -51,7 +57,16 @@ export function PostComposer({
         setBody("");
         clearImage();
         setTagIds([]);
+        setPollOptions(null);
       }
+    });
+  }
+
+  function setPollOption(i: number, value: string) {
+    setPollOptions((prev) => {
+      const next = [...(prev ?? [])];
+      next[i] = value;
+      return next;
     });
   }
 
@@ -115,6 +130,44 @@ export function PostComposer({
         </div>
       )}
 
+      {pollOptions && (
+        <div className="border-outline-variant mt-3 flex flex-col gap-2 rounded-lg border p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-on-surface-variant text-xs font-medium">
+              Poll options
+            </p>
+            <button
+              type="button"
+              onClick={() => setPollOptions(null)}
+              aria-label="Remove poll"
+              className="text-on-surface-variant hover:text-on-surface"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          {pollOptions.map((opt, i) => (
+            <input
+              key={i}
+              value={opt}
+              onChange={(e) => setPollOption(i, e.target.value)}
+              maxLength={200}
+              placeholder={`Option ${i + 1}`}
+              className="border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary w-full rounded-lg border p-2 text-sm outline-none"
+            />
+          ))}
+          {pollOptions.length < 6 && (
+            <button
+              type="button"
+              onClick={() => setPollOptions((prev) => [...(prev ?? []), ""])}
+              className="text-primary inline-flex items-center gap-1 self-start text-xs font-medium"
+            >
+              <Plus className="size-3.5" />
+              Add option
+            </button>
+          )}
+        </div>
+      )}
+
       {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
 
       <div className="border-outline-variant mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
@@ -150,6 +203,20 @@ export function PostComposer({
             className="hidden"
             onChange={(e) => setImage(e.target.files?.[0] ?? null)}
           />
+
+          <button
+            type="button"
+            onClick={() => setPollOptions((prev) => (prev ? null : ["", ""]))}
+            className={
+              pollOptions
+                ? "text-primary inline-flex items-center gap-1.5 text-sm"
+                : "text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-sm"
+            }
+            title="Add a poll"
+          >
+            <BarChart3 className="size-4" />
+            Poll
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
