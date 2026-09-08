@@ -17,6 +17,10 @@ import {
   deleteCertification,
   updateCertification,
 } from "./actions";
+import {
+  CERT_NAME_SUGGESTIONS,
+  CERT_ISSUER_SUGGESTIONS,
+} from "@/lib/eten/certifications-catalog";
 
 export type Certification = {
   id: string;
@@ -305,10 +309,16 @@ function CertForm({
             name="name"
             required
             maxLength={160}
+            list="cert-name-options"
             defaultValue={cert?.name ?? ""}
             className={fieldClass}
             placeholder="e.g. Microsoft Certified: Azure Solutions Architect Expert"
           />
+          <datalist id="cert-name-options">
+            {CERT_NAME_SUGGESTIONS.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -319,10 +329,16 @@ function CertForm({
             id="issuer"
             name="issuer"
             maxLength={120}
+            list="cert-issuer-options"
             defaultValue={cert?.issuer ?? ""}
             className={fieldClass}
             placeholder="e.g. Microsoft"
           />
+          <datalist id="cert-issuer-options">
+            {CERT_ISSUER_SUGGESTIONS.map((issuer) => (
+              <option key={issuer} value={issuer} />
+            ))}
+          </datalist>
         </div>
 
         <div className="flex flex-col gap-2">

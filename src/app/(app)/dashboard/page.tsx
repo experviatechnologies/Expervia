@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { MailWarning, ShieldCheck, Sparkles, UserPen } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Circle,
+  MailWarning,
+  ShieldCheck,
+  Sparkles,
+  UserPen,
+} from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  computeCompleteness,
+  type Completeness,
+} from "@/lib/eten/profile-completeness";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -15,6 +28,46 @@ export default async function DashboardPage() {
   if (!member) redirect("/signin");
 
   const firstName = member.fullName?.trim().split(/\s+/)[0] ?? "there";
+
+  // Profile-completeness nudge (only meaningful once they can build a profile,
+  // i.e. after email confirmation). RLS scopes every read to the member.
+  let completeness: Completeness | null = null;
+  if (member.emailConfirmed) {
+    const supabase = await createSupabaseServerClient();
+    const [{ data: profile }, { count: skillCount }, { count: certCount }] =
+      await Promise.all([
+        supabase
+          .from("profiles")
+          .select(
+            "headline, job_title, location, bio, industry_experience, availability_status, years_experience, primary_specialization_pod_id",
+          )
+          .eq("member_id", member.id)
+          .maybeSingle(),
+        supabase
+          .from("member_skills")
+          .select("*", { count: "exact", head: true })
+          .eq("member_id", member.id),
+        supabase
+          .from("certifications")
+          .select("*", { count: "exact", head: true })
+          .eq("member_id", member.id),
+      ]);
+
+    if (profile) {
+      completeness = computeCompleteness({
+        headline: profile.headline,
+        jobTitle: profile.job_title,
+        location: profile.location,
+        bio: profile.bio,
+        industryExperience: profile.industry_experience,
+        availabilityStatus: profile.availability_status,
+        yearsExperience: profile.years_experience,
+        primaryPodId: profile.primary_specialization_pod_id,
+        skillCount: skillCount ?? 0,
+        certCount: certCount ?? 0,
+      });
+    }
+  }
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
@@ -40,6 +93,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
+
+      {completeness && <CompletenessCard completeness={completeness} />}
 
       <div className="glass-card rounded-2xl p-8">
         <span className="bg-primary/10 text-primary mb-4 flex size-12 items-center justify-center rounded-full">
@@ -92,6 +147,70 @@ export default async function DashboardPage() {
           </div>
         </dl>
       </div>
+    </div>
+  );
+}
+
+/** Profile-completeness nudge: progress + the next things left to fill in. */
+function CompletenessCard({ completeness }: { completeness: Completeness }) {
+  const { percent, done, total, items } = completeness;
+  const complete = percent === 100;
+  const remaining = items.filter((i) => !i.done);
+
+  if (complete) {
+    return (
+      <div className="border-primary/30 bg-primary/10 mb-6 flex items-start gap-3 rounded-xl border p-4">
+        <CheckCircle2 className="text-primary mt-0.5 size-5 shrink-0" />
+        <div className="text-sm">
+          <p className="text-on-surface font-medium">
+            Your profile is complete.
+          </p>
+          <p className="text-on-surface-variant mt-1">
+            Nicely done — a full, credential-backed profile helps peers and pods
+            find you.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass-card mb-6 rounded-2xl p-6">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-on-surface font-semibold">Complete your profile</h2>
+        <span className="text-on-surface-variant text-sm">
+          {done}/{total} · {percent}%
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="bg-surface-container h-2 w-full overflow-hidden rounded-full">
+        <div
+          className="bg-primary h-full rounded-full transition-all"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      <ul className="mt-4 flex flex-col gap-1.5">
+        {remaining.slice(0, 4).map((item) => (
+          <li key={item.label}>
+            <Link
+              href={item.href}
+              className="group text-on-surface-variant hover:text-on-surface flex items-center gap-2 text-sm transition-colors"
+            >
+              <Circle className="text-on-surface-variant/40 size-3.5 shrink-0" />
+              <span className="flex-1">{item.label}</span>
+              <ArrowRight className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      {remaining.length > 4 && (
+        <p className="text-on-surface-variant/70 mt-2 text-xs">
+          +{remaining.length - 4} more
+        </p>
+      )}
     </div>
   );
 }
