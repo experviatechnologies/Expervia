@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { writeAudit } from "@/lib/eten/audit";
 
 type MemberStatus = "active" | "suspended" | "deactivated";
 type ActionResult = { ok: true } | { error: string };
@@ -55,6 +56,13 @@ export async function setMemberStatus(input: {
   if (error) {
     return { error: "Couldn't update the member. Please try again." };
   }
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: `member.status.${input.status}`,
+    targetType: "member",
+    targetId: input.memberId,
+  });
 
   revalidatePath("/admin/members");
   return { ok: true };

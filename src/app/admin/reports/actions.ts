@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { writeAudit } from "@/lib/eten/audit";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -31,6 +32,14 @@ export async function resolveReport(input: {
     .eq("id", input.reportId);
 
   if (error) return { error: "Couldn't update the report. Please try again." };
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: `report.${input.status}`,
+    targetType: "report",
+    targetId: input.reportId,
+    reason: input.note ?? null,
+  });
 
   revalidatePath("/admin/reports");
   return { ok: true };
@@ -76,6 +85,14 @@ export async function removeReportedContent(input: {
       resolution_note: "Content removed",
     })
     .eq("id", input.reportId);
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: `${input.targetType}.removed`,
+    targetType: input.targetType,
+    targetId: input.targetId,
+    reason: "Removed via report",
+  });
 
   revalidatePath("/admin/reports");
   revalidatePath("/feed");

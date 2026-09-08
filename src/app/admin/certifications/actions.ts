@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { writeAudit } from "@/lib/eten/audit";
 
 type VerificationStatus = "unverified" | "verified" | "rejected";
 type ActionResult = { ok: true } | { error: string };
@@ -50,6 +51,13 @@ export async function setVerificationStatus(input: {
   if (error) {
     return { error: "Couldn't update the certification. Please try again." };
   }
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: `cert.${input.status}`,
+    targetType: "certification",
+    targetId: input.certId,
+  });
 
   revalidatePath("/admin/certifications");
   return { ok: true };

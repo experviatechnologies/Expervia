@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin, POST_MEDIA_BUCKET } from "@/lib/supabase";
 import type { ReactionType } from "@/lib/eten/reactions";
 import { notify } from "@/lib/eten/notifications";
+import { writeAudit } from "@/lib/eten/audit";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -366,6 +367,17 @@ export async function setPostRemoved(input: {
     return { error: "Couldn't update the post. Please try again." };
   }
 
+  // Audit ops moderation removals (not an author deleting their own post).
+  if (input.removed && member.role === "operations") {
+    await writeAudit({
+      actorId: member.id,
+      action: "post.removed",
+      targetType: "post",
+      targetId: input.postId,
+      reason: input.reason ?? null,
+    });
+  }
+
   revalidatePath("/feed");
   revalidatePath(`/feed/${input.postId}`);
   revalidatePath("/pods/[slug]", "page");
@@ -397,6 +409,17 @@ export async function setCommentRemoved(input: {
 
   if (error) {
     return { error: "Couldn't update the comment. Please try again." };
+  }
+
+  // Audit ops moderation removals (not an author deleting their own comment).
+  if (input.removed && member.role === "operations") {
+    await writeAudit({
+      actorId: member.id,
+      action: "comment.removed",
+      targetType: "comment",
+      targetId: input.commentId,
+      reason: input.reason ?? null,
+    });
   }
 
   revalidatePath(`/feed/${input.postId}`);
