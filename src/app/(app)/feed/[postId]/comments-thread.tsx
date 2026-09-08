@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Flag, Loader2, Trash2 } from "lucide-react";
 import { timeAgo } from "@/lib/time";
+import type { ReactionCounts, ReactionType } from "@/lib/eten/reactions";
 import { reportContent, setCommentRemoved } from "../actions";
+import { ReactionBar } from "../reaction-bar";
 import { CommentComposer } from "./comment-composer";
 
 export type CommentNode = {
@@ -14,6 +16,8 @@ export type CommentNode = {
   body: string;
   createdAt: string;
   replies: CommentNode[];
+  reactionCounts: ReactionCounts;
+  myReaction: ReactionType | null;
 };
 
 export function CommentsThread({
@@ -108,7 +112,17 @@ function CommentItem({
           {comment.body}
         </p>
 
-        <div className="mt-1.5 flex items-center gap-3">
+        <div className="mt-2">
+          <ReactionBar
+            targetType="comment"
+            targetId={comment.id}
+            postId={postId}
+            counts={comment.reactionCounts}
+            mine={comment.myReaction}
+          />
+        </div>
+
+        <div className="mt-2 flex items-center gap-3">
           {canReply && !replying && (
             <button
               type="button"

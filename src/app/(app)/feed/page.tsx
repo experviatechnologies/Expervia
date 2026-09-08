@@ -11,6 +11,7 @@ import {
   type ReactionType,
 } from "@/lib/eten/reactions";
 import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
+import { tagsByPost } from "@/lib/eten/post-tags";
 import { PostComposer, type ComposerTarget } from "./post-composer";
 import { ReactionBar } from "./reaction-bar";
 import { PostActions } from "./post-actions";
@@ -30,32 +31,62 @@ type PostRow = {
   comments: { count: number }[] | null;
 };
 
-export default async function FeedPage() {
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string }>;
+}) {
   const member = await getCurrentMember();
   if (!member) redirect("/signin");
 
   const supabase = await createSupabaseServerClient();
+  const { tag } = await searchParams;
 
-  const [{ data: mainPod }, { data: myMemberships }, { data: postRows }] =
-    await Promise.all([
-      supabase
-        .from("pods")
-        .select("id, name")
-        .eq("is_main", true)
-        .maybeSingle(),
-      supabase
-        .from("pod_memberships")
-        .select("pods(id, name)")
-        .eq("member_id", member.id),
-      supabase
-        .from("posts")
-        .select(
-          "id, body, created_at, author_id, post_targets(pods(name, slug)), comments(count)",
-        )
-        .eq("is_removed", false)
-        .order("created_at", { ascending: false })
-        .limit(50),
+  // Optional tag filter: narrow to posts carrying this skill.
+  let taggedPostIds: string[] | null = null;
+  let tagName: string | null = null;
+  if (tag) {
+    const [{ data: tagPosts }, { data: skill }] = await Promise.all([
+      supabase.from("post_tags").select("post_id").eq("skill_id", tag),
+      supabase.from("skills").select("name").eq("id", tag).maybeSingle(),
     ]);
+    taggedPostIds = (tagPosts ?? []).map((r) => r.post_id);
+    tagName = skill?.name ?? null;
+    // No matches → a sentinel id so the posts query returns nothing.
+    if (taggedPostIds.length === 0)
+      taggedPostIds = ["00000000-0000-0000-0000-000000000000"];
+  }
+
+  let postsQuery = supabase
+    .from("posts")
+    .select(
+      "id, body, created_at, author_id, post_targets(pods(name, slug)), comments(count)",
+    )
+    .eq("is_removed", false);
+  if (taggedPostIds) postsQuery = postsQuery.in("id", taggedPostIds);
+  postsQuery = postsQuery.order("created_at", { ascending: false }).limit(50);
+
+  const [
+    { data: mainPod },
+    { data: myMemberships },
+    { data: skillRows },
+    { data: postRows },
+  ] = await Promise.all([
+    supabase.from("pods").select("id, name").eq("is_main", true).maybeSingle(),
+    supabase
+      .from("pod_memberships")
+      .select("pods(id, name)")
+      .eq("member_id", member.id),
+    supabase
+      .from("skills")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("sort", { ascending: true, nullsFirst: false })
+      .order("name"),
+    postsQuery,
+  ]);
+
+  const tagOptions = (skillRows ?? []).map((s) => ({ id: s.id, name: s.name }));
 
   // Where a member can post: the Main Community feed, plus any pods they're in.
   const targets: ComposerTarget[] = [];
@@ -112,6 +143,7 @@ export default async function FeedPage() {
   }
 
   const imagesByPost = await imageAttachmentsByPost(supabase, postIds);
+  const tagsMap = await tagsByPost(supabase, postIds);
   const isOps = member.role === "operations";
 
   return (
@@ -125,7 +157,26 @@ export default async function FeedPage() {
         </h1>
       </header>
 
-      {targets.length > 0 && <PostComposer targets={targets} />}
+      {tag && (
+        <div className="border-outline-variant mb-6 flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-sm">
+          <span className="text-on-surface-variant">
+            Filtered by{" "}
+            <span className="text-primary font-medium">
+              #{tagName ?? "tag"}
+            </span>
+          </span>
+          <Link
+            href="/feed"
+            className="text-on-surface-variant hover:text-on-surface"
+          >
+            Clear
+          </Link>
+        </div>
+      )}
+
+      {targets.length > 0 && !tag && (
+        <PostComposer targets={targets} tagOptions={tagOptions} />
+      )}
 
       {posts.length === 0 ? (
         <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
@@ -189,6 +240,20 @@ export default async function FeedPage() {
                     className="border-outline-variant mt-3 max-h-[28rem] w-full rounded-xl border object-cover"
                   />
                 ))}
+
+                {(tagsMap.get(post.id) ?? []).length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {(tagsMap.get(post.id) ?? []).map((t) => (
+                      <Link
+                        key={t.id}
+                        href={`/feed?tag=${t.id}`}
+                        className="border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary/40 rounded-full border px-2.5 py-0.5 text-xs transition-colors"
+                      >
+                        #{t.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <ReactionBar

@@ -11,6 +11,7 @@ import {
   type ReactionType,
 } from "@/lib/eten/reactions";
 import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
+import { tagsByPost } from "@/lib/eten/post-tags";
 import { ReactionBar } from "../reaction-bar";
 import { PostActions } from "../post-actions";
 import { CommentComposer } from "./comment-composer";
@@ -83,10 +84,34 @@ export default async function PostDetailPage({
   );
   const nameOf = (id: string) => nameById.get(id) ?? "A member";
 
+  // Reaction tallies for every comment on this post (one query).
+  const commentIds = comments.map((c) => c.id);
+  const { data: commentReactionRows } = commentIds.length
+    ? await supabase
+        .from("reactions")
+        .select("target_id, reaction_type, member_id")
+        .eq("target_type", "comment")
+        .in("target_id", commentIds)
+    : { data: [] };
+  const commentReactions = new Map<
+    string,
+    { counts: ReactionCounts; mine: ReactionType | null }
+  >();
+  for (const id of commentIds) {
+    commentReactions.set(id, { counts: emptyReactionCounts(), mine: null });
+  }
+  for (const r of commentReactionRows ?? []) {
+    const entry = commentReactions.get(r.target_id);
+    if (!entry) continue;
+    entry.counts[r.reaction_type as ReactionType] += 1;
+    if (r.member_id === member.id) entry.mine = r.reaction_type as ReactionType;
+  }
+
   // Build the one-level comment tree (top-level, each with its replies).
   const byId = new Map<string, CommentNode>();
   const roots: CommentNode[] = [];
   for (const c of comments) {
+    const rx = commentReactions.get(c.id);
     byId.set(c.id, {
       id: c.id,
       authorId: c.author_id,
@@ -94,6 +119,8 @@ export default async function PostDetailPage({
       body: c.body,
       createdAt: c.created_at,
       replies: [],
+      reactionCounts: rx?.counts ?? emptyReactionCounts(),
+      myReaction: rx?.mine ?? null,
     });
   }
   for (const c of comments) {
@@ -127,6 +154,7 @@ export default async function PostDetailPage({
   const images = (await imageAttachmentsByPost(supabase, [post.id])).get(
     post.id,
   );
+  const tags = (await tagsByPost(supabase, [post.id])).get(post.id) ?? [];
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
@@ -182,6 +210,20 @@ export default async function PostDetailPage({
             className="border-outline-variant mt-4 max-h-[32rem] w-full rounded-xl border object-contain"
           />
         ))}
+
+        {tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <Link
+                key={t.id}
+                href={`/feed?tag=${t.id}`}
+                className="border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary/40 rounded-full border px-2.5 py-0.5 text-xs transition-colors"
+              >
+                #{t.name}
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <ReactionBar

@@ -130,6 +130,24 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
     }
   }
 
+  // Optional tags drawn from the skills taxonomy. The post already exists, so
+  // owns_post() (from 07_feed_rls_fix) lets these inserts through.
+  const tagIds = formData
+    .getAll("tags")
+    .filter((t): t is string => typeof t === "string" && t.length > 0)
+    .slice(0, 10);
+  if (tagIds.length > 0) {
+    const { error: tagError } = await supabase
+      .from("post_tags")
+      .insert(
+        tagIds.map((skillId) => ({ post_id: postId, skill_id: skillId })),
+      );
+    if (tagError) {
+      console.error("createPost: tag insert failed", tagError);
+      // Non-fatal: keep the post, just drop the tags rather than losing the post.
+    }
+  }
+
   revalidatePath("/feed");
   revalidatePath("/pods/[slug]", "page");
   return { ok: true };

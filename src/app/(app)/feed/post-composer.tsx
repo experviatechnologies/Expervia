@@ -6,16 +6,35 @@ import { Button } from "@/components/ui/button";
 import { createPost } from "./actions";
 
 export type ComposerTarget = { id: string; name: string };
+export type ComposerTag = { id: string; name: string };
 
 const MAX_BODY = 5000;
+const MAX_TAGS = 5;
 
-export function PostComposer({ targets }: { targets: ComposerTarget[] }) {
+export function PostComposer({
+  targets,
+  tagOptions,
+}: {
+  targets: ComposerTarget[];
+  tagOptions: ComposerTag[];
+}) {
   const [body, setBody] = useState("");
   const [targetId, setTargetId] = useState(targets[0]?.id ?? "");
   const [image, setImage] = useState<File | null>(null);
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function toggleTag(id: string) {
+    setTagIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((t) => t !== id)
+        : prev.length >= MAX_TAGS
+          ? prev
+          : [...prev, id],
+    );
+  }
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,12 +43,14 @@ export function PostComposer({ targets }: { targets: ComposerTarget[] }) {
     formData.set("body", body);
     formData.set("targetPodId", targetId);
     if (image) formData.set("image", image);
+    for (const id of tagIds) formData.append("tags", id);
     startTransition(async () => {
       const res = await createPost(formData);
       if ("error" in res) setError(res.error);
       else {
         setBody("");
         clearImage();
+        setTagIds([]);
       }
     });
   }
@@ -64,6 +85,33 @@ export function PostComposer({ targets }: { targets: ComposerTarget[] }) {
           >
             <X className="size-4" />
           </button>
+        </div>
+      )}
+
+      {tagOptions.length > 0 && (
+        <div className="mt-3">
+          <p className="text-on-surface-variant/70 mb-1.5 text-xs">
+            Tags {tagIds.length > 0 && `(${tagIds.length}/${MAX_TAGS})`}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {tagOptions.map((tag) => {
+              const on = tagIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => toggleTag(tag.id)}
+                  className={
+                    on
+                      ? "border-primary/40 bg-primary/10 text-primary rounded-full border px-2.5 py-1 text-xs font-medium"
+                      : "border-outline-variant text-on-surface-variant hover:text-on-surface rounded-full border px-2.5 py-1 text-xs transition-colors"
+                  }
+                >
+                  #{tag.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
