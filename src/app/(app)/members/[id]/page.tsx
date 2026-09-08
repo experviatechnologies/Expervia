@@ -5,6 +5,7 @@ import { ArrowLeft, BadgeCheck, MapPin, Pencil } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { MessageButton } from "./message-button";
 
 export const metadata: Metadata = {
   title: "Member Profile",
@@ -95,7 +96,7 @@ export default async function MemberProfilePage({
           <ArrowLeft className="size-4" />
           Back to dashboard
         </Link>
-        {isSelf && (
+        {isSelf ? (
           <Link
             href="/profile"
             className="text-primary inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
@@ -103,6 +104,8 @@ export default async function MemberProfilePage({
             <Pencil className="size-4" />
             Edit profile
           </Link>
+        ) : (
+          <MessageButton memberId={id} />
         )}
       </div>
 
