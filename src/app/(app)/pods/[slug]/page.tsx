@@ -5,6 +5,7 @@ import { ArrowLeft, MessageSquare, Star, Users } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { PodMembershipButton } from "./pod-membership-button";
+import { PodRoleControl } from "./pod-role-control";
 
 export const metadata: Metadata = {
   title: "Pod",
@@ -86,6 +87,7 @@ export default async function PodDetailPage({
 
   const isMember = memberIds.includes(member.id);
   const isPrimary = profile?.primary_specialization_pod_id === pod.id;
+  const isOps = member.role === "operations";
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
@@ -155,10 +157,13 @@ export default async function PodDetailPage({
         ) : (
           <ul className="flex flex-col gap-2">
             {roster.map((r) => (
-              <li key={r.memberId}>
+              <li
+                key={r.memberId}
+                className="glass-card flex items-center gap-4 rounded-xl p-4"
+              >
                 <Link
                   href={`/members/${r.memberId}`}
-                  className="glass-card flex items-center gap-4 rounded-xl p-4 transition-colors hover:bg-white/5"
+                  className="flex min-w-0 flex-1 items-center gap-4 transition-opacity hover:opacity-80"
                 >
                   <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full font-bold">
                     {(r.name ?? "?").trim().charAt(0).toUpperCase()}
@@ -179,6 +184,13 @@ export default async function PodDetailPage({
                     )}
                   </span>
                 </Link>
+                {isOps && (
+                  <PodRoleControl
+                    podId={pod.id}
+                    memberId={r.memberId}
+                    role={r.role}
+                  />
+                )}
               </li>
             ))}
           </ul>

@@ -1,10 +1,52 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentMember } from "@/lib/auth";
+import { getCurrentMember, isOperations } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import { writeAudit } from "@/lib/eten/audit";
 
 type ActionResult = { ok: true } | { error: string };
+type PodRole = "member" | "lead" | "co_lead";
+
+/**
+ * Set a member's role within a pod (member / lead / co-lead). Ops-only —
+ * pod_memberships_role_ops requires is_operations(). Leads gain moderation reach
+ * over their pod's content via the existing leads_any_target_pod() RLS. Written
+ * via service_role after the ops check, and audited.
+ */
+export async function setPodRole(input: {
+  podId: string;
+  memberId: string;
+  role: PodRole;
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to set pod roles." };
+  }
+  if (!["member", "lead", "co_lead"].includes(input.role)) {
+    return { error: "Unknown role." };
+  }
+
+  const me = await getCurrentMember();
+  const { error } = await getSupabaseAdmin()
+    .from("pod_memberships")
+    .update({ role_in_pod: input.role })
+    .eq("pod_id", input.podId)
+    .eq("member_id", input.memberId);
+
+  if (error) return { error: "Couldn't update the role. Please try again." };
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: `pod.role.${input.role}`,
+    targetType: "member",
+    targetId: input.memberId,
+    metadata: { podId: input.podId },
+  });
+
+  revalidatePath("/pods/[slug]", "page");
+  return { ok: true };
+}
 
 /**
  * Join a pod as an ordinary member. Writes through the member's OWN session
