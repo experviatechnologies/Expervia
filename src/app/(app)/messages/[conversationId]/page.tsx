@@ -4,8 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { timeAgo } from "@/lib/time";
 import { MessageComposer } from "./message-composer";
+import { MessageList, type ChatMessage } from "./message-list";
 import { markConversationRead } from "../actions";
 
 export const metadata: Metadata = {
@@ -65,17 +65,26 @@ export default async function ConversationPage({
       ? (nameById.get(otherId) ?? "A member")
       : "Conversation";
 
-  const messages = msgRows ?? [];
+  const messages: ChatMessage[] = (msgRows ?? []).map((m) => ({
+    id: m.id,
+    senderId: m.sender_id,
+    body: m.body,
+    createdAt: m.created_at,
+  }));
 
   // Mark read now that we're viewing it.
   await markConversationRead({ conversationId });
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-6 py-8">
-      <header className="mb-4 flex items-center gap-3">
+    // Full-screen chat shell: fixed so the header and composer stay put while
+    // only the message pane scrolls. On desktop it sits to the right of the
+    // sidebar (md:left-60); on mobile it covers the tab bar (back button
+    // returns to the list), the standard mobile-chat pattern.
+    <div className="bg-background fixed inset-0 z-40 flex flex-col md:left-60">
+      <header className="border-outline-variant bg-surface/80 flex shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur">
         <Link
           href="/messages"
-          className="text-on-surface-variant hover:text-on-surface inline-flex size-9 items-center justify-center rounded-full"
+          className="text-on-surface-variant hover:text-on-surface inline-flex size-9 shrink-0 items-center justify-center rounded-full"
           aria-label="Back to messages"
         >
           <ArrowLeft className="size-5" />
@@ -83,57 +92,30 @@ export default async function ConversationPage({
         {otherId ? (
           <Link
             href={`/members/${otherId}`}
-            className="flex items-center gap-3 hover:underline"
+            className="flex min-w-0 items-center gap-3 hover:underline"
           >
-            <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-sm font-bold">
+            <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold">
               {title.trim().charAt(0).toUpperCase()}
             </span>
-            <span className="text-on-surface font-semibold">{title}</span>
+            <span className="text-on-surface truncate font-semibold">
+              {title}
+            </span>
           </Link>
         ) : (
-          <span className="text-on-surface font-semibold">{title}</span>
+          <span className="text-on-surface truncate font-semibold">
+            {title}
+          </span>
         )}
       </header>
 
-      <div className="flex flex-1 flex-col justify-end gap-3 py-4">
-        {messages.length === 0 ? (
-          <p className="text-on-surface-variant py-8 text-center text-sm">
-            No messages yet. Say hello.
-          </p>
-        ) : (
-          messages.map((m) => {
-            const mine = m.sender_id === member.id;
-            return (
-              <div
-                key={m.id}
-                className={mine ? "flex justify-end" : "flex justify-start"}
-              >
-                <div
-                  className={
-                    mine
-                      ? "bg-primary text-primary-foreground max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2"
-                      : "bg-surface-container text-on-surface max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-2"
-                  }
-                >
-                  <p className="text-sm whitespace-pre-line">{m.body}</p>
-                  <p
-                    className={
-                      mine
-                        ? "text-primary-foreground/70 mt-1 text-right text-[10px]"
-                        : "text-on-surface-variant mt-1 text-[10px]"
-                    }
-                  >
-                    {timeAgo(m.created_at)}
-                  </p>
-                </div>
-              </div>
-            );
-          })
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <MessageList messages={messages} memberId={member.id} />
       </div>
 
-      <div className="bg-background/80 sticky bottom-0 pt-2 pb-4 backdrop-blur">
-        <MessageComposer conversationId={conversationId} />
+      <div className="border-outline-variant bg-surface/80 shrink-0 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
+        <div className="mx-auto max-w-2xl">
+          <MessageComposer conversationId={conversationId} />
+        </div>
       </div>
     </div>
   );

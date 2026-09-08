@@ -200,7 +200,7 @@ export default async function PostDetailPage({
             </div>
           </div>
         </div>
-        <p className="text-on-surface mt-4 text-sm whitespace-pre-line">
+        <p className="text-on-surface mt-4 text-sm break-words whitespace-pre-line">
           {post.body}
         </p>
 

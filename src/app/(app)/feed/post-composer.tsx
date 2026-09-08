@@ -170,14 +170,14 @@ export function PostComposer({
 
       {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
 
-      <div className="border-outline-variant mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-        <div className="flex items-center gap-3">
-          <label className="text-on-surface-variant flex items-center gap-2 text-sm">
-            Post to
+      <div className="border-outline-variant mt-3 flex flex-col gap-3 border-t pt-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <label className="text-on-surface-variant flex shrink-0 items-center gap-2 text-sm">
+            <span className="whitespace-nowrap">Post to</span>
             <select
               value={targetId}
               onChange={(e) => setTargetId(e.target.value)}
-              className="border-outline-variant bg-surface text-on-surface focus:border-primary rounded-lg border px-3 py-1.5 text-sm outline-none"
+              className="border-outline-variant bg-surface text-on-surface focus:border-primary min-w-0 rounded-lg border px-3 py-1.5 text-sm outline-none"
             >
               {targets.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -219,7 +219,7 @@ export function PostComposer({
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3">
           <span
             className={
               over

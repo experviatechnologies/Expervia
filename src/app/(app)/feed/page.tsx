@@ -230,7 +230,7 @@ export default async function FeedPage({
                   </div>
                 </div>
 
-                <p className="text-on-surface mt-3 text-sm whitespace-pre-line">
+                <p className="text-on-surface mt-3 text-sm break-words whitespace-pre-line">
                   {post.body}
                 </p>
 

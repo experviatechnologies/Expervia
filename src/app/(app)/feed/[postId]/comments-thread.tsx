@@ -108,7 +108,7 @@ function CommentItem({
             {timeAgo(comment.createdAt)}
           </span>
         </div>
-        <p className="text-on-surface mt-1 text-sm whitespace-pre-line">
+        <p className="text-on-surface mt-1 text-sm break-words whitespace-pre-line">
           {comment.body}
         </p>
 
