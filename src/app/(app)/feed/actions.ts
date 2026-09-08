@@ -7,6 +7,7 @@ import { getSupabaseAdmin, POST_MEDIA_BUCKET } from "@/lib/supabase";
 import type { ReactionType } from "@/lib/eten/reactions";
 import { notify } from "@/lib/eten/notifications";
 import { writeAudit } from "@/lib/eten/audit";
+import { withinRateLimit, TOO_FAST } from "@/lib/eten/rate-limit";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -52,6 +53,18 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
     return { error: `Posts are limited to ${MAX_BODY} characters.` };
   }
   if (!targetPodId) return { error: "Choose where to post." };
+
+  if (
+    !(await withinRateLimit({
+      table: "posts",
+      column: "author_id",
+      memberId: member.id,
+      windowSeconds: 60,
+      max: 10,
+    }))
+  ) {
+    return { error: TOO_FAST };
+  }
 
   const entry = formData.get("image");
   const image = entry instanceof File && entry.size > 0 ? entry : null;
@@ -248,6 +261,18 @@ export async function addComment(input: {
     return { error: `Comments are limited to ${MAX_COMMENT} characters.` };
   }
 
+  if (
+    !(await withinRateLimit({
+      table: "comments",
+      column: "author_id",
+      memberId: member.id,
+      windowSeconds: 60,
+      max: 30,
+    }))
+  ) {
+    return { error: TOO_FAST };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("comments").insert({
     post_id: input.postId,
@@ -324,6 +349,18 @@ export async function reportContent(input: {
   if (!reason) return { error: "Please add a reason." };
   if (reason.length > MAX_REASON) {
     return { error: `Keep the reason under ${MAX_REASON} characters.` };
+  }
+
+  if (
+    !(await withinRateLimit({
+      table: "reports",
+      column: "reporter_id",
+      memberId: member.id,
+      windowSeconds: 3600,
+      max: 20,
+    }))
+  ) {
+    return { error: TOO_FAST };
   }
 
   const supabase = await createSupabaseServerClient();

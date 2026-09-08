@@ -5,6 +5,7 @@ import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
+import { withinRateLimit, TOO_FAST } from "@/lib/eten/rate-limit";
 
 type StartResult = { conversationId: string } | { error: string };
 type ActionResult = { ok: true } | { error: string };
@@ -106,6 +107,18 @@ export async function sendMessage(input: {
   if (!body) return { error: "Write a message first." };
   if (body.length > MAX_MESSAGE) {
     return { error: `Messages are limited to ${MAX_MESSAGE} characters.` };
+  }
+
+  if (
+    !(await withinRateLimit({
+      table: "messages",
+      column: "sender_id",
+      memberId: me.id,
+      windowSeconds: 60,
+      max: 60,
+    }))
+  ) {
+    return { error: TOO_FAST };
   }
 
   const supabase = await createSupabaseServerClient();
