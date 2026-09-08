@@ -19,6 +19,7 @@ type PostRow = {
   created_at: string;
   author_id: string;
   post_targets: TargetRef[] | null;
+  comments: { count: number }[] | null;
 };
 
 export default async function FeedPage() {
@@ -41,7 +42,7 @@ export default async function FeedPage() {
       supabase
         .from("posts")
         .select(
-          "id, body, created_at, author_id, post_targets(pods(name, slug))",
+          "id, body, created_at, author_id, post_targets(pods(name, slug)), comments(count)",
         )
         .eq("is_removed", false)
         .order("created_at", { ascending: false })
@@ -143,6 +144,17 @@ export default async function FeedPage() {
                 <p className="text-on-surface mt-3 text-sm whitespace-pre-line">
                   {post.body}
                 </p>
+
+                <Link
+                  href={`/feed/${post.id}`}
+                  className="text-on-surface-variant hover:text-on-surface mt-3 inline-flex items-center gap-1.5 text-xs font-medium"
+                >
+                  <MessageSquare className="size-3.5" />
+                  {post.comments?.[0]?.count ?? 0}{" "}
+                  {(post.comments?.[0]?.count ?? 0) === 1
+                    ? "comment"
+                    : "comments"}
+                </Link>
               </li>
             );
           })}

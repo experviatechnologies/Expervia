@@ -61,3 +61,49 @@ export async function createPost(input: {
   revalidatePath("/pods/[slug]", "page");
   return { ok: true };
 }
+
+const MAX_COMMENT = 3000;
+
+/**
+ * Add a comment to a post, or a reply to a top-level comment (one level deep —
+ * the `enforce_comment_depth` trigger rejects replying to a reply). Writes
+ * through the member's session: comments_insert_self requires author_id =
+ * auth.uid(), is_active_member, and that the post is visible to the caller.
+ */
+export async function addComment(input: {
+  postId: string;
+  body: string;
+  parentCommentId?: string | null;
+}): Promise<ActionResult> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "You need to sign in." };
+  if (member.status !== "active") {
+    return { error: "Your account isn't active." };
+  }
+
+  const body = input.body.trim();
+  if (!body) return { error: "Write a comment first." };
+  if (body.length > MAX_COMMENT) {
+    return { error: `Comments are limited to ${MAX_COMMENT} characters.` };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("comments").insert({
+    post_id: input.postId,
+    author_id: member.id,
+    body,
+    parent_comment_id: input.parentCommentId ?? null,
+  });
+
+  if (error) {
+    // The depth trigger raises a message containing "one level deep".
+    if (error.message.includes("one level")) {
+      return { error: "You can only reply to a top-level comment." };
+    }
+    return { error: "Couldn't post your comment. Please try again." };
+  }
+
+  revalidatePath(`/feed/${input.postId}`);
+  revalidatePath("/feed");
+  return { ok: true };
+}
