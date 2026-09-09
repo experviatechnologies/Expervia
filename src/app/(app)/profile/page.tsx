@@ -90,32 +90,32 @@ export default async function ProfilePage() {
       <header className="mb-8">
         <Link
           href="/dashboard"
-          className="text-on-surface-variant hover:text-on-surface mb-4 inline-flex items-center gap-1.5 text-sm"
+          className="text-eten-ink-muted hover:text-eten-ink mb-4 inline-flex items-center gap-1.5 text-sm"
         >
           <ArrowLeft className="size-4" />
           Back to dashboard
         </Link>
-        <p className="text-label-sm text-primary font-mono tracking-widest uppercase">
+        <p className="text-label-sm text-eten-accent font-mono tracking-widest uppercase">
           My Profile
         </p>
-        <h1 className="font-display text-headline-md text-on-surface mt-1 font-bold">
+        <h1 className="font-display text-headline-md text-eten-ink mt-1 font-bold">
           Edit your profile
         </h1>
-        <p className="text-on-surface-variant mt-2 text-sm">
+        <p className="text-eten-ink-muted mt-2 text-sm">
           This is your credential-backed identity across ETEN. Keep it current
           so peers and pods can find you.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-4">
           <Link
             href={`/members/${member.id}`}
-            className="text-primary inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+            className="text-eten-accent inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
           >
             <Eye className="size-4" />
             View public profile
           </Link>
           <Link
             href="/settings"
-            className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-sm font-semibold"
+            className="text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 text-sm font-semibold"
           >
             <Settings className="size-4" />
             Settings
@@ -125,20 +125,20 @@ export default async function ProfilePage() {
 
       <Link
         href="/profile/certifications"
-        className="glass-card mb-8 flex items-center gap-4 rounded-2xl p-5 transition-colors hover:bg-white/5"
+        className="bg-eten-panel border-eten-line mb-8 flex items-center gap-4 rounded-2xl border p-5 transition-colors hover:bg-white/5"
       >
-        <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
+        <span className="bg-eten-accent-soft text-eten-accent flex size-11 shrink-0 items-center justify-center rounded-full">
           <BadgeCheck className="size-5" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="text-on-surface block font-semibold">
+          <span className="text-eten-ink block font-semibold">
             Certifications &amp; credentials
           </span>
-          <span className="text-on-surface-variant block text-sm">
+          <span className="text-eten-ink-muted block text-sm">
             Add certifications and upload proof for verification.
           </span>
         </span>
-        <ChevronRight className="text-on-surface-variant size-5 shrink-0" />
+        <ChevronRight className="text-eten-ink-muted size-5 shrink-0" />
       </Link>
 
       {hasResume && (
@@ -146,21 +146,21 @@ export default async function ProfilePage() {
           href="/api/member/resume"
           target="_blank"
           rel="noopener noreferrer"
-          className="glass-card mb-8 flex items-center gap-4 rounded-2xl p-5 transition-colors hover:bg-white/5"
+          className="bg-eten-panel border-eten-line mb-8 flex items-center gap-4 rounded-2xl border p-5 transition-colors hover:bg-white/5"
         >
-          <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
+          <span className="bg-eten-accent-soft text-eten-accent flex size-11 shrink-0 items-center justify-center rounded-full">
             <FileText className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="text-on-surface block font-semibold">
+            <span className="text-eten-ink block font-semibold">
               Your résumé
             </span>
-            <span className="text-on-surface-variant block text-sm">
+            <span className="text-eten-ink-muted block text-sm">
               The résumé you submitted when you registered — on file with your
               profile. Opens in a new tab.
             </span>
           </span>
-          <ChevronRight className="text-on-surface-variant size-5 shrink-0" />
+          <ChevronRight className="text-eten-ink-muted size-5 shrink-0" />
         </a>
       )}
 

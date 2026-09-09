@@ -34,8 +34,8 @@ const AVAILABILITY_OPTIONS = [
 ];
 
 const fieldClass =
-  "w-full rounded-lg border border-outline-variant bg-surface p-3 text-sm text-on-surface outline-none transition-all focus:border-primary placeholder:text-on-surface-variant/60";
-const labelClass = "text-label-sm text-on-surface-variant font-mono uppercase";
+  "w-full rounded-lg border border-eten-line bg-eten-panel-hi p-3 text-sm text-eten-ink outline-none transition-all focus:border-eten-accent placeholder:text-eten-ink-muted/60";
+const labelClass = "text-label-sm text-eten-ink-muted font-mono uppercase";
 
 export function ProfileForm({
   initial,
@@ -115,8 +115,8 @@ export function ProfileForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       {/* Basics */}
-      <section className="glass-card rounded-2xl p-6">
-        <h2 className="font-display text-body-lg text-on-surface mb-5 font-bold">
+      <section className="bg-eten-panel border-eten-line rounded-2xl border p-6">
+        <h2 className="font-display text-body-lg text-eten-ink mb-5 font-bold">
           Basics
         </h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -163,8 +163,8 @@ export function ProfileForm({
       </section>
 
       {/* Professional */}
-      <section className="glass-card rounded-2xl p-6">
-        <h2 className="font-display text-body-lg text-on-surface mb-5 font-bold">
+      <section className="bg-eten-panel border-eten-line rounded-2xl border p-6">
+        <h2 className="font-display text-body-lg text-eten-ink mb-5 font-bold">
           Professional
         </h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -244,11 +244,11 @@ export function ProfileForm({
       </section>
 
       {/* Specialization + skills */}
-      <section className="glass-card rounded-2xl p-6">
-        <h2 className="font-display text-body-lg text-on-surface mb-1 font-bold">
+      <section className="bg-eten-panel border-eten-line rounded-2xl border p-6">
+        <h2 className="font-display text-body-lg text-eten-ink mb-1 font-bold">
           Specialization &amp; skills
         </h2>
-        <p className="text-on-surface-variant mb-5 text-sm">
+        <p className="text-eten-ink-muted mb-5 text-sm">
           Your primary pod is your home community; skills help peers find you.
         </p>
 
@@ -278,7 +278,7 @@ export function ProfileForm({
                 .filter((g) => g.skills.length > 0)
                 .map((group) => (
                   <div key={group.podId}>
-                    <p className="text-on-surface-variant mb-2 text-xs font-medium">
+                    <p className="text-eten-ink-muted mb-2 text-xs font-medium">
                       {group.podName}
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -292,8 +292,8 @@ export function ProfileForm({
                             aria-pressed={isOn}
                             className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
                               isOn
-                                ? "border-primary bg-primary/15 text-primary"
-                                : "border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-on-surface-variant/50"
+                                ? "border-eten-accent bg-eten-accent/15 text-eten-accent"
+                                : "border-eten-line text-eten-ink-muted hover:text-eten-ink hover:border-eten-ink-muted/50"
                             }`}
                           >
                             {isOn && <Check className="size-3.5" />}
@@ -306,7 +306,7 @@ export function ProfileForm({
                 ))}
             </div>
           ) : (
-            <p className="border-outline-variant text-on-surface-variant rounded-xl border border-dashed p-4 text-sm">
+            <p className="border-eten-line text-eten-ink-muted rounded-xl border border-dashed p-4 text-sm">
               No skills are available yet. Once the ETEN team adds them, they
               show up here to tag yourself with.
             </p>
@@ -318,12 +318,12 @@ export function ProfileForm({
 
       <div className="sticky bottom-4 flex items-center justify-end gap-3">
         {saved && !pending && (
-          <span className="text-primary inline-flex items-center gap-1.5 text-sm">
+          <span className="text-eten-accent inline-flex items-center gap-1.5 text-sm">
             <CircleCheck className="size-4" />
             Saved
           </span>
         )}
-        <Button type="submit" variant="brand" size="pill-sm" disabled={pending}>
+        <Button type="submit" variant="eten" size="pill-sm" disabled={pending}>
           {pending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
@@ -356,9 +356,7 @@ function Field({
       <label htmlFor={htmlFor} className={labelClass}>
         {label}
         {hint && (
-          <span className="text-on-surface-variant/60 ml-2 lowercase">
-            {hint}
-          </span>
+          <span className="text-eten-ink-muted/60 ml-2 lowercase">{hint}</span>
         )}
       </label>
       {children}

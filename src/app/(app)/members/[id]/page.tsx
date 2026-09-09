@@ -63,13 +63,13 @@ export default async function MemberProfilePage({
       <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
         <Link
           href="/dashboard"
-          className="text-on-surface-variant hover:text-on-surface mb-8 inline-flex items-center gap-1.5 text-sm"
+          className="text-eten-ink-muted hover:text-eten-ink mb-8 inline-flex items-center gap-1.5 text-sm"
         >
           <ArrowLeft className="size-4" />
           Back to dashboard
         </Link>
-        <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
-          <p className="text-on-surface font-medium">
+        <div className="bg-eten-panel border-eten-line text-eten-ink-muted flex flex-col items-center gap-3 rounded-2xl border p-12 text-center">
+          <p className="text-eten-ink font-medium">
             This member&apos;s profile isn&apos;t available yet.
           </p>
           <p className="max-w-sm text-sm">
@@ -135,7 +135,7 @@ export default async function MemberProfilePage({
       <div className="mb-8 flex items-center justify-between gap-4">
         <Link
           href="/dashboard"
-          className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-sm"
+          className="text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 text-sm"
         >
           <ArrowLeft className="size-4" />
           Back to dashboard
@@ -143,7 +143,7 @@ export default async function MemberProfilePage({
         {isSelf ? (
           <Link
             href="/profile"
-            className="text-primary inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+            className="text-eten-accent inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
           >
             <Pencil className="size-4" />
             Edit profile
@@ -157,21 +157,21 @@ export default async function MemberProfilePage({
       </div>
 
       {/* Identity header */}
-      <header className="glass-card rounded-2xl p-6 sm:p-8">
+      <header className="bg-eten-panel border-eten-line rounded-2xl border p-6 sm:p-8">
         <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-          <span className="bg-primary/10 text-primary flex size-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold">
+          <span className="bg-eten-accent-soft text-eten-accent flex size-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold">
             {initials}
           </span>
           <div className="min-w-0">
-            <h1 className="font-display text-headline-md text-on-surface font-bold">
+            <h1 className="font-display text-headline-md text-eten-ink font-bold">
               {profile.full_name}
             </h1>
             {profile.headline && (
-              <p className="text-on-surface-variant text-body-lg mt-1">
+              <p className="text-eten-ink-muted text-body-lg mt-1">
                 {profile.headline}
               </p>
             )}
-            <div className="text-on-surface-variant mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <div className="text-eten-ink-muted mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               {profile.job_title && <span>{profile.job_title}</span>}
               {profile.location && (
                 <span className="inline-flex items-center gap-1">
@@ -181,7 +181,7 @@ export default async function MemberProfilePage({
               )}
             </div>
             {profile.availability_status && (
-              <span className="bg-primary/10 text-primary mt-3 inline-block rounded-full px-3 py-1 text-xs font-medium">
+              <span className="bg-eten-accent-soft text-eten-accent mt-3 inline-block rounded-full px-3 py-1 text-xs font-medium">
                 {profile.availability_status}
               </span>
             )}
@@ -192,19 +192,19 @@ export default async function MemberProfilePage({
       {/* Verified credentials — the credential-backed identity */}
       <Section title="Verified credentials">
         {certs.length === 0 ? (
-          <p className="text-on-surface-variant text-sm">
+          <p className="text-eten-ink-muted text-sm">
             No verified credentials yet.
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
             {certs.map((c) => (
               <li key={c.id} className="flex items-start gap-3">
-                <BadgeCheck className="text-primary mt-0.5 size-5 shrink-0" />
+                <BadgeCheck className="text-eten-verified mt-0.5 size-5 shrink-0" />
                 <span className="min-w-0">
-                  <span className="text-on-surface block font-semibold">
+                  <span className="text-eten-ink block font-semibold">
                     {c.name}
                   </span>
-                  <span className="text-on-surface-variant block text-sm">
+                  <span className="text-eten-ink-muted block text-sm">
                     {[c.issuer, formatYear(c.date_obtained)]
                       .filter(Boolean)
                       .join(" · ")}
@@ -219,7 +219,7 @@ export default async function MemberProfilePage({
       {/* About */}
       {profile.bio && (
         <Section title="About">
-          <p className="text-on-surface text-sm whitespace-pre-line">
+          <p className="text-eten-ink text-sm whitespace-pre-line">
             {profile.bio}
           </p>
         </Section>
@@ -230,10 +230,10 @@ export default async function MemberProfilePage({
         <Section title="Specialization">
           {pod?.name && (
             <div className="mb-4">
-              <p className="text-label-sm text-on-surface-variant font-mono uppercase">
+              <p className="text-label-sm text-eten-ink-muted font-mono uppercase">
                 Primary pod
               </p>
-              <p className="text-on-surface mt-1 font-semibold">{pod.name}</p>
+              <p className="text-eten-ink mt-1 font-semibold">{pod.name}</p>
             </div>
           )}
           {skills.length > 0 && (
@@ -241,7 +241,7 @@ export default async function MemberProfilePage({
               {skills.map((name) => (
                 <span
                   key={name}
-                  className="border-outline-variant text-on-surface rounded-full border px-3 py-1 text-sm"
+                  className="border-eten-line text-eten-ink rounded-full border px-3 py-1 text-sm"
                 >
                   {name}
                 </span>
@@ -285,8 +285,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="glass-card mt-6 rounded-2xl p-6">
-      <h2 className="font-display text-body-lg text-on-surface mb-4 font-bold">
+    <section className="bg-eten-panel border-eten-line mt-6 rounded-2xl border p-6">
+      <h2 className="font-display text-body-lg text-eten-ink mb-4 font-bold">
         {title}
       </h2>
       {children}
@@ -303,10 +303,10 @@ function Detail({
 }) {
   return (
     <div>
-      <dt className="text-label-sm text-on-surface-variant font-mono uppercase">
+      <dt className="text-label-sm text-eten-ink-muted font-mono uppercase">
         {label}
       </dt>
-      <dd className="text-on-surface mt-1 text-sm">{children}</dd>
+      <dd className="text-eten-ink mt-1 text-sm">{children}</dd>
     </div>
   );
 }

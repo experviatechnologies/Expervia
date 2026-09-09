@@ -38,7 +38,7 @@ export function BlockButton({
         type="button"
         onClick={toggle}
         disabled={pending}
-        className="text-on-surface-variant hover:text-destructive inline-flex items-center gap-1.5 text-xs disabled:opacity-60"
+        className="text-eten-ink-muted hover:text-destructive inline-flex items-center gap-1.5 text-xs disabled:opacity-60"
       >
         {pending ? (
           <Loader2 className="size-3.5 animate-spin" />

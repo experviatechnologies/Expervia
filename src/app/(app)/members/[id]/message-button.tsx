@@ -24,7 +24,7 @@ export function MessageButton({ memberId }: { memberId: string }) {
     <div className="flex flex-col items-end gap-1">
       <Button
         type="button"
-        variant="brand"
+        variant="eten"
         size="pill-sm"
         disabled={pending}
         onClick={open}

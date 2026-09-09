@@ -44,18 +44,18 @@ export default async function CertificationsPage() {
       <header className="mb-8">
         <Link
           href="/profile"
-          className="text-on-surface-variant hover:text-on-surface mb-4 inline-flex items-center gap-1.5 text-sm"
+          className="text-eten-ink-muted hover:text-eten-ink mb-4 inline-flex items-center gap-1.5 text-sm"
         >
           <ArrowLeft className="size-4" />
           Back to profile
         </Link>
-        <p className="text-label-sm text-primary font-mono tracking-widest uppercase">
+        <p className="text-label-sm text-eten-accent font-mono tracking-widest uppercase">
           My Certifications
         </p>
-        <h1 className="font-display text-headline-md text-on-surface mt-1 font-bold">
+        <h1 className="font-display text-headline-md text-eten-ink mt-1 font-bold">
           Certifications &amp; credentials
         </h1>
-        <p className="text-on-surface-variant mt-2 text-sm">
+        <p className="text-eten-ink-muted mt-2 text-sm">
           Add your professional certifications and upload the certificate as
           proof. The ETEN team verifies them — verified badges build trust
           across the community.

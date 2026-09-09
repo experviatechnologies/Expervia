@@ -34,8 +34,8 @@ export type Certification = {
 };
 
 const fieldClass =
-  "w-full rounded-lg border border-outline-variant bg-surface p-3 text-sm text-on-surface outline-none transition-all focus:border-primary placeholder:text-on-surface-variant/60";
-const labelClass = "text-label-sm text-on-surface-variant font-mono uppercase";
+  "w-full rounded-lg border border-eten-line bg-eten-panel-hi p-3 text-sm text-eten-ink outline-none transition-all focus:border-eten-accent placeholder:text-eten-ink-muted/60";
+const labelClass = "text-label-sm text-eten-ink-muted font-mono uppercase";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "";
@@ -65,8 +65,8 @@ export function CertificationsManager({
       )}
 
       {certifications.length === 0 && !adding && (
-        <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
-          <BadgeCheck className="text-on-surface-variant/40 size-9" />
+        <div className="bg-eten-panel border-eten-line text-eten-ink-muted flex flex-col items-center gap-3 rounded-2xl border p-12 text-center">
+          <BadgeCheck className="text-eten-ink-muted/40 size-9" />
           <p className="text-sm">
             No certifications yet. Add the credentials that back up your
             expertise — they&apos;re the core of your ETEN profile.
@@ -101,7 +101,7 @@ export function CertificationsManager({
       ) : (
         <Button
           type="button"
-          variant="brandOutline"
+          variant="etenOutline"
           size="pill-sm"
           className="self-start"
           disabled={editingId !== null}
@@ -125,7 +125,7 @@ function VerificationBadge({
 }) {
   if (status === "verified") {
     return (
-      <span className="border-primary/30 bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium">
+      <span className="border-eten-verified/30 bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium">
         <BadgeCheck className="size-3.5" />
         Verified
       </span>
@@ -140,7 +140,7 @@ function VerificationBadge({
     );
   }
   return (
-    <span className="border-outline-variant text-on-surface-variant inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium">
+    <span className="border-eten-line text-eten-ink-muted inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium">
       <Clock className="size-3.5" />
       Pending verification
     </span>
@@ -176,38 +176,38 @@ function CertCard({
   }
 
   return (
-    <div className="glass-card rounded-2xl p-5">
+    <div className="bg-eten-panel border-eten-line rounded-2xl border p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-on-surface font-semibold">{cert.name}</h3>
+          <h3 className="text-eten-ink font-semibold">{cert.name}</h3>
           {cert.issuer && (
-            <p className="text-on-surface-variant text-sm">{cert.issuer}</p>
+            <p className="text-eten-ink-muted text-sm">{cert.issuer}</p>
           )}
         </div>
         <VerificationBadge status={cert.verificationStatus} />
       </div>
 
-      <dl className="text-on-surface-variant mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
+      <dl className="text-eten-ink-muted mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
         {cert.credentialId && (
           <div>
-            <dt className="text-on-surface-variant/60 inline">ID: </dt>
-            <dd className="text-on-surface inline font-mono">
+            <dt className="text-eten-ink-muted/60 inline">ID: </dt>
+            <dd className="text-eten-ink inline font-mono">
               {cert.credentialId}
             </dd>
           </div>
         )}
         {cert.dateObtained && (
           <div>
-            <dt className="text-on-surface-variant/60 inline">Obtained: </dt>
-            <dd className="text-on-surface inline">
+            <dt className="text-eten-ink-muted/60 inline">Obtained: </dt>
+            <dd className="text-eten-ink inline">
               {formatDate(cert.dateObtained)}
             </dd>
           </div>
         )}
         {cert.expiryDate && (
           <div>
-            <dt className="text-on-surface-variant/60 inline">Expires: </dt>
-            <dd className="text-on-surface inline">
+            <dt className="text-eten-ink-muted/60 inline">Expires: </dt>
+            <dd className="text-eten-ink inline">
               {formatDate(cert.expiryDate)}
             </dd>
           </div>
@@ -222,7 +222,7 @@ function CertCard({
             )}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+            className="text-eten-accent inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
             <FileText className="size-4" />
             View file
@@ -244,7 +244,7 @@ function CertCard({
             variant="ghost"
             size="icon-sm"
             aria-label="Delete certification"
-            className="text-on-surface-variant hover:text-destructive"
+            className="text-eten-ink-muted hover:text-destructive"
             disabled={disabled || pending}
             onClick={handleDelete}
           >
@@ -291,10 +291,10 @@ function CertForm({
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="glass-card flex flex-col gap-4 rounded-2xl p-5"
+      className="bg-eten-panel border-eten-line flex flex-col gap-4 rounded-2xl border p-5"
     >
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-body-lg text-on-surface font-bold">
+        <h3 className="font-display text-body-lg text-eten-ink font-bold">
           {isEdit ? "Edit certification" : "New certification"}
         </h3>
       </div>
@@ -384,7 +384,7 @@ function CertForm({
         <div className="flex flex-col gap-2 sm:col-span-2">
           <label htmlFor="file" className={labelClass}>
             Certificate file{" "}
-            <span className="text-on-surface-variant/60 lowercase">
+            <span className="text-eten-ink-muted/60 lowercase">
               (PDF or image, 10 MB max
               {isEdit ? " — leave empty to keep current" : ""})
             </span>
@@ -394,10 +394,10 @@ function CertForm({
             name="file"
             type="file"
             accept="application/pdf,image/png,image/jpeg,image/webp"
-            className="text-on-surface-variant file:bg-surface-container file:text-on-surface hover:file:bg-surface-container/70 text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium"
+            className="text-eten-ink-muted file:bg-eten-hover file:text-eten-ink hover:file:bg-eten-hover/70 text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium"
           />
           {isEdit && cert?.certificatePath && (
-            <p className="text-on-surface-variant/70 text-xs">
+            <p className="text-eten-ink-muted/70 text-xs">
               A file is already attached. Uploading a new one replaces it.
             </p>
           )}
@@ -407,14 +407,14 @@ function CertForm({
       <div className="flex items-center justify-end gap-2">
         <Button
           type="button"
-          variant="brandOutline"
+          variant="etenOutline"
           size="pill-sm"
           disabled={pending}
           onClick={onDone}
         >
           Cancel
         </Button>
-        <Button type="submit" variant="brand" size="pill-sm" disabled={pending}>
+        <Button type="submit" variant="eten" size="pill-sm" disabled={pending}>
           {pending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
