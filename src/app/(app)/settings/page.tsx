@@ -76,31 +76,31 @@ export default async function SettingsPage() {
       <header className="mb-8">
         <Link
           href="/profile"
-          className="text-on-surface-variant hover:text-on-surface mb-4 inline-flex items-center gap-1.5 text-sm"
+          className="text-eten-ink-muted hover:text-eten-ink mb-4 inline-flex items-center gap-1.5 text-sm"
         >
           <ArrowLeft className="size-4" />
           Back to profile
         </Link>
-        <h1 className="font-display text-headline-md text-on-surface font-bold">
+        <h1 className="font-display text-headline-md text-eten-ink font-bold">
           Settings
         </h1>
       </header>
 
-      <section className="glass-card mb-6 rounded-2xl p-6">
-        <h2 className="font-display text-body-lg text-on-surface mb-1 font-bold">
+      <section className="bg-eten-panel border-eten-line mb-6 rounded-2xl border p-6">
+        <h2 className="font-display text-body-lg text-eten-ink mb-1 font-bold">
           Notifications
         </h2>
-        <p className="text-on-surface-variant mb-5 text-sm">
+        <p className="text-eten-ink-muted mb-5 text-sm">
           Choose what shows up in your notifications.
         </p>
         <NotificationPreferences prefs={prefs} />
       </section>
 
-      <section className="glass-card rounded-2xl p-6">
-        <h2 className="font-display text-body-lg text-on-surface mb-1 font-bold">
+      <section className="bg-eten-panel border-eten-line rounded-2xl border p-6">
+        <h2 className="font-display text-body-lg text-eten-ink mb-1 font-bold">
           Blocked members
         </h2>
-        <p className="text-on-surface-variant mb-5 text-sm">
+        <p className="text-eten-ink-muted mb-5 text-sm">
           Blocked members can&apos;t message you, and you can&apos;t message
           them.
         </p>

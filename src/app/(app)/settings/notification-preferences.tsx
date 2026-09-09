@@ -43,8 +43,8 @@ export function NotificationPreferences({ prefs }: { prefs: Pref[] }) {
       {state.map((p) => (
         <div key={p.key} className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-on-surface text-sm font-medium">{p.label}</p>
-            <p className="text-on-surface-variant text-xs">{p.hint}</p>
+            <p className="text-eten-ink text-sm font-medium">{p.label}</p>
+            <p className="text-eten-ink-muted text-xs">{p.hint}</p>
           </div>
           <button
             type="button"
@@ -54,7 +54,7 @@ export function NotificationPreferences({ prefs }: { prefs: Pref[] }) {
             disabled={pending}
             onClick={() => toggle(p.key, !p.enabled)}
             className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-              p.enabled ? "bg-primary" : "bg-surface-container"
+              p.enabled ? "bg-eten-accent" : "bg-eten-hover"
             }`}
           >
             <span

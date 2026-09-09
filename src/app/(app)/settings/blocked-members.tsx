@@ -15,7 +15,7 @@ export function BlockedMembers({ blocked }: { blocked: BlockedRow[] }) {
 
   if (blocked.length === 0) {
     return (
-      <p className="text-on-surface-variant text-sm">
+      <p className="text-eten-ink-muted text-sm">
         You haven&apos;t blocked anyone.
       </p>
     );
@@ -41,13 +41,13 @@ export function BlockedMembers({ blocked }: { blocked: BlockedRow[] }) {
         >
           <Link
             href={`/members/${b.memberId}`}
-            className="text-on-surface text-sm font-medium hover:underline"
+            className="text-eten-ink text-sm font-medium hover:underline"
           >
             {b.name}
           </Link>
           <Button
             type="button"
-            variant="brandOutline"
+            variant="etenOutline"
             size="sm"
             disabled={pending}
             onClick={() => unblock(b.memberId)}
