@@ -35,15 +35,13 @@ export function PodRoleControl({
 
   return (
     <span className="flex items-center gap-1.5">
-      {pending && (
-        <Loader2 className="text-on-surface-variant size-3.5 animate-spin" />
-      )}
+      {pending && <Loader2 className="text-eten-faint size-3.5 animate-spin" />}
       <select
         value={value}
         disabled={pending}
         onChange={(e) => change(e.target.value as PodRole)}
         aria-label="Pod role"
-        className="border-outline-variant bg-surface text-on-surface focus:border-primary rounded-lg border px-2 py-1 text-xs outline-none disabled:opacity-60"
+        className="border-eten-line bg-eten-panel-hi text-eten-ink focus:border-eten-accent rounded-lg border px-2 py-1 text-xs outline-none disabled:opacity-60"
       >
         <option value="member">Member</option>
         <option value="lead">Lead</option>

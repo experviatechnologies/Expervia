@@ -90,127 +90,186 @@ export default async function PodDetailPage({
   const isMember = memberIds.includes(member.id);
   const isPrimary = profile?.primary_specialization_pod_id === pod.id;
   const isOps = member.role === "operations";
+  const myRole = roster.find((r) => r.memberId === member.id)?.role;
+  const leads = roster.filter((r) => r.role !== "member");
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
-      <Link
-        href="/pods"
-        className="text-on-surface-variant hover:text-on-surface mb-6 inline-flex items-center gap-1.5 text-sm"
-      >
-        <ArrowLeft className="size-4" />
-        All pods
-      </Link>
+    <div className="mx-auto flex w-full max-w-5xl gap-8 px-4 py-6 lg:px-8">
+      <main className="min-w-0 flex-1">
+        <Link
+          href="/pods"
+          className="text-eten-faint hover:text-eten-ink mb-4 inline-flex items-center gap-1.5 text-sm"
+        >
+          <ArrowLeft className="size-4" />
+          All pods
+        </Link>
 
-      {/* Header */}
-      <header className="glass-card rounded-2xl p-6 sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="font-display text-headline-md text-on-surface font-bold">
-              {pod.name}
-            </h1>
-            <div className="text-on-surface-variant mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              <span className="inline-flex items-center gap-1.5">
-                <Users className="size-4" />
-                {roster.length} {roster.length === 1 ? "member" : "members"}
-              </span>
-              {isPrimary && (
-                <span className="text-primary inline-flex items-center gap-1.5 font-medium">
-                  <Star className="size-4" />
-                  Your primary pod
+        {/* Header */}
+        <header className="bg-eten-panel border-eten-line rounded-2xl border p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-eten-accent mb-1 font-mono text-sm">
+                #{pod.slug}
+              </div>
+              <h1 className="font-display text-eten-ink text-2xl font-bold">
+                {pod.name}
+              </h1>
+              <div className="text-eten-faint mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="size-4" />
+                  {roster.length} {roster.length === 1 ? "member" : "members"}
                 </span>
-              )}
+                {isPrimary && (
+                  <span className="text-eten-accent inline-flex items-center gap-1.5 font-medium">
+                    <Star className="size-4" />
+                    Your primary pod
+                  </span>
+                )}
+              </div>
             </div>
+
+            {isPrimary ? (
+              <span className="bg-eten-accent-soft inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[#cddcfb]">
+                <Star className="size-3.5" />
+                Primary
+              </span>
+            ) : (
+              <PodMembershipButton podId={pod.id} isMember={isMember} />
+            )}
           </div>
 
-          {isPrimary ? (
-            <span className="bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium">
-              <Star className="size-3.5" />
-              Primary
-            </span>
-          ) : (
-            <PodMembershipButton podId={pod.id} isMember={isMember} />
+          {pod.description && (
+            <p className="text-eten-ink-muted mt-4 text-sm">
+              {pod.description}
+            </p>
           )}
+        </header>
+
+        {/* Discussion placeholder — per-pod feed is a future enhancement. */}
+        <div className="border-eten-line text-eten-faint mt-5 flex items-center gap-3 rounded-2xl border border-dashed p-5 text-sm">
+          <MessageSquare className="size-5 shrink-0" />
+          <span>
+            This pod&apos;s discussion arrives soon. For now, share to it from
+            the feed composer.
+          </span>
         </div>
 
-        {pod.description && (
-          <p className="text-on-surface-variant mt-4 text-sm">
-            {pod.description}
-          </p>
-        )}
-      </header>
-
-      {/* Pod feed placeholder — the composer + feed land in M2.4 / M2.5. */}
-      <div className="border-outline-variant text-on-surface-variant mt-6 flex items-center gap-3 rounded-2xl border border-dashed p-5 text-sm">
-        <MessageSquare className="size-5 shrink-0" />
-        <span>
-          This pod&apos;s feed arrives with posts &amp; discussion soon.
-        </span>
-      </div>
-
-      {/* Roster */}
-      <section className="mt-6">
-        <h2 className="font-display text-body-lg text-on-surface mb-4 font-bold">
-          Members
-        </h2>
-        {roster.length === 0 ? (
-          <div className="glass-card text-on-surface-variant rounded-2xl p-8 text-center text-sm">
-            No members yet — be the first to join.
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {roster.map((r) => (
-              <li
-                key={r.memberId}
-                className="glass-card flex items-center gap-4 rounded-xl p-4"
-              >
-                {(() => {
-                  const inner = (
-                    <>
-                      <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full font-bold">
-                        {(r.name ?? "?").trim().charAt(0).toUpperCase()}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="text-on-surface flex items-center gap-2 font-medium">
-                          {r.name}
-                          {r.role !== "member" && (
-                            <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
-                              {ROLE_LABEL[r.role]}
+        {/* Roster */}
+        <section className="mt-6">
+          <h2 className="text-eten-faint mb-3 font-mono text-xs tracking-wider uppercase">
+            Members · {roster.length}
+          </h2>
+          {roster.length === 0 ? (
+            <div className="bg-eten-panel border-eten-line text-eten-faint rounded-2xl border p-8 text-center text-sm">
+              No members yet — be the first to join.
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {roster.map((r) => (
+                <li
+                  key={r.memberId}
+                  className="bg-eten-panel border-eten-line flex items-center gap-4 rounded-xl border p-4"
+                >
+                  {(() => {
+                    const inner = (
+                      <>
+                        <span className="from-eten-accent grid size-11 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br to-[#3257b8] font-bold text-white">
+                          {(r.name ?? "?").trim().charAt(0).toUpperCase()}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="text-eten-ink flex items-center gap-2 font-semibold">
+                            {r.name}
+                            {r.role !== "member" && (
+                              <span className="bg-eten-verified-soft text-eten-verified rounded px-1.5 py-0.5 font-mono text-[10px] tracking-wide uppercase">
+                                {ROLE_LABEL[r.role]}
+                              </span>
+                            )}
+                          </span>
+                          {(r.headline || r.jobTitle) && (
+                            <span className="text-eten-faint block truncate text-sm">
+                              {r.headline ?? r.jobTitle}
                             </span>
                           )}
                         </span>
-                        {(r.headline || r.jobTitle) && (
-                          <span className="text-on-surface-variant block truncate text-sm">
-                            {r.headline ?? r.jobTitle}
-                          </span>
-                        )}
-                      </span>
-                    </>
-                  );
-                  return r.visible ? (
-                    <Link
-                      href={`/members/${r.memberId}`}
-                      className="flex min-w-0 flex-1 items-center gap-4 transition-opacity hover:opacity-80"
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <div className="flex min-w-0 flex-1 items-center gap-4">
-                      {inner}
-                    </div>
-                  );
-                })()}
-                {isOps && (
-                  <PodRoleControl
-                    podId={pod.id}
-                    memberId={r.memberId}
-                    role={r.role}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                      </>
+                    );
+                    return r.visible ? (
+                      <Link
+                        href={`/members/${r.memberId}`}
+                        className="flex min-w-0 flex-1 items-center gap-4 transition-opacity hover:opacity-80"
+                      >
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div className="flex min-w-0 flex-1 items-center gap-4">
+                        {inner}
+                      </div>
+                    );
+                  })()}
+                  {isOps && (
+                    <PodRoleControl
+                      podId={pod.id}
+                      memberId={r.memberId}
+                      role={r.role}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
+
+      {/* About panel */}
+      <aside className="hidden w-72 shrink-0 xl:block">
+        <div className="bg-eten-panel border-eten-line sticky top-6 rounded-2xl border p-4">
+          <h3 className="text-eten-ink font-display mb-3 text-sm font-semibold">
+            About this pod
+          </h3>
+          <dl className="flex flex-col gap-3 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-eten-faint">Members</dt>
+              <dd className="text-eten-ink font-semibold tabular-nums">
+                {roster.length}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-eten-faint">Your status</dt>
+              <dd className="text-eten-ink font-medium">
+                {isPrimary
+                  ? "Primary pod"
+                  : myRole
+                    ? myRole === "member"
+                      ? "Member"
+                      : ROLE_LABEL[myRole]
+                    : "Not joined"}
+              </dd>
+            </div>
+          </dl>
+          {leads.length > 0 && (
+            <div className="border-eten-line-soft mt-4 border-t pt-4">
+              <p className="text-eten-faint mb-2 font-mono text-xs tracking-wider uppercase">
+                Leads
+              </p>
+              <div className="flex flex-col gap-2">
+                {leads.map((l) => (
+                  <div key={l.memberId} className="flex items-center gap-2.5">
+                    <span className="from-eten-accent grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br to-[#3257b8] text-xs font-bold text-white">
+                      {(l.name ?? "?").trim().charAt(0).toUpperCase()}
+                    </span>
+                    <span className="text-eten-ink min-w-0 flex-1 truncate text-[13px] font-medium">
+                      {l.name}
+                    </span>
+                    <span className="text-eten-verified font-mono text-[10px] tracking-wide uppercase">
+                      {ROLE_LABEL[l.role]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
     </div>
   );
 }

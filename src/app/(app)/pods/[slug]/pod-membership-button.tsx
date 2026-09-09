@@ -34,7 +34,7 @@ export function PodMembershipButton({
     <div className="flex flex-col items-end gap-1.5">
       <Button
         type="button"
-        variant={isMember ? "brandOutline" : "brand"}
+        variant={isMember ? "etenOutline" : "eten"}
         size="pill-sm"
         disabled={pending}
         onClick={toggle}

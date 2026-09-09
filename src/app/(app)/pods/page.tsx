@@ -53,15 +53,12 @@ export default async function PodsPage() {
   }));
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-4xl px-6 py-12">
-      <header className="mb-8">
-        <p className="text-label-sm text-primary font-mono tracking-widest uppercase">
-          ETEN
-        </p>
-        <h1 className="font-display text-headline-md text-on-surface mt-1 font-bold">
+    <div className="mx-auto min-h-screen w-full max-w-4xl px-4 py-6 lg:px-8">
+      <header className="mb-6">
+        <h1 className="font-display text-eten-ink text-xl font-semibold">
           Explore Pods
         </h1>
-        <p className="text-on-surface-variant mt-2 text-sm">
+        <p className="text-eten-faint mt-1.5 text-sm">
           The specialist communities where members do their best work. Join the
           ones that match your expertise — your primary pod is set from your
           profile.

@@ -47,17 +47,17 @@ export function PodsDirectory({ pods }: { pods: PodCard[] }) {
           return (
             <div
               key={pod.id}
-              className="glass-card flex flex-col gap-3 rounded-2xl p-5"
+              className="bg-eten-panel border-eten-line flex flex-col gap-3 rounded-2xl border p-5"
             >
               <div className="flex items-start justify-between gap-3">
                 <Link
                   href={`/pods/${pod.slug}`}
-                  className="text-on-surface font-display text-body-lg font-bold hover:underline"
+                  className="text-eten-ink font-display text-body-lg font-bold hover:underline"
                 >
                   {pod.name}
                 </Link>
                 {pod.isPrimary && (
-                  <span className="bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
+                  <span className="bg-eten-accent-soft inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#cddcfb]">
                     <Star className="size-3.5" />
                     Primary
                   </span>
@@ -65,27 +65,27 @@ export function PodsDirectory({ pods }: { pods: PodCard[] }) {
               </div>
 
               {pod.description && (
-                <p className="text-on-surface-variant flex-1 text-sm">
+                <p className="text-eten-ink-muted flex-1 text-sm">
                   {pod.description}
                 </p>
               )}
 
               <div className="mt-1 flex items-center justify-between gap-3">
-                <span className="text-on-surface-variant inline-flex items-center gap-1.5 text-xs">
+                <span className="text-eten-faint inline-flex items-center gap-1.5 text-xs">
                   <Users className="size-3.5" />
                   {pod.memberCount}{" "}
                   {pod.memberCount === 1 ? "member" : "members"}
                 </span>
 
                 {pod.isPrimary ? (
-                  <span className="text-on-surface-variant inline-flex items-center gap-1.5 text-xs font-medium">
+                  <span className="text-eten-faint inline-flex items-center gap-1.5 text-xs font-medium">
                     <Check className="size-3.5" />
                     Member
                   </span>
                 ) : (
                   <Button
                     type="button"
-                    variant={pod.isMember ? "brandOutline" : "brand"}
+                    variant={pod.isMember ? "etenOutline" : "eten"}
                     size="pill-sm"
                     disabled={pending}
                     onClick={() => toggle(pod)}
