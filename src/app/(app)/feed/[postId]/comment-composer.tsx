@@ -51,7 +51,7 @@ export function CommentComposer({
         rows={parentCommentId ? 2 : 3}
         autoFocus={autoFocus}
         placeholder={placeholder}
-        className="border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary w-full resize-y rounded-lg border p-3 text-sm outline-none"
+        className="border-eten-line bg-eten-panel-hi text-eten-ink placeholder:text-eten-faint focus:border-eten-accent w-full resize-y rounded-lg border p-3 text-sm outline-none"
       />
       {error && <p className="text-destructive text-xs">{error}</p>}
       <div className="flex items-center justify-end gap-2">
@@ -68,7 +68,7 @@ export function CommentComposer({
         )}
         <Button
           type="submit"
-          variant="brand"
+          variant="eten"
           size="pill-sm"
           disabled={pending || body.trim().length === 0}
         >

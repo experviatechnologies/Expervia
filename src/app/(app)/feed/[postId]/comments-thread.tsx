@@ -33,7 +33,7 @@ export function CommentsThread({
 }) {
   if (comments.length === 0) {
     return (
-      <p className="text-on-surface-variant py-4 text-sm">
+      <p className="text-eten-faint py-4 text-sm">
         No comments yet. Start the conversation.
       </p>
     );
@@ -51,7 +51,7 @@ export function CommentsThread({
             isOps={isOps}
           />
           {c.replies.length > 0 && (
-            <ul className="border-outline-variant/50 mt-4 flex flex-col gap-4 border-l pl-4">
+            <ul className="border-eten-line-soft mt-4 flex flex-col gap-4 border-l pl-4">
               {c.replies.map((r) => (
                 <li key={r.id}>
                   <CommentItem
@@ -92,7 +92,7 @@ function CommentItem({
     <div className="flex gap-3">
       <Link
         href={`/members/${comment.authorId}`}
-        className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+        className="from-eten-accent grid size-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br to-[#3257b8] text-sm font-bold text-white"
       >
         {comment.authorName.trim().charAt(0).toUpperCase()}
       </Link>
@@ -100,15 +100,15 @@ function CommentItem({
         <div className="flex flex-wrap items-center gap-x-2 text-sm">
           <Link
             href={`/members/${comment.authorId}`}
-            className="text-on-surface font-medium hover:underline"
+            className="text-eten-ink font-semibold hover:underline"
           >
             {comment.authorName}
           </Link>
-          <span className="text-on-surface-variant text-xs">
+          <span className="text-eten-faint text-xs">
             {timeAgo(comment.createdAt)}
           </span>
         </div>
-        <p className="text-on-surface mt-1 text-sm break-words whitespace-pre-line">
+        <p className="text-eten-ink mt-1 text-sm break-words whitespace-pre-line">
           {comment.body}
         </p>
 
@@ -127,7 +127,7 @@ function CommentItem({
             <button
               type="button"
               onClick={() => setReplying(true)}
-              className="text-on-surface-variant hover:text-on-surface text-xs font-medium"
+              className="text-eten-faint hover:text-eten-ink text-xs font-medium"
             >
               Reply
             </button>
@@ -204,7 +204,7 @@ function CommentActions({
   }
 
   if (done) {
-    return <span className="text-on-surface-variant text-xs">{done}</span>;
+    return <span className="text-eten-faint text-xs">{done}</span>;
   }
 
   return (
@@ -213,7 +213,7 @@ function CommentActions({
         <button
           type="button"
           onClick={() => setReporting((v) => !v)}
-          className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1 text-xs"
+          className="text-eten-faint hover:text-eten-ink inline-flex items-center gap-1 text-xs"
         >
           <Flag className="size-3" />
           Report
@@ -224,7 +224,7 @@ function CommentActions({
           type="button"
           onClick={remove}
           disabled={pending}
-          className="text-on-surface-variant hover:text-destructive inline-flex items-center gap-1 text-xs disabled:opacity-60"
+          className="text-eten-faint hover:text-destructive inline-flex items-center gap-1 text-xs disabled:opacity-60"
         >
           {pending ? (
             <Loader2 className="size-3 animate-spin" />
@@ -242,13 +242,13 @@ function CommentActions({
             rows={2}
             autoFocus
             placeholder="What's wrong with this comment?"
-            className="border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary w-full max-w-sm resize-y rounded-lg border p-2 text-xs outline-none"
+            className="border-eten-line bg-eten-panel-hi text-eten-ink placeholder:text-eten-faint focus:border-eten-accent w-full max-w-sm resize-y rounded-lg border p-2 text-xs outline-none"
           />
           <span className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setReporting(false)}
-              className="text-on-surface-variant hover:text-on-surface text-xs"
+              className="text-eten-faint hover:text-eten-ink text-xs"
             >
               Cancel
             </button>
@@ -256,7 +256,7 @@ function CommentActions({
               type="button"
               onClick={submitReport}
               disabled={pending || reason.trim().length === 0}
-              className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold disabled:opacity-60"
+              className="bg-eten-accent inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
             >
               Submit report
             </button>

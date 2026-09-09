@@ -160,39 +160,39 @@ export default async function PostDetailPage({
   const poll = (await pollsByPost(supabase, [post.id], member.id)).get(post.id);
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
+    <div className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6">
       <Link
         href="/feed"
-        className="text-on-surface-variant hover:text-on-surface mb-6 inline-flex items-center gap-1.5 text-sm"
+        className="text-eten-faint hover:text-eten-ink mb-5 inline-flex items-center gap-1.5 text-sm"
       >
         <ArrowLeft className="size-4" />
         Back to feed
       </Link>
 
       {/* Post */}
-      <article className="glass-card rounded-2xl p-6">
+      <article className="bg-eten-panel border-eten-line rounded-2xl border p-5">
         <div className="flex items-center gap-3">
           <Link
             href={`/members/${post.author_id}`}
-            className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full font-bold"
+            className="from-eten-accent grid size-10 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br to-[#3257b8] font-bold text-white"
           >
             {authorName.trim().charAt(0).toUpperCase()}
           </Link>
           <div className="min-w-0">
             <Link
               href={`/members/${post.author_id}`}
-              className="text-on-surface font-medium hover:underline"
+              className="text-eten-ink font-semibold hover:underline"
             >
               {authorName}
             </Link>
-            <div className="text-on-surface-variant flex flex-wrap items-center gap-x-2 text-xs">
+            <div className="text-eten-faint flex flex-wrap items-center gap-x-2 text-xs">
               <span>{timeAgo(post.created_at)}</span>
               {pods.length > 0 && <span aria-hidden>·</span>}
               {pods.map((pod) => (
                 <Link
                   key={pod.slug}
                   href={`/pods/${pod.slug}`}
-                  className="hover:text-on-surface"
+                  className="text-eten-accent font-mono hover:underline"
                 >
                   {pod.name}
                 </Link>
@@ -200,7 +200,7 @@ export default async function PostDetailPage({
             </div>
           </div>
         </div>
-        <p className="text-on-surface mt-4 text-sm break-words whitespace-pre-line">
+        <p className="text-eten-ink mt-4 text-sm break-words whitespace-pre-line">
           {post.body}
         </p>
 
@@ -210,7 +210,7 @@ export default async function PostDetailPage({
             key={img.url}
             src={img.url}
             alt={img.filename ?? "Post image"}
-            className="border-outline-variant mt-4 max-h-[32rem] w-full rounded-xl border object-contain"
+            className="border-eten-line mt-4 max-h-[32rem] w-full rounded-xl border object-contain"
           />
         ))}
 
@@ -222,7 +222,7 @@ export default async function PostDetailPage({
               <Link
                 key={t.id}
                 href={`/feed?tag=${t.id}`}
-                className="border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary/40 rounded-full border px-2.5 py-0.5 text-xs transition-colors"
+                className="border-eten-line text-eten-ink-muted hover:text-eten-accent hover:border-eten-accent/40 rounded-full border px-2.5 py-0.5 font-mono text-xs transition-colors"
               >
                 #{t.name}
               </Link>
@@ -249,13 +249,13 @@ export default async function PostDetailPage({
       </article>
 
       {/* New comment */}
-      <div className="glass-card mt-6 rounded-2xl p-5">
+      <div className="bg-eten-panel border-eten-line mt-6 rounded-2xl border p-5">
         <CommentComposer postId={post.id} />
       </div>
 
       {/* Comments */}
       <section className="mt-8">
-        <h2 className="font-display text-body-lg text-on-surface mb-4 font-bold">
+        <h2 className="font-display text-body-lg text-eten-ink mb-4 font-bold">
           {comments.length} {comments.length === 1 ? "comment" : "comments"}
         </h2>
         <CommentsThread
