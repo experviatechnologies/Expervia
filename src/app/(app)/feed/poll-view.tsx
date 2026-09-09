@@ -34,30 +34,30 @@ export function PollView({ postId, poll }: { postId: string; poll: PollData }) {
             aria-pressed={mine}
             className={
               mine
-                ? "border-primary/50 relative w-full overflow-hidden rounded-lg border text-left disabled:opacity-70"
-                : "border-outline-variant hover:border-outline relative w-full overflow-hidden rounded-lg border text-left transition-colors disabled:opacity-70"
+                ? "border-eten-accent/50 relative w-full overflow-hidden rounded-lg border text-left disabled:opacity-70"
+                : "border-eten-line hover:border-eten-faint relative w-full overflow-hidden rounded-lg border text-left transition-colors disabled:opacity-70"
             }
           >
             <span
               className={
                 mine
-                  ? "bg-primary/20 absolute inset-y-0 left-0"
-                  : "bg-surface-container absolute inset-y-0 left-0"
+                  ? "bg-eten-accent-soft absolute inset-y-0 left-0"
+                  : "bg-eten-hover absolute inset-y-0 left-0"
               }
               style={{ width: `${pct}%` }}
               aria-hidden
             />
             <span className="relative flex items-center justify-between gap-2 px-3 py-2 text-sm">
-              <span className="text-on-surface flex items-center gap-1.5">
-                {mine && <Check className="text-primary size-3.5" />}
+              <span className="text-eten-ink flex items-center gap-1.5">
+                {mine && <Check className="text-eten-accent size-3.5" />}
                 {o.label}
               </span>
-              <span className="text-on-surface-variant text-xs">{pct}%</span>
+              <span className="text-eten-ink-muted text-xs">{pct}%</span>
             </span>
           </button>
         );
       })}
-      <p className="text-on-surface-variant/70 text-xs">
+      <p className="text-eten-faint text-xs">
         {totalVotes} {totalVotes === 1 ? "vote" : "votes"} · tap to
         {myOptionId ? " change or retract" : " vote"}
       </p>

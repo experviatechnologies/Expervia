@@ -95,18 +95,18 @@ export function PostComposer({
         onChange={(e) => setBody(e.target.value)}
         rows={3}
         placeholder="Share an update, a question, or something you're working on…"
-        className="text-on-surface placeholder:text-on-surface-variant/60 w-full resize-y bg-transparent text-sm outline-none"
+        className="text-eten-ink placeholder:text-eten-faint w-full resize-y bg-transparent text-sm outline-none"
       />
 
       {image && (
-        <div className="border-outline-variant text-on-surface-variant mt-2 flex items-center gap-2 rounded-lg border p-2 text-sm">
-          <ImagePlus className="text-primary size-4 shrink-0" />
+        <div className="border-eten-line text-eten-ink-muted mt-2 flex items-center gap-2 rounded-lg border p-2 text-sm">
+          <ImagePlus className="text-eten-accent size-4 shrink-0" />
           <span className="min-w-0 flex-1 truncate">{image.name}</span>
           <button
             type="button"
             onClick={clearImage}
             aria-label="Remove image"
-            className="hover:text-on-surface"
+            className="hover:text-eten-ink"
           >
             <X className="size-4" />
           </button>
@@ -115,7 +115,7 @@ export function PostComposer({
 
       {tagOptions.length > 0 && (
         <div className="mt-3">
-          <p className="text-on-surface-variant/70 mb-1.5 text-xs">
+          <p className="text-eten-faint mb-1.5 text-xs">
             Tags {tagIds.length > 0 && `(${tagIds.length}/${MAX_TAGS})`}
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -128,8 +128,8 @@ export function PostComposer({
                   onClick={() => toggleTag(tag.id)}
                   className={
                     on
-                      ? "border-primary/40 bg-primary/10 text-primary rounded-full border px-2.5 py-1 text-xs font-medium"
-                      : "border-outline-variant text-on-surface-variant hover:text-on-surface rounded-full border px-2.5 py-1 text-xs transition-colors"
+                      ? "border-eten-accent/50 bg-eten-accent-soft rounded-full border px-2.5 py-1 text-xs font-medium text-[#cddcfb]"
+                      : "border-eten-line text-eten-ink-muted hover:text-eten-ink rounded-full border px-2.5 py-1 text-xs transition-colors"
                   }
                 >
                   #{tag.name}
@@ -141,16 +141,16 @@ export function PostComposer({
       )}
 
       {pollOptions && (
-        <div className="border-outline-variant mt-3 flex flex-col gap-2 rounded-lg border p-3">
+        <div className="border-eten-line mt-3 flex flex-col gap-2 rounded-lg border p-3">
           <div className="flex items-center justify-between">
-            <p className="text-on-surface-variant text-xs font-medium">
+            <p className="text-eten-ink-muted text-xs font-medium">
               Poll options
             </p>
             <button
               type="button"
               onClick={() => setPollOptions(null)}
               aria-label="Remove poll"
-              className="text-on-surface-variant hover:text-on-surface"
+              className="text-eten-faint hover:text-eten-ink"
             >
               <X className="size-4" />
             </button>
@@ -162,14 +162,14 @@ export function PostComposer({
               onChange={(e) => setPollOption(i, e.target.value)}
               maxLength={200}
               placeholder={`Option ${i + 1}`}
-              className="border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary w-full rounded-lg border p-2 text-sm outline-none"
+              className="border-eten-line bg-eten-panel-hi text-eten-ink placeholder:text-eten-faint focus:border-eten-accent w-full rounded-lg border p-2 text-sm outline-none"
             />
           ))}
           {pollOptions.length < 6 && (
             <button
               type="button"
               onClick={() => setPollOptions((prev) => [...(prev ?? []), ""])}
-              className="text-primary inline-flex items-center gap-1 self-start text-xs font-medium"
+              className="text-eten-accent inline-flex items-center gap-1 self-start text-xs font-medium"
             >
               <Plus className="size-3.5" />
               Add option
@@ -180,14 +180,14 @@ export function PostComposer({
 
       {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
 
-      <div className="border-outline-variant mt-3 flex flex-col gap-3 border-t pt-3">
+      <div className="border-eten-line mt-3 flex flex-col gap-3 border-t pt-3">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <label className="text-on-surface-variant flex shrink-0 items-center gap-2 text-sm">
+          <label className="text-eten-ink-muted flex shrink-0 items-center gap-2 text-sm">
             <span className="whitespace-nowrap">Post to</span>
             <select
               value={targetId}
               onChange={(e) => setTargetId(e.target.value)}
-              className="border-outline-variant bg-surface text-on-surface focus:border-primary min-w-0 rounded-lg border px-3 py-1.5 text-sm outline-none"
+              className="border-eten-line bg-eten-panel-hi text-eten-ink focus:border-eten-accent min-w-0 rounded-lg border px-3 py-1.5 text-sm outline-none"
             >
               {targets.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -200,7 +200,7 @@ export function PostComposer({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-sm"
+            className="text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 text-sm"
             title="Attach an image"
           >
             <ImagePlus className="size-4" />
@@ -219,8 +219,8 @@ export function PostComposer({
             onClick={() => setPollOptions((prev) => (prev ? null : ["", ""]))}
             className={
               pollOptions
-                ? "text-primary inline-flex items-center gap-1.5 text-sm"
-                : "text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-sm"
+                ? "text-eten-accent inline-flex items-center gap-1.5 text-sm"
+                : "text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 text-sm"
             }
             title="Add a poll"
           >
@@ -232,16 +232,14 @@ export function PostComposer({
         <div className="flex items-center justify-between gap-3">
           <span
             className={
-              over
-                ? "text-destructive text-xs"
-                : "text-on-surface-variant/60 text-xs"
+              over ? "text-destructive text-xs" : "text-eten-faint text-xs"
             }
           >
             {body.length}/{MAX_BODY}
           </span>
           <Button
             type="submit"
-            variant="brand"
+            variant="eten"
             size="pill-sm"
             disabled={pending || !canPost}
           >

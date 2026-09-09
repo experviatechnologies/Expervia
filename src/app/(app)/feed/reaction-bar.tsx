@@ -59,8 +59,8 @@ export function ReactionBar({
               onClick={() => react(type)}
               className={
                 active
-                  ? "border-primary/40 bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-60"
-                  : "border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-outline inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-60"
+                  ? "border-eten-accent/50 bg-eten-accent-soft inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-[#cddcfb] transition-colors disabled:opacity-60"
+                  : "border-eten-line text-eten-ink-muted hover:text-eten-ink hover:border-eten-faint inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-60"
               }
             >
               <span aria-hidden>{emoji}</span>

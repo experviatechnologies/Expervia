@@ -59,7 +59,7 @@ export function PostActions({
   }
 
   if (message) {
-    return <span className="text-on-surface-variant text-xs">{message}</span>;
+    return <span className="text-eten-faint text-xs">{message}</span>;
   }
 
   return (
@@ -69,7 +69,7 @@ export function PostActions({
           <button
             type="button"
             onClick={() => setReporting((v) => !v)}
-            className="text-on-surface-variant hover:text-on-surface inline-flex items-center gap-1.5 text-xs"
+            className="text-eten-faint hover:text-eten-ink inline-flex items-center gap-1.5 text-xs"
           >
             <Flag className="size-3.5" />
             Report
@@ -80,7 +80,7 @@ export function PostActions({
             type="button"
             onClick={remove}
             disabled={pending}
-            className="text-on-surface-variant hover:text-destructive inline-flex items-center gap-1.5 text-xs disabled:opacity-60"
+            className="text-eten-faint hover:text-destructive inline-flex items-center gap-1.5 text-xs disabled:opacity-60"
           >
             {pending ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -100,13 +100,13 @@ export function PostActions({
             rows={2}
             autoFocus
             placeholder="What's wrong with this post?"
-            className="border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary w-full resize-y rounded-lg border p-2 text-xs outline-none"
+            className="border-eten-line bg-eten-panel-hi text-eten-ink placeholder:text-eten-faint focus:border-eten-accent w-full resize-y rounded-lg border p-2 text-xs outline-none"
           />
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setReporting(false)}
-              className="text-on-surface-variant hover:text-on-surface text-xs"
+              className="text-eten-faint hover:text-eten-ink text-xs"
             >
               Cancel
             </button>
@@ -114,7 +114,7 @@ export function PostActions({
               type="button"
               onClick={submitReport}
               disabled={pending || reason.trim().length === 0}
-              className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold disabled:opacity-60"
+              className="bg-eten-accent inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
             >
               {pending && <Loader2 className="size-3 animate-spin" />}
               Submit report

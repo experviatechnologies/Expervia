@@ -23,6 +23,10 @@ const buttonVariants = cva(
           "bg-brand text-brand-foreground rounded-full font-semibold hover:brightness-110 active:scale-95",
         brandOutline:
           "border-outline-variant text-on-surface rounded-full font-semibold hover:bg-white/5",
+        // ETEN member-app workspace buttons (blue accent).
+        eten: "bg-eten-accent rounded-lg font-semibold text-white hover:bg-eten-accent-press active:scale-95",
+        etenOutline:
+          "border-eten-line text-eten-ink-muted rounded-lg font-semibold hover:border-eten-faint hover:text-eten-ink",
       },
       size: {
         default:
