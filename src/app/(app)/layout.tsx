@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { AppNav } from "./app-nav";
+import { AppNav, type NavPod } from "./app-nav";
 
 /**
  * Shell for the ETEN member app: persistent navigation (Feed · Explore Pods ·
@@ -48,6 +48,25 @@ export default async function AppLayout({
     badges["/notifications"] = unreadNotifications;
   }
 
+  // The member's pods, shown as channels in the rail.
+  const { data: podRows } = await supabase
+    .from("pod_memberships")
+    .select("role_in_pod, pods(name, slug, is_main)")
+    .eq("member_id", member.id);
+
+  const pods: NavPod[] = (podRows ?? [])
+    .map((row) => {
+      const r = row as unknown as {
+        role_in_pod: NavPod["role"];
+        pods: { name: string; slug: string; is_main: boolean } | null;
+      };
+      return r.pods && !r.pods.is_main
+        ? { name: r.pods.name, slug: r.pods.slug, role: r.role_in_pod }
+        : null;
+    })
+    .filter((p): p is NavPod => p !== null)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div className="min-h-screen">
       <AppNav
@@ -55,9 +74,12 @@ export default async function AppLayout({
         email={member.email}
         isOps={member.role === "operations"}
         badges={badges}
+        pods={pods}
       />
-      <div className="md:pl-60">
-        <div className="pb-24 md:pb-0">{children}</div>
+      <div className="md:pl-64">
+        <main className="bg-eten-canvas min-h-screen pb-24 md:pb-0">
+          {children}
+        </main>
       </div>
     </div>
   );

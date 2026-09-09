@@ -81,6 +81,27 @@
   --color-secondary-container: #56378d;
   --color-on-secondary-container: #c7aaff;
 
+  /* ---------------------------------------------------------------- */
+  /* ETEN member-app "workspace" palette (Slack/Circle direction).    */
+  /* Layered slate surfaces + a blue accent + a verified-green.       */
+  /* The accent is isolated here so it can be re-pointed in one place. */
+  /* ---------------------------------------------------------------- */
+  --color-eten-rail: #0a0f19; /* deepest — sidebar / drawer */
+  --color-eten-canvas: #0f1622; /* content ground */
+  --color-eten-panel: #161f2e; /* cards */
+  --color-eten-panel-hi: #1c2839; /* inputs / raised */
+  --color-eten-hover: #1a2434;
+  --color-eten-line: #253145;
+  --color-eten-line-soft: #1c2636;
+  --color-eten-ink: #eaf0f8;
+  --color-eten-ink-muted: #aebccf;
+  --color-eten-faint: #778699;
+  --color-eten-accent: #4f86ec;
+  --color-eten-accent-press: #6e9df0;
+  --color-eten-accent-soft: #16233d;
+  --color-eten-verified: #3ec98a;
+  --color-eten-verified-soft: #10241c;
+
   /* Layout spacing tokens. */
   --spacing-section: 120px;
   --spacing-gutter: 32px;
