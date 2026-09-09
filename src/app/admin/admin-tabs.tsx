@@ -7,6 +7,7 @@ import {
   BadgeCheck,
   ShieldAlert,
   ScrollText,
+  LayoutDashboard,
 } from "lucide-react";
 
 // Top-level admin navigation. The submission streams (community applications
@@ -14,6 +15,12 @@ import {
 // Members administers ETEN accounts; the skills taxonomy is the platform's
 // shared vocabulary.
 const TABS = [
+  {
+    key: "overview",
+    label: "Overview",
+    href: "/admin/overview",
+    Icon: LayoutDashboard,
+  },
   {
     key: "applications",
     label: "Community Applications",
@@ -63,6 +70,7 @@ export function AdminTabs({
   active,
 }: {
   active:
+    | "overview"
     | "applications"
     | "events"
     | "taxonomy"

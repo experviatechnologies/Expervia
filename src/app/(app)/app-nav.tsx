@@ -96,7 +96,7 @@ export function AppNav({
 
           {isOps && (
             <Link
-              href="/admin/applications"
+              href="/admin/overview"
               className="text-on-surface-variant hover:text-on-surface mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
             >
               <ShieldCheck className="size-5 shrink-0" />

@@ -86,7 +86,7 @@ export async function proxy(request: NextRequest) {
     const isOps = member?.role === "operations";
 
     if (!isOps) return redirectTo("/dashboard");
-    if (isAdminLogin) return redirectTo("/admin/applications");
+    if (isAdminLogin) return redirectTo("/admin/overview");
     return response;
   }
 
