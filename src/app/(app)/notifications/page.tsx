@@ -97,19 +97,16 @@ export default async function NotificationsPage() {
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
-      <header className="mb-8">
-        <p className="text-label-sm text-primary font-mono tracking-widest uppercase">
-          ETEN
-        </p>
-        <h1 className="font-display text-headline-md text-on-surface mt-1 font-bold">
+    <div className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6">
+      <header className="mb-6 hidden md:block">
+        <h1 className="font-display text-eten-ink text-xl font-semibold">
           Notifications
         </h1>
       </header>
 
       {notifications.length === 0 ? (
-        <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
-          <Bell className="text-on-surface-variant/40 size-9" />
+        <div className="bg-eten-panel border-eten-line text-eten-faint flex flex-col items-center gap-3 rounded-2xl border p-12 text-center">
+          <Bell className="text-eten-faint/50 size-9" />
           <p className="text-sm">
             You&apos;re all caught up. Activity on your posts and messages shows
             up here.
@@ -132,23 +129,21 @@ export default async function NotificationsPage() {
                   href={href}
                   className={
                     n.is_read
-                      ? "glass-card flex items-center gap-3 rounded-xl p-4 transition-colors hover:bg-white/5"
-                      : "glass-card border-primary/30 bg-primary/5 flex items-center gap-3 rounded-xl border p-4 transition-colors hover:bg-white/5"
+                      ? "bg-eten-panel border-eten-line hover:bg-eten-hover flex items-center gap-3 rounded-xl border p-4 transition-colors"
+                      : "border-eten-accent/40 bg-eten-accent-soft hover:bg-eten-hover flex items-center gap-3 rounded-xl border p-4 transition-colors"
                   }
                 >
-                  <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
+                  <span className="bg-eten-accent-soft text-eten-accent grid size-9 shrink-0 place-items-center rounded-lg">
                     <Icon className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="text-on-surface block text-sm">
-                      {text}
-                    </span>
-                    <span className="text-on-surface-variant text-xs">
+                    <span className="text-eten-ink block text-sm">{text}</span>
+                    <span className="text-eten-faint text-xs">
                       {timeAgo(n.created_at)}
                     </span>
                   </span>
                   {!n.is_read && (
-                    <span className="bg-primary size-2 shrink-0 rounded-full" />
+                    <span className="bg-eten-accent size-2 shrink-0 rounded-full" />
                   )}
                 </Link>
               </li>

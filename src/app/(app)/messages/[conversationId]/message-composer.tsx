@@ -38,11 +38,11 @@ export function MessageComposer({
           }}
           rows={1}
           placeholder="Write a message…"
-          className="border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary max-h-40 min-h-[2.75rem] w-full resize-y rounded-xl border p-3 text-sm outline-none"
+          className="border-eten-line bg-eten-panel-hi text-eten-ink placeholder:text-eten-faint focus:border-eten-accent max-h-40 min-h-[2.75rem] w-full resize-y rounded-xl border p-3 text-sm outline-none"
         />
         <Button
           type="submit"
-          variant="brand"
+          variant="eten"
           size="icon-sm"
           className="mb-0.5 shrink-0"
           disabled={pending || body.trim().length === 0}

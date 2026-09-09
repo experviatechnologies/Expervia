@@ -110,18 +110,18 @@ export default async function MessagesPage() {
           <li key={c.id}>
             <Link
               href={`/messages/${c.id}`}
-              className="glass-card flex items-center gap-3 rounded-xl p-4 transition-colors hover:bg-white/5"
+              className="bg-eten-panel border-eten-line hover:bg-eten-hover flex items-center gap-3 rounded-xl border p-4 transition-colors"
             >
-              <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full font-bold">
+              <span className="from-eten-accent grid size-11 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br to-[#3257b8] font-bold text-white">
                 {c.otherName.trim().charAt(0).toUpperCase()}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
-                  <span className="text-on-surface truncate font-medium">
+                  <span className="text-eten-ink truncate font-semibold">
                     {c.otherName}
                   </span>
                   {c.last && (
-                    <span className="text-on-surface-variant shrink-0 text-xs">
+                    <span className="text-eten-faint shrink-0 text-xs">
                       {timeAgo(c.last.created_at)}
                     </span>
                   )}
@@ -130,8 +130,8 @@ export default async function MessagesPage() {
                   <span
                     className={
                       c.unread
-                        ? "text-on-surface truncate text-sm font-medium"
-                        : "text-on-surface-variant truncate text-sm"
+                        ? "text-eten-ink truncate text-sm font-medium"
+                        : "text-eten-faint truncate text-sm"
                     }
                   >
                     {c.last
@@ -139,7 +139,7 @@ export default async function MessagesPage() {
                       : "No messages yet"}
                   </span>
                   {c.unread && (
-                    <span className="bg-primary size-2 shrink-0 rounded-full" />
+                    <span className="bg-eten-accent size-2 shrink-0 rounded-full" />
                   )}
                 </span>
               </span>
@@ -153,19 +153,16 @@ export default async function MessagesPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
-      <header className="mb-8">
-        <p className="text-label-sm text-primary font-mono tracking-widest uppercase">
-          ETEN
-        </p>
-        <h1 className="font-display text-headline-md text-on-surface mt-1 font-bold">
+    <div className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6">
+      <header className="mb-6 hidden md:block">
+        <h1 className="font-display text-eten-ink text-xl font-semibold">
           Messages
         </h1>
       </header>
 
       {children ?? (
-        <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
-          <MessagesSquare className="text-on-surface-variant/40 size-9" />
+        <div className="bg-eten-panel border-eten-line text-eten-faint flex flex-col items-center gap-3 rounded-2xl border p-12 text-center">
+          <MessagesSquare className="text-eten-faint/50 size-9" />
           <p className="text-sm">
             No conversations yet. Open a member&apos;s profile and choose
             “Message” to start one.

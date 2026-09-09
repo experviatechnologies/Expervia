@@ -92,7 +92,7 @@ export function MessageList({
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-4">
       {items.length === 0 ? (
-        <p className="text-on-surface-variant py-8 text-center text-sm">
+        <p className="text-eten-faint py-8 text-center text-sm">
           No messages yet. Say hello.
         </p>
       ) : (
@@ -106,8 +106,8 @@ export function MessageList({
               <div
                 className={
                   mine
-                    ? "bg-primary text-primary-foreground max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2"
-                    : "bg-surface-container text-on-surface max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-2"
+                    ? "bg-eten-accent max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2 text-white"
+                    : "bg-eten-panel-hi text-eten-ink max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-2"
                 }
               >
                 <p className="text-sm break-words whitespace-pre-line">
@@ -116,8 +116,8 @@ export function MessageList({
                 <p
                   className={
                     mine
-                      ? "text-primary-foreground/70 mt-1 text-right text-[10px]"
-                      : "text-on-surface-variant mt-1 text-[10px]"
+                      ? "mt-1 text-right text-[10px] text-white/70"
+                      : "text-eten-faint mt-1 text-[10px]"
                   }
                 >
                   {timeAgo(m.createdAt)}

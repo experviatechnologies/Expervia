@@ -80,11 +80,11 @@ export default async function ConversationPage({
     // only the message pane scrolls. On desktop it sits to the right of the
     // sidebar (md:left-60); on mobile it covers the tab bar (back button
     // returns to the list), the standard mobile-chat pattern.
-    <div className="bg-background fixed inset-0 z-40 flex flex-col md:left-60">
-      <header className="border-outline-variant bg-surface/80 flex shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur">
+    <div className="bg-eten-canvas fixed inset-0 z-40 flex flex-col md:left-64">
+      <header className="border-eten-line bg-eten-rail/80 flex shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur">
         <Link
           href="/messages"
-          className="text-on-surface-variant hover:text-on-surface inline-flex size-9 shrink-0 items-center justify-center rounded-full"
+          className="text-eten-faint hover:text-eten-ink inline-flex size-9 shrink-0 items-center justify-center rounded-full"
           aria-label="Back to messages"
         >
           <ArrowLeft className="size-5" />
@@ -94,17 +94,15 @@ export default async function ConversationPage({
             href={`/members/${otherId}`}
             className="flex min-w-0 items-center gap-3 hover:underline"
           >
-            <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold">
+            <span className="from-eten-accent grid size-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br to-[#3257b8] text-sm font-bold text-white">
               {title.trim().charAt(0).toUpperCase()}
             </span>
-            <span className="text-on-surface truncate font-semibold">
+            <span className="text-eten-ink truncate font-semibold">
               {title}
             </span>
           </Link>
         ) : (
-          <span className="text-on-surface truncate font-semibold">
-            {title}
-          </span>
+          <span className="text-eten-ink truncate font-semibold">{title}</span>
         )}
       </header>
 
@@ -116,7 +114,7 @@ export default async function ConversationPage({
         />
       </div>
 
-      <div className="border-outline-variant bg-surface/80 shrink-0 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
+      <div className="border-eten-line bg-eten-rail/80 shrink-0 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto max-w-2xl">
           <MessageComposer conversationId={conversationId} />
         </div>
