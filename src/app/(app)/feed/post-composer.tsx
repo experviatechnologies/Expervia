@@ -14,9 +14,15 @@ const MAX_TAGS = 5;
 export function PostComposer({
   targets,
   tagOptions,
+  embedded = false,
+  onPosted,
 }: {
   targets: ComposerTarget[];
   tagOptions: ComposerTag[];
+  /** Rendered inside a modal (drops the standalone card chrome). */
+  embedded?: boolean;
+  /** Called after a successful post (e.g. to close the modal). */
+  onPosted?: () => void;
 }) {
   const [body, setBody] = useState("");
   const [targetId, setTargetId] = useState(targets[0]?.id ?? "");
@@ -58,6 +64,7 @@ export function PostComposer({
         clearImage();
         setTagIds([]);
         setPollOptions(null);
+        onPosted?.();
       }
     });
   }
@@ -79,7 +86,10 @@ export function PostComposer({
   const canPost = body.trim().length > 0 && !over && Boolean(targetId);
 
   return (
-    <form onSubmit={submit} className="glass-card mb-8 rounded-2xl p-5">
+    <form
+      onSubmit={submit}
+      className={embedded ? "" : "glass-card mb-8 rounded-2xl p-5"}
+    >
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}

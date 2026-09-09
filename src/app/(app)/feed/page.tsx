@@ -13,7 +13,8 @@ import {
 import { imageAttachmentsByPost } from "@/lib/eten/post-attachments";
 import { tagsByPost } from "@/lib/eten/post-tags";
 import { pollsByPost } from "@/lib/eten/polls";
-import { PostComposer, type ComposerTarget } from "./post-composer";
+import { type ComposerTarget } from "./post-composer";
+import { ComposerLauncher } from "./composer-launcher";
 import { ReactionBar } from "./reaction-bar";
 import { PostActions } from "./post-actions";
 import { PollView } from "./poll-view";
@@ -178,7 +179,7 @@ export default async function FeedPage({
       )}
 
       {targets.length > 0 && !tag && (
-        <PostComposer targets={targets} tagOptions={tagOptions} />
+        <ComposerLauncher targets={targets} tagOptions={tagOptions} />
       )}
 
       {posts.length === 0 ? (

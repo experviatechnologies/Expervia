@@ -48,7 +48,39 @@ export default async function MemberProfilePage({
     .eq("member_id", id)
     .maybeSingle();
 
-  if (!profile) notFound();
+  if (!profile) {
+    // RLS hid the profile. Distinguish a non-existent member (real 404) from one
+    // that exists but isn't visible yet (not activated / claimed) — the latter
+    // gets a friendly notice instead of a jarring 404.
+    const { data: exists } = await getSupabaseAdmin()
+      .from("members")
+      .select("id")
+      .eq("id", id)
+      .maybeSingle();
+    if (!exists) notFound();
+
+    return (
+      <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
+        <Link
+          href="/dashboard"
+          className="text-on-surface-variant hover:text-on-surface mb-8 inline-flex items-center gap-1.5 text-sm"
+        >
+          <ArrowLeft className="size-4" />
+          Back to dashboard
+        </Link>
+        <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
+          <p className="text-on-surface font-medium">
+            This member&apos;s profile isn&apos;t available yet.
+          </p>
+          <p className="max-w-sm text-sm">
+            They haven&apos;t finished activating their ETEN account.
+            You&apos;ll be able to view their profile and message them once
+            they&apos;ve confirmed their email and set up their profile.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const [{ data: mySkillRows }, { data: pod }, { data: verifiedCerts }] =
     await Promise.all([
