@@ -32,11 +32,29 @@ export function ResetPasswordForm() {
     setError(null);
 
     const supabase = createSupabaseBrowserClient();
+
+    // A valid session is required to change the password. It comes from either
+    // the recovery link (verified by /auth/confirm) or an existing sign-in.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setError(
+        "Your reset link has expired or was already used. Request a new one and open it from your email.",
+      );
+      setLoading(false);
+      return;
+    }
+
     const { error: updateError } = await supabase.auth.updateUser({ password });
 
     if (updateError) {
+      // Surface Supabase's real reason (e.g. "New password should be different
+      // from the old password", rate limits, reauthentication) instead of
+      // always blaming the link.
       setError(
-        "We couldn't update your password. Your reset link may have expired — request a new one.",
+        updateError.message ||
+          "We couldn't update your password. Please try again.",
       );
       setLoading(false);
       return;
