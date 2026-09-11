@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
   Clock,
@@ -12,11 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  addCertification,
-  deleteCertification,
-  updateCertification,
-} from "./actions";
+import { deleteCertification } from "./actions";
 import {
   CERT_NAME_SUGGESTIONS,
   CERT_ISSUER_SUGGESTIONS,
@@ -269,6 +266,7 @@ function CertForm({
   onError: (msg: string | null) => void;
   onDone: () => void;
 }) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const isEdit = Boolean(cert);
@@ -279,11 +277,25 @@ function CertForm({
     if (cert) formData.append("id", cert.id);
     onError(null);
     startTransition(async () => {
-      const res = isEdit
-        ? await updateCertification(formData)
-        : await addCertification(formData);
-      if ("error" in res) onError(res.error);
-      else onDone();
+      try {
+        // POST to an API route (not a Server Action) so files up to 10 MB
+        // aren't blocked by the 1 MB Server Action body limit.
+        const res = await fetch("/api/member/certificate", {
+          method: "POST",
+          body: formData,
+        });
+        const data: { ok?: true; error?: string } = await res
+          .json()
+          .catch(() => ({}));
+        if (!res.ok || data.error) {
+          onError(data.error ?? "Something went wrong. Please try again.");
+          return;
+        }
+        onDone();
+        router.refresh();
+      } catch {
+        onError("Network error. Please check your connection and try again.");
+      }
     });
   }
 
