@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { after } from "next/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -72,8 +73,10 @@ export default async function ConversationPage({
     createdAt: m.created_at,
   }));
 
-  // Mark read now that we're viewing it.
-  await markConversationRead({ conversationId });
+  // Mark read now that we're viewing it. Runs in after() — not during render —
+  // because markConversationRead calls revalidatePath, which is not allowed
+  // during a Server Component render (it throws, crashing the whole page).
+  after(() => markConversationRead({ conversationId }));
 
   return (
     // Full-screen chat shell: fixed so the header and composer stay put while
