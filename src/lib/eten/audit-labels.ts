@@ -10,6 +10,12 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "report.dismissed": "Dismissed a report",
   "post.removed": "Removed a post",
   "comment.removed": "Removed a comment",
+  "identity.verified": "Verified an identity document",
+  "identity.rejected": "Rejected an identity document",
+  "identity.unverified": "Reset an identity to pending",
+  "address.verified": "Verified a proof of address",
+  "address.rejected": "Rejected a proof of address",
+  "address.unverified": "Reset an address to pending",
 };
 
 /** Friendly label for an audit action code, with a readable fallback. */
@@ -19,11 +25,11 @@ export function auditLabel(action: string): string {
 
 /** Semantic tone for an action, used to colour activity-feed markers. */
 export function auditTone(action: string): "good" | "warn" | "danger" | "info" {
-  if (action === "cert.verified" || action === "member.status.active")
+  if (action.endsWith(".verified") || action === "member.status.active")
     return "good";
   if (
     action.endsWith(".removed") ||
-    action === "cert.rejected" ||
+    action.endsWith(".rejected") ||
     action === "member.status.suspended" ||
     action === "member.status.deactivated"
   )

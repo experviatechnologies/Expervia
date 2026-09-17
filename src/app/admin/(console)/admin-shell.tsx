@@ -62,7 +62,11 @@ const GROUPS: NavGroup[] = [
         href: "/admin/certifications",
         Icon: BadgeCheck,
       },
-      { label: "Identity & Address", Icon: IdCard, soon: true },
+      {
+        label: "Identity & Address",
+        href: "/admin/verifications",
+        Icon: IdCard,
+      },
       { label: "Reports", href: "/admin/reports", Icon: ShieldAlert },
     ],
   },
