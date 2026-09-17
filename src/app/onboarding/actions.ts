@@ -19,6 +19,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
  */
 export async function completeOnboarding(input: {
   primaryPodId: string;
+  secondaryPodIds?: string[];
   skillIds: string[];
 }): Promise<{ error: string } | void> {
   const member = await getCurrentMember();
@@ -41,15 +42,22 @@ export async function completeOnboarding(input: {
 
   const supabase = await createSupabaseServerClient();
 
-  // The primary specialization must be one of the specialist pods (not Main).
-  const { data: pod } = await supabase
+  // Validate every chosen pod against the real specialist pods (not Main). This
+  // covers both the primary and any secondary pods, so a crafted id can't slip
+  // through — RLS still enforces join-self on the membership rows below.
+  const { data: specialistPods } = await supabase
     .from("pods")
-    .select("id, is_main")
-    .eq("id", primaryPodId)
-    .maybeSingle();
-  if (!pod || pod.is_main) {
+    .select("id")
+    .eq("is_main", false);
+  const validPodIds = new Set((specialistPods ?? []).map((p) => p.id));
+  if (!validPodIds.has(primaryPodId)) {
     return { error: "That pod isn't available. Please pick another." };
   }
+
+  // Secondary pods: keep only valid specialist pods, drop the primary and dups.
+  const secondaryPodIds = Array.from(new Set(input.secondaryPodIds ?? []))
+    .filter((id) => id && id !== primaryPodId && validPodIds.has(id))
+    .slice(0, 20);
 
   // 1) Record the primary specialization on the profile.
   const { error: profileError } = await supabase
@@ -60,13 +68,20 @@ export async function completeOnboarding(input: {
     return { error: "We couldn't save your pod. Please try again." };
   }
 
-  // 2) Join the pod (idempotent — re-running onboarding won't duplicate).
+  // 2) Join the primary + any secondary pods (idempotent — re-running
+  // onboarding won't duplicate). All join as plain members; RLS join-self
+  // forbids self-assigning a lead role.
+  const membershipRows = [primaryPodId, ...secondaryPodIds].map((pod_id) => ({
+    pod_id,
+    member_id: member.id,
+    role_in_pod: "member" as const,
+  }));
   const { error: joinError } = await supabase
     .from("pod_memberships")
-    .upsert(
-      { pod_id: primaryPodId, member_id: member.id, role_in_pod: "member" },
-      { onConflict: "pod_id,member_id", ignoreDuplicates: true },
-    );
+    .upsert(membershipRows, {
+      onConflict: "pod_id,member_id",
+      ignoreDuplicates: true,
+    });
   if (joinError) {
     return { error: "We couldn't add you to the pod. Please try again." };
   }

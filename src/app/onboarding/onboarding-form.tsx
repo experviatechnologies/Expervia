@@ -26,6 +26,9 @@ export function OnboardingForm({
   skillGroups: SkillGroup[];
 }) {
   const [selectedPodId, setSelectedPodId] = useState<string | null>(null);
+  const [secondaryPodIds, setSecondaryPodIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedSkillIds, setSelectedSkillIds] = useState<Set<string>>(
     new Set(),
   );
@@ -33,6 +36,27 @@ export function OnboardingForm({
   const [pending, startTransition] = useTransition();
 
   const hasSkills = skillGroups.some((g) => g.skills.length > 0);
+
+  // Choosing a primary pod removes it from the secondary set (a pod can't be
+  // both), so the two selections never conflict.
+  function selectPrimary(id: string) {
+    setSelectedPodId(id);
+    setSecondaryPodIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleSecondary(id: string) {
+    setSecondaryPodIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function toggleSkill(id: string) {
     setSelectedSkillIds((prev) => {
@@ -52,6 +76,7 @@ export function OnboardingForm({
     startTransition(async () => {
       const result = await completeOnboarding({
         primaryPodId: selectedPodId,
+        secondaryPodIds: Array.from(secondaryPodIds),
         skillIds: Array.from(selectedSkillIds),
       });
       // On success the action redirects; only an error comes back here.
@@ -80,7 +105,7 @@ export function OnboardingForm({
               <button
                 key={pod.id}
                 type="button"
-                onClick={() => setSelectedPodId(pod.id)}
+                onClick={() => selectPrimary(pod.id)}
                 aria-pressed={isSelected}
                 className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
                   isSelected
@@ -113,11 +138,56 @@ export function OnboardingForm({
         </div>
       </section>
 
-      {/* Step 2 — skills (optional) */}
+      {/* Step 2 — secondary pods (optional) */}
       <section>
         <div className="mb-4">
           <h2 className="font-display text-body-lg text-on-surface font-bold">
-            2. Add your skills{" "}
+            2. Join other pods{" "}
+            <span className="text-on-surface-variant text-sm font-normal">
+              (optional)
+            </span>
+          </h2>
+          <p className="text-on-surface-variant mt-1 text-sm">
+            Belong to more than one specialist community. Your primary pod stays
+            your home — you can add or leave pods anytime.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {pods
+            .filter((pod) => pod.id !== selectedPodId)
+            .map((pod) => {
+              const isOn = secondaryPodIds.has(pod.id);
+              return (
+                <button
+                  key={pod.id}
+                  type="button"
+                  onClick={() => toggleSecondary(pod.id)}
+                  aria-pressed={isOn}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
+                    isOn
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-on-surface-variant/50"
+                  }`}
+                >
+                  {isOn && <Check className="size-3.5" />}
+                  {pod.name}
+                </button>
+              );
+            })}
+          {selectedPodId && pods.length <= 1 && (
+            <p className="text-on-surface-variant text-sm">
+              No other pods available.
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* Step 3 — skills (optional) */}
+      <section>
+        <div className="mb-4">
+          <h2 className="font-display text-body-lg text-on-surface font-bold">
+            3. Add your skills{" "}
             <span className="text-on-surface-variant text-sm font-normal">
               (optional)
             </span>
