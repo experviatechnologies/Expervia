@@ -4,25 +4,14 @@ import { ScrollText } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { AUDIT_ACTION_LABEL } from "@/lib/eten/audit-labels";
 
 export const metadata: Metadata = {
   title: "Audit Log",
   robots: { index: false, follow: false },
 };
 
-/** Human labels for the action codes written by writeAudit(). */
-const ACTION_LABEL: Record<string, string> = {
-  "member.status.active": "Reactivated a member",
-  "member.status.suspended": "Suspended a member",
-  "member.status.deactivated": "Deactivated a member",
-  "cert.verified": "Verified a certification",
-  "cert.rejected": "Rejected a certification",
-  "cert.unverified": "Reset a certification to pending",
-  "report.actioned": "Actioned a report",
-  "report.dismissed": "Dismissed a report",
-  "post.removed": "Removed a post",
-  "comment.removed": "Removed a comment",
-};
+const ACTION_LABEL = AUDIT_ACTION_LABEL;
 
 function timestamp(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
