@@ -25,12 +25,16 @@ export default async function AdminPodsPage() {
         .select("id, slug, name, description, is_main")
         .order("name"),
       admin.from("pod_memberships").select("pod_id, member_id, role_in_pod"),
-      admin.from("profiles").select("member_id, primary_specialization_pod_id"),
+      admin
+        .from("profiles")
+        .select("member_id, full_name, primary_specialization_pod_id"),
     ]);
 
   const primaryByMember = new Map<string, string | null>();
+  const nameByMember = new Map<string, string>();
   for (const p of profileRows ?? []) {
     primaryByMember.set(p.member_id, p.primary_specialization_pod_id);
+    nameByMember.set(p.member_id, p.full_name);
   }
 
   // Per-pod tallies + specialist multi-pod membership.
@@ -56,12 +60,24 @@ export default async function AdminPodsPage() {
     }
   }
 
-  let multiPodMembers = 0;
   let membersInSpecialistPods = 0;
-  for (const set of specialistPodsByMember.values()) {
+  const multiPodList: { memberId: string; name: string; pods: string[] }[] = [];
+  for (const [memberId, set] of specialistPodsByMember) {
     membersInSpecialistPods += 1;
-    if (set.size > 1) multiPodMembers += 1;
+    if (set.size > 1) {
+      const podNames = [...set]
+        .map((id) => podById.get(id)?.name ?? "")
+        .filter(Boolean)
+        .sort();
+      multiPodList.push({
+        memberId,
+        name: nameByMember.get(memberId) ?? "—",
+        pods: podNames,
+      });
+    }
   }
+  multiPodList.sort((a, b) => a.name.localeCompare(b.name));
+  const multiPodMembers = multiPodList.length;
 
   const allPods = podRows ?? [];
   const mainPod = allPods.find((p) => p.is_main) ?? null;
@@ -134,6 +150,43 @@ export default async function AdminPodsPage() {
           <Boxes className="text-eten-faint/50 size-10" />
           <p>No specialist pods yet.</p>
         </div>
+      )}
+
+      {/* Multi-pod report */}
+      {multiPodList.length > 0 && (
+        <section className="bg-eten-panel border-eten-line mt-6 rounded-2xl border p-5 sm:p-6">
+          <h2 className="text-eten-ink text-sm font-bold">
+            Members in multiple pods · {multiPodList.length}
+          </h2>
+          <p className="text-eten-faint mt-0.5 mb-4 text-xs">
+            Members who belong to more than one specialist pod.
+          </p>
+          <ul className="flex flex-col">
+            {multiPodList.map((m) => (
+              <li
+                key={m.memberId}
+                className="border-eten-line-soft flex flex-wrap items-center justify-between gap-3 border-t py-2.5 first:border-t-0"
+              >
+                <Link
+                  href={`/admin/members/${m.memberId}`}
+                  className="text-eten-ink text-sm font-semibold hover:underline"
+                >
+                  {m.name}
+                </Link>
+                <span className="flex flex-wrap gap-1">
+                  {m.pods.map((p) => (
+                    <span
+                      key={p}
+                      className="bg-eten-panel-hi border-eten-line text-eten-ink-muted rounded-full border px-2 py-0.5 text-[11.5px] font-medium"
+                    >
+                      {p}
+                    </span>
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Main community */}
