@@ -45,7 +45,7 @@ const GROUPS: NavGroup[] = [
     heading: "Community",
     items: [
       { label: "Members", href: "/admin/members", Icon: Users },
-      { label: "Pods", Icon: Boxes, soon: true },
+      { label: "Pods", href: "/admin/pods", Icon: Boxes },
       { label: "Applications", href: "/admin/applications", Icon: FileText },
       {
         label: "Event Registrations",
