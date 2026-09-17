@@ -115,6 +115,16 @@ export default async function AdminOverviewPage() {
         </div>
       )}
 
+      {/* Member growth */}
+      <div className="mb-4">
+        <Card
+          title="Member growth"
+          sub="New & cumulative members · last 8 months"
+        >
+          <GrowthChart data={growth} />
+        </Card>
+      </div>
+
       {/* Pods + verification funnel */}
       <div className="mb-4 grid gap-3.5 lg:grid-cols-[1.4fr_1fr]">
         <Card
@@ -341,4 +351,153 @@ function FunnelBar({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-eten-faint py-4 text-sm">{children}</p>;
+}
+
+/**
+ * Member-growth chart. Both series are member counts, so they share one y-scale:
+ * a cumulative area+line (the running total) with faint per-month "new" bars.
+ * Hand-drawn SVG, dark-theme hex to match the console.
+ */
+function GrowthChart({
+  data,
+}: {
+  data: { label: string; added: number; cumulative: number }[];
+}) {
+  if (data.length === 0) return <Empty>No data yet.</Empty>;
+
+  const W = 640;
+  const H = 240;
+  const padL = 40;
+  const padR = 14;
+  const padT = 16;
+  const padB = 28;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = data.length;
+
+  const maxCum = Math.max(1, ...data.map((d) => d.cumulative));
+  const niceMax =
+    maxCum >= 50 ? Math.ceil(maxCum / 50) * 50 : Math.ceil(maxCum / 10) * 10;
+
+  const x = (i: number) =>
+    padL + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+  const y = (v: number) => padT + innerH * (1 - v / niceMax);
+  const baseY = y(0);
+
+  const pts = data.map((d, i) => `${x(i)},${y(d.cumulative)}`);
+  const linePath = "M" + pts.join(" L");
+  const areaPath = `M${x(0)},${baseY} L${pts.join(" L")} L${x(n - 1)},${baseY} Z`;
+  const barW = Math.min(22, (innerW / n) * 0.4);
+  const ticks = [
+    niceMax,
+    Math.round((niceMax * 2) / 3),
+    Math.round(niceMax / 3),
+  ];
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-auto w-full min-w-[440px]"
+        role="img"
+        aria-label="Member growth over the last 8 months"
+      >
+        {ticks.map((t) => (
+          <g key={t}>
+            <line
+              x1={padL}
+              y1={y(t)}
+              x2={W - padR}
+              y2={y(t)}
+              stroke="#253145"
+              strokeWidth="1"
+            />
+            <text
+              x={padL - 6}
+              y={y(t) + 3}
+              textAnchor="end"
+              fontSize="10"
+              fontFamily="monospace"
+              fill="#778699"
+            >
+              {t}
+            </text>
+          </g>
+        ))}
+        <line
+          x1={padL}
+          y1={baseY}
+          x2={W - padR}
+          y2={baseY}
+          stroke="#253145"
+          strokeWidth="1"
+        />
+
+        {data.map((d, i) => {
+          const h = (d.added / niceMax) * innerH;
+          return (
+            <rect
+              key={`bar-${i}`}
+              x={x(i) - barW / 2}
+              y={baseY - h}
+              width={barW}
+              height={Math.max(0, h)}
+              rx="2"
+              fill="#4f86ec"
+              fillOpacity="0.28"
+            />
+          );
+        })}
+
+        <path d={areaPath} fill="#4f86ec" fillOpacity="0.12" />
+        <path
+          d={linePath}
+          fill="none"
+          stroke="#4f86ec"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle
+          cx={x(n - 1)}
+          cy={y(data[n - 1].cumulative)}
+          r="4.5"
+          fill="#6e9df0"
+          stroke="#0f1622"
+          strokeWidth="2"
+        />
+
+        {data.map((d, i) => (
+          <text
+            key={`lab-${i}`}
+            x={x(i)}
+            y={H - 8}
+            textAnchor="middle"
+            fontSize="10"
+            fontFamily="monospace"
+            fill="#778699"
+          >
+            {d.label}
+          </text>
+        ))}
+      </svg>
+
+      <div className="text-eten-faint mt-2 flex items-center gap-4 text-xs">
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-block h-2 w-3 rounded-sm"
+            style={{ background: "#4f86ec" }}
+          />
+          Cumulative
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-block h-2 w-3 rounded-sm"
+            style={{ background: "rgba(79,134,236,0.28)" }}
+          />
+          New per month
+        </span>
+      </div>
+    </div>
+  );
 }
