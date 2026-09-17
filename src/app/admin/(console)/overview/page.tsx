@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getOverviewMetrics } from "./metrics";
 
 export const metadata: Metadata = {
   title: "Overview",
@@ -15,99 +15,56 @@ export default async function AdminOverviewPage() {
   if (!manager) redirect("/admin/login");
   if (!(await isOperations())) redirect("/dashboard");
 
-  const admin = getSupabaseAdmin();
-  const head = { count: "exact" as const, head: true };
+  const { counts, pods, verification } = await getOverviewMetrics();
 
-  const [
-    totalMembers,
-    activatedMembers,
-    pendingMembers,
-    suspendedMembers,
-    posts,
-    comments,
-    verifiedCerts,
-    pendingCerts,
-    openReports,
-    { data: podRows },
-    { data: membershipRows },
-  ] = await Promise.all([
-    admin.from("members").select("*", head),
-    admin.from("members").select("*", head).not("claimed_at", "is", null),
-    admin.from("members").select("*", head).is("claimed_at", null),
-    admin.from("members").select("*", head).eq("status", "suspended"),
-    admin.from("posts").select("*", head).eq("is_removed", false),
-    admin.from("comments").select("*", head).eq("is_removed", false),
-    admin
-      .from("certifications")
-      .select("*", head)
-      .eq("verification_status", "verified"),
-    admin
-      .from("certifications")
-      .select("*", head)
-      .eq("verification_status", "unverified"),
-    admin.from("reports").select("*", head).eq("status", "open"),
-    admin.from("pods").select("id, name, is_main").order("name"),
-    admin.from("pod_memberships").select("pod_id"),
-  ]);
-
-  const podCounts = new Map<string, number>();
-  for (const m of membershipRows ?? []) {
-    podCounts.set(m.pod_id, (podCounts.get(m.pod_id) ?? 0) + 1);
-  }
-  const pods = (podRows ?? [])
-    .filter((p) => !p.is_main)
-    .map((p) => ({ name: p.name, members: podCounts.get(p.id) ?? 0 }));
-
-  const community: [string, number, string?][] = [
-    ["Total members", totalMembers.count ?? 0],
-    ["Activated", activatedMembers.count ?? 0],
-    ["Pending activation", pendingMembers.count ?? 0],
-    ["Suspended", suspendedMembers.count ?? 0],
+  const community: [string, number][] = [
+    ["Total members", counts.totalMembers],
+    ["Active", counts.activeMembers],
+    ["Pending activation", counts.pendingActivation],
+    ["Suspended", counts.suspendedMembers],
   ];
   const content: [string, number][] = [
-    ["Posts", posts.count ?? 0],
-    ["Comments", comments.count ?? 0],
+    ["Posts", counts.posts],
+    ["Comments", counts.comments],
   ];
   const credentials: [string, number][] = [
-    ["Verified", verifiedCerts.count ?? 0],
-    ["Pending review", pendingCerts.count ?? 0],
+    ["Verified", verification.verified],
+    ["Pending review", verification.pending],
   ];
 
   return (
     <div className="px-margin-mobile md:px-margin-desktop mx-auto max-w-6xl py-10">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-label-sm text-primary mb-1 font-mono tracking-widest uppercase">
-            Expervia Admin
-          </p>
-          <h1 className="font-display text-headline-lg text-on-surface font-bold">
-            Overview
-          </h1>
-          <p className="text-on-surface-variant mt-1 text-sm">
-            Platform health at a glance.
-          </p>
-        </div>
+      <div className="mb-8">
+        <p className="text-label-sm text-primary mb-1 font-mono tracking-widest uppercase">
+          Expervia Admin
+        </p>
+        <h1 className="font-display text-headline-lg text-on-surface font-bold">
+          Overview
+        </h1>
+        <p className="text-on-surface-variant mt-1 text-sm">
+          Platform health at a glance.
+        </p>
       </div>
 
       {/* Attention row */}
-      {((pendingCerts.count ?? 0) > 0 || (openReports.count ?? 0) > 0) && (
+      {(counts.certsToReview > 0 || counts.openReports > 0) && (
         <div className="mb-6 flex flex-wrap gap-3">
-          {(pendingCerts.count ?? 0) > 0 && (
+          {counts.certsToReview > 0 && (
             <Link
               href="/admin/certifications"
               className="rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-400"
             >
-              {pendingCerts.count} certification
-              {pendingCerts.count === 1 ? "" : "s"} awaiting review →
+              {counts.certsToReview} certification
+              {counts.certsToReview === 1 ? "" : "s"} awaiting review →
             </Link>
           )}
-          {(openReports.count ?? 0) > 0 && (
+          {counts.openReports > 0 && (
             <Link
               href="/admin/reports"
               className="border-destructive/30 bg-destructive/10 text-destructive rounded-full border px-4 py-2 text-sm font-medium"
             >
-              {openReports.count} open report
-              {openReports.count === 1 ? "" : "s"} →
+              {counts.openReports} open report
+              {counts.openReports === 1 ? "" : "s"} →
             </Link>
           )}
         </div>
@@ -120,7 +77,8 @@ export default async function AdminOverviewPage() {
 
         <section>
           <h2 className="text-label-sm text-on-surface-variant mb-3 font-mono tracking-wider uppercase">
-            Pods
+            Pods · {counts.multiPodMembers} member
+            {counts.multiPodMembers === 1 ? "" : "s"} in ≥2 pods
           </h2>
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {pods.map(({ name, members }) => (
@@ -145,7 +103,7 @@ function StatGroup({
   stats,
 }: {
   title: string;
-  stats: [string, number, string?][];
+  stats: [string, number][];
 }) {
   return (
     <section>
