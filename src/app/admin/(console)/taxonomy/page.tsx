@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { SignOutButton } from "../applications/sign-out-button";
-import { AdminTabs } from "../admin-tabs";
 import { TaxonomyManager, type PodBlock } from "./taxonomy-manager";
 
 export const metadata: Metadata = {
@@ -72,10 +70,7 @@ export default async function TaxonomyPage() {
             during onboarding and on their profile.
           </p>
         </div>
-        <SignOutButton />
       </div>
-
-      <AdminTabs active="taxonomy" />
 
       <TaxonomyManager pods={pods} />
     </div>

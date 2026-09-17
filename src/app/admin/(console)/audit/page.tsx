@@ -4,8 +4,6 @@ import { ScrollText } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { SignOutButton } from "../applications/sign-out-button";
-import { AdminTabs } from "../admin-tabs";
 
 export const metadata: Metadata = {
   title: "Audit Log",
@@ -74,10 +72,7 @@ export default async function AuditLogPage() {
             A record of moderation and admin actions (most recent 200).
           </p>
         </div>
-        <SignOutButton />
       </div>
-
-      <AdminTabs active="audit" />
 
       {entries.length === 0 ? (
         <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-16 text-center">

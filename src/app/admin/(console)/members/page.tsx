@@ -4,8 +4,6 @@ import { Users } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { SignOutButton } from "../applications/sign-out-button";
-import { AdminTabs } from "../admin-tabs";
 import { MembersManager, type MemberRow } from "./members-manager";
 
 export const metadata: Metadata = {
@@ -81,10 +79,7 @@ export default async function MembersPage() {
             change takes effect on their next request.
           </p>
         </div>
-        <SignOutButton />
       </div>
-
-      <AdminTabs active="members" />
 
       {members.length === 0 ? (
         <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-16 text-center">

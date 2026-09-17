@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { Inbox } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getSupabaseAdmin, EVENT_REGISTRATIONS_TABLE } from "@/lib/supabase";
-import { SignOutButton } from "../applications/sign-out-button";
-import { AdminTabs } from "../admin-tabs";
 
 export const metadata: Metadata = {
   title: "Event Registrations",
@@ -72,10 +70,7 @@ export default async function EventRegistrationsPage() {
             Signed in as {manager.email}
           </p>
         </div>
-        <SignOutButton />
       </div>
-
-      <AdminTabs active="events" />
 
       {error ? (
         <div className="glass-card text-destructive rounded-2xl p-8 text-sm">
@@ -113,7 +108,8 @@ export default async function EventRegistrationsPage() {
                   >
                     <td className="px-4 py-4 align-top">
                       <div className="text-on-surface font-medium">
-                        {joinTruthy([row.first_name, row.last_name], " ") || "—"}
+                        {joinTruthy([row.first_name, row.last_name], " ") ||
+                          "—"}
                       </div>
                       <a
                         href={`mailto:${row.email}`}
@@ -130,7 +126,9 @@ export default async function EventRegistrationsPage() {
                         </a>
                       )}
                     </td>
-                    <Td>{joinTruthy([row.job_title, row.organization], " · ")}</Td>
+                    <Td>
+                      {joinTruthy([row.job_title, row.organization], " · ")}
+                    </Td>
                     <Td>{row.area_of_expertise}</Td>
                     <Td>{row.membership_status}</Td>
                     <Td>{row.heard_from}</Td>

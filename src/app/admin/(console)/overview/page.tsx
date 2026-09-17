@@ -4,8 +4,6 @@ import { redirect } from "next/navigation";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { SignOutButton } from "../applications/sign-out-button";
-import { AdminTabs } from "../admin-tabs";
 
 export const metadata: Metadata = {
   title: "Overview",
@@ -89,10 +87,7 @@ export default async function AdminOverviewPage() {
             Platform health at a glance.
           </p>
         </div>
-        <SignOutButton />
       </div>
-
-      <AdminTabs active="overview" />
 
       {/* Attention row */}
       {((pendingCerts.count ?? 0) > 0 || (openReports.count ?? 0) > 0) && (
