@@ -8,6 +8,7 @@ import {
   Eye,
   FileText,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -136,6 +137,24 @@ export default async function ProfilePage() {
           </span>
           <span className="text-eten-ink-muted block text-sm">
             Add certifications and upload proof for verification.
+          </span>
+        </span>
+        <ChevronRight className="text-eten-ink-muted size-5 shrink-0" />
+      </Link>
+
+      <Link
+        href="/profile/verification"
+        className="bg-eten-panel border-eten-line mb-8 flex items-center gap-4 rounded-2xl border p-5 transition-colors hover:bg-white/5"
+      >
+        <span className="bg-eten-accent-soft text-eten-accent flex size-11 shrink-0 items-center justify-center rounded-full">
+          <ShieldCheck className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="text-eten-ink block font-semibold">
+            Identity &amp; address verification
+          </span>
+          <span className="text-eten-ink-muted block text-sm">
+            Upload your ID and proof of address for the ETEN team to verify.
           </span>
         </span>
         <ChevronRight className="text-eten-ink-muted size-5 shrink-0" />

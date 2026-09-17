@@ -36,6 +36,11 @@ export const CERTIFICATES_BUCKET = "certificates";
 // service_role uploads the object, and the feed renders it via a short-lived
 // signed URL. Create it as a PRIVATE bucket in Supabase Storage.
 export const POST_MEDIA_BUCKET = "post-media";
+// Private bucket for member KYC documents — identity (passport/licence/NIN) and
+// proof of address (Phase 6). Same access model as `certificates`: service_role
+// writes/reads, downloads go out as short-lived signed URLs. Create it as a
+// PRIVATE bucket in Supabase Storage.
+export const VERIFICATIONS_BUCKET = "verifications";
 
 // Thrown when a submission collides with an existing one (same email — and, for
 // community applications, same vendor track). Route Handlers catch this to
