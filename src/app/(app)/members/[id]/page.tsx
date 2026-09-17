@@ -82,29 +82,40 @@ export default async function MemberProfilePage({
     );
   }
 
-  const [{ data: mySkillRows }, { data: pod }, { data: verifiedCerts }] =
-    await Promise.all([
-      // member_skills_select allows any active member to read; join to names.
-      supabase
-        .from("member_skills")
-        .select("skills(id, name, is_active, pod_id)")
-        .eq("member_id", id),
-      profile.primary_specialization_pod_id
-        ? supabase
-            .from("pods")
-            .select("name")
-            .eq("id", profile.primary_specialization_pod_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      // Verified credentials only, metadata only — never the file path. Read via
-      // service_role because certifications RLS is own-or-ops.
-      getSupabaseAdmin()
-        .from("certifications")
-        .select("id, name, issuer, date_obtained")
-        .eq("member_id", id)
-        .eq("verification_status", "verified")
-        .order("date_obtained", { ascending: false, nullsFirst: false }),
-    ]);
+  const [
+    { data: mySkillRows },
+    { data: pod },
+    { data: verifiedCerts },
+    { data: verifiedKycRows },
+  ] = await Promise.all([
+    // member_skills_select allows any active member to read; join to names.
+    supabase
+      .from("member_skills")
+      .select("skills(id, name, is_active, pod_id)")
+      .eq("member_id", id),
+    profile.primary_specialization_pod_id
+      ? supabase
+          .from("pods")
+          .select("name")
+          .eq("id", profile.primary_specialization_pod_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Verified credentials only, metadata only — never the file path. Read via
+    // service_role because certifications RLS is own-or-ops.
+    getSupabaseAdmin()
+      .from("certifications")
+      .select("id, name, issuer, date_obtained")
+      .eq("member_id", id)
+      .eq("verification_status", "verified")
+      .order("date_obtained", { ascending: false, nullsFirst: false }),
+    // Which KYC checks this member has passed — the STATUS only, never the
+    // document. Read via service_role (member_verifications RLS is own-or-ops).
+    getSupabaseAdmin()
+      .from("member_verifications")
+      .select("kind")
+      .eq("member_id", id)
+      .eq("status", "verified"),
+  ]);
 
   const skills = (mySkillRows ?? [])
     .map(
@@ -127,6 +138,7 @@ export default async function MemberProfilePage({
   const isBlocked = Boolean(blockRow);
 
   const certs = verifiedCerts ?? [];
+  const verifiedKinds = new Set((verifiedKycRows ?? []).map((v) => v.kind));
   const languages = profile.languages ?? [];
   const initials = (profile.full_name ?? "?").trim().charAt(0).toUpperCase();
 
@@ -184,6 +196,23 @@ export default async function MemberProfilePage({
               <span className="bg-eten-accent-soft text-eten-accent mt-3 inline-block rounded-full px-3 py-1 text-xs font-medium">
                 {profile.availability_status}
               </span>
+            )}
+            {(verifiedKinds.has("identity") ||
+              verifiedKinds.has("address")) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {verifiedKinds.has("identity") && (
+                  <span className="border-eten-verified/30 bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium">
+                    <BadgeCheck className="size-3.5" />
+                    Identity verified
+                  </span>
+                )}
+                {verifiedKinds.has("address") && (
+                  <span className="border-eten-verified/30 bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium">
+                    <MapPin className="size-3.5" />
+                    Address verified
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>

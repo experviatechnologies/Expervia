@@ -32,6 +32,11 @@ export type OverviewMetrics = {
     verified: number;
     rejected: number;
   };
+  kyc: {
+    identityVerified: number;
+    addressVerified: number;
+    pending: number;
+  };
   recentActivity: {
     id: string;
     action: string;
@@ -73,6 +78,9 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
     certsVerified,
     certsRejected,
     openReports,
+    idVerified,
+    addrVerified,
+    kycPending,
     { data: podRows },
     { data: membershipRows },
     { data: memberDates },
@@ -102,6 +110,20 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
       .select("*", head)
       .eq("verification_status", "rejected"),
     admin.from("reports").select("*", head).eq("status", "open"),
+    admin
+      .from("member_verifications")
+      .select("*", head)
+      .eq("kind", "identity")
+      .eq("status", "verified"),
+    admin
+      .from("member_verifications")
+      .select("*", head)
+      .eq("kind", "address")
+      .eq("status", "verified"),
+    admin
+      .from("member_verifications")
+      .select("*", head)
+      .eq("status", "unverified"),
     admin.from("pods").select("id, name, is_main").order("name"),
     admin.from("pod_memberships").select("pod_id, member_id"),
     admin.from("members").select("created_at"),
@@ -178,6 +200,11 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
       pending: certsPending.count ?? 0,
       verified: certsVerified.count ?? 0,
       rejected: certsRejected.count ?? 0,
+    },
+    kyc: {
+      identityVerified: idVerified.count ?? 0,
+      addressVerified: addrVerified.count ?? 0,
+      pending: kycPending.count ?? 0,
     },
     recentActivity,
   };

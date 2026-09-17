@@ -60,6 +60,7 @@ export default async function AdminMemberDetailPage({
     { data: membershipRows },
     { data: skillRows },
     { data: certRows },
+    { data: verificationRows },
   ] = await Promise.all([
     admin
       .from("profiles")
@@ -84,7 +85,23 @@ export default async function AdminMemberDetailPage({
       )
       .eq("member_id", id)
       .order("date_obtained", { ascending: false, nullsFirst: false }),
+    admin
+      .from("member_verifications")
+      .select("kind, status, document_type, file_path, review_note")
+      .eq("member_id", id)
+      .order("created_at", { ascending: false }),
   ]);
+
+  type VRow = {
+    kind: "identity" | "address";
+    status: "unverified" | "verified" | "rejected";
+    document_type: "passport" | "drivers_license" | "nin" | null;
+    file_path: string;
+    review_note: string | null;
+  };
+  const vrows = (verificationRows ?? []) as VRow[];
+  const identityV = vrows.find((v) => v.kind === "identity") ?? null;
+  const addressV = vrows.find((v) => v.kind === "address") ?? null;
 
   const email = authUser?.user?.email ?? null;
 
@@ -287,6 +304,14 @@ export default async function AdminMemberDetailPage({
         )}
       </Section>
 
+      {/* Identity & address verification */}
+      <Section title="Identity & address">
+        <div className="flex flex-col gap-3">
+          <VerificationLine label="Identity" row={identityV} />
+          <VerificationLine label="Proof of address" row={addressV} />
+        </div>
+      </Section>
+
       {/* About + details */}
       {profile?.bio && (
         <Section title="About">
@@ -379,5 +404,56 @@ function CertBadge({
       <Clock className="size-3.5" />
       Pending
     </span>
+  );
+}
+
+const VERIFY_ID_TYPE: Record<string, string> = {
+  passport: "International Passport",
+  drivers_license: "Driver's License",
+  nin: "National ID (NIN)",
+};
+
+function VerificationLine({
+  label,
+  row,
+}: {
+  label: string;
+  row: {
+    status: "unverified" | "verified" | "rejected";
+    document_type: "passport" | "drivers_license" | "nin" | null;
+    file_path: string;
+    review_note: string | null;
+  } | null;
+}) {
+  return (
+    <div className="border-eten-line-soft flex flex-wrap items-center justify-between gap-3 border-b pb-3 last:border-0 last:pb-0">
+      <div className="min-w-0">
+        <div className="text-eten-ink text-sm font-medium">{label}</div>
+        {row ? (
+          <div className="text-eten-faint text-xs">
+            {row.document_type ? `${VERIFY_ID_TYPE[row.document_type]} · ` : ""}
+            <a
+              href={`/api/admin/verification?path=${encodeURIComponent(row.file_path)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-eten-accent inline-flex items-center gap-1 font-medium hover:underline"
+            >
+              <FileText className="size-3" />
+              View document
+            </a>
+            {row.status === "rejected" && row.review_note
+              ? ` · ${row.review_note}`
+              : ""}
+          </div>
+        ) : (
+          <div className="text-eten-faint/70 text-xs">Not submitted</div>
+        )}
+      </div>
+      {row ? (
+        <CertBadge status={row.status} />
+      ) : (
+        <span className="text-eten-faint/60 text-xs">—</span>
+      )}
+    </div>
   );
 }

@@ -25,7 +25,7 @@ export default async function AdminOverviewPage() {
   if (!manager) redirect("/admin/login");
   if (!(await isOperations())) redirect("/dashboard");
 
-  const { counts, pods, verification, growth, recentActivity } =
+  const { counts, pods, verification, kyc, growth, recentActivity } =
     await getOverviewMetrics();
 
   const addedThisMonth = growth.length ? growth[growth.length - 1].added : 0;
@@ -160,10 +160,7 @@ export default async function AdminOverviewPage() {
           )}
         </Card>
 
-        <Card
-          title="Verification funnel"
-          sub="Certifications (identity & address arrive in Phase 6)"
-        >
+        <Card title="Verification funnel" sub="Certification reviews">
           <div className="flex flex-col gap-2.5">
             <FunnelBar
               label="Submitted"
@@ -190,6 +187,21 @@ export default async function AdminOverviewPage() {
           <p className="text-eten-faint mt-3 text-xs">
             {verification.rejected} rejected
           </p>
+          <div className="border-eten-line-soft mt-3 border-t pt-3">
+            <p className="text-eten-faint mb-1 font-mono text-[11px] tracking-wider uppercase">
+              Identity &amp; address (KYC)
+            </p>
+            <p className="text-eten-ink-muted text-xs">
+              <b className="text-eten-verified font-semibold">
+                {kyc.identityVerified}
+              </b>{" "}
+              ID ·{" "}
+              <b className="text-eten-verified font-semibold">
+                {kyc.addressVerified}
+              </b>{" "}
+              address verified · {kyc.pending} pending
+            </p>
+          </div>
         </Card>
       </div>
 
