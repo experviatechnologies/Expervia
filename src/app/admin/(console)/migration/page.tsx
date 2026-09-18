@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import { listPendingMigration } from "@/lib/eten/migration-pending";
 import { MigrationRunner } from "./migration-runner";
+import { PendingClaims } from "./pending-claims";
 
 export const metadata: Metadata = {
   title: "Member Migration",
@@ -13,6 +16,8 @@ export default async function MigrationPage() {
   const manager = await getCurrentManager();
   if (!manager) redirect("/admin/login");
   if (!(await isOperations())) redirect("/dashboard");
+
+  const pending = await listPendingMigration(getSupabaseAdmin());
 
   return (
     <div className="px-margin-mobile md:px-margin-desktop mx-auto max-w-4xl py-10">
@@ -31,6 +36,10 @@ export default async function MigrationPage() {
             send.
           </p>
         </div>
+      </div>
+
+      <div className="mb-8">
+        <PendingClaims pending={pending} />
       </div>
 
       <MigrationRunner />
