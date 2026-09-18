@@ -45,7 +45,7 @@ export default async function MembersPage() {
   ] = await Promise.all([
     admin
       .from("members")
-      .select("id, status, role, origin, claimed_at, created_at")
+      .select("id, status, role, origin, claimed_at, created_at, v_level")
       .order("created_at", { ascending: false }),
     admin.from("profiles").select("member_id, full_name"),
     admin.from("pods").select("id, name, is_main"),
@@ -79,6 +79,7 @@ export default async function MembersPage() {
     origin: m.origin,
     claimedAt: m.claimed_at,
     createdAt: m.created_at,
+    vLevel: m.v_level,
     pods: (podsByMember.get(m.id) ?? []).sort(),
   }));
 

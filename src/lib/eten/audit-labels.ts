@@ -3,6 +3,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "member.status.active": "Reactivated a member",
   "member.status.suspended": "Suspended a member",
   "member.status.deactivated": "Deactivated a member",
+  "member.v_level": "Changed a member's V-level",
   "cert.verified": "Verified a certification",
   "cert.rejected": "Rejected a certification",
   "cert.unverified": "Reset a certification to pending",

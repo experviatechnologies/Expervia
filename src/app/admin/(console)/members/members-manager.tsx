@@ -12,6 +12,7 @@ import {
   UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { vLevelBadge } from "@/lib/eten/v-levels";
 import { setMemberStatus } from "./actions";
 
 export type MemberRow = {
@@ -23,6 +24,7 @@ export type MemberRow = {
   origin: "self_signup" | "migrated";
   claimedAt: string | null;
   createdAt: string;
+  vLevel: number;
   pods: string[];
 };
 
@@ -143,6 +145,7 @@ export function MembersManager({ members }: { members: MemberRow[] }) {
               <tr className="border-eten-line-soft border-b text-left">
                 <Th>Member</Th>
                 <Th>Status</Th>
+                <Th>V-level</Th>
                 <Th>Role</Th>
                 <Th>Pods</Th>
                 <Th>Joined</Th>
@@ -153,7 +156,7 @@ export function MembersManager({ members }: { members: MemberRow[] }) {
               {pageRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="text-eten-faint px-4 py-10 text-center"
                   >
                     No members match your filters.
@@ -205,6 +208,14 @@ export function MembersManager({ members }: { members: MemberRow[] }) {
                           }
                         >
                           {m.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <span
+                          title={vLevelBadge(m.vLevel)}
+                          className="bg-eten-accent-soft text-eten-accent inline-block rounded-full px-2 py-0.5 text-[11.5px] font-bold tabular-nums"
+                        >
+                          V{m.vLevel}
                         </span>
                       </td>
                       <td className="text-eten-ink-muted px-4 py-3 align-top capitalize">

@@ -5,6 +5,7 @@ import { ArrowLeft, BadgeCheck, MapPin, Pencil } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { vLevelBadge } from "@/lib/eten/v-levels";
 import { MessageButton } from "./message-button";
 import { BlockButton } from "./block-button";
 
@@ -87,6 +88,7 @@ export default async function MemberProfilePage({
     { data: pod },
     { data: verifiedCerts },
     { data: verifiedKycRows },
+    { data: memberRow },
   ] = await Promise.all([
     // member_skills_select allows any active member to read; join to names.
     supabase
@@ -115,6 +117,13 @@ export default async function MemberProfilePage({
       .select("kind")
       .eq("member_id", id)
       .eq("status", "verified"),
+    // ETEN readiness level — a public-facing signal. members.v_level is not
+    // peer-readable via RLS, so read it via service_role.
+    getSupabaseAdmin()
+      .from("members")
+      .select("v_level")
+      .eq("id", id)
+      .maybeSingle(),
   ]);
 
   const skills = (mySkillRows ?? [])
@@ -138,6 +147,7 @@ export default async function MemberProfilePage({
   const isBlocked = Boolean(blockRow);
 
   const certs = verifiedCerts ?? [];
+  const vLevel = memberRow?.v_level ?? 0;
   const verifiedKinds = new Set((verifiedKycRows ?? []).map((v) => v.kind));
   const languages = profile.languages ?? [];
   const initials = (profile.full_name ?? "?").trim().charAt(0).toUpperCase();
@@ -197,6 +207,11 @@ export default async function MemberProfilePage({
                 {profile.availability_status}
               </span>
             )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="bg-eten-accent-soft text-eten-accent inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold">
+                {vLevelBadge(vLevel)}
+              </span>
+            </div>
             {(verifiedKinds.has("identity") ||
               verifiedKinds.has("address")) && (
               <div className="mt-3 flex flex-wrap gap-2">

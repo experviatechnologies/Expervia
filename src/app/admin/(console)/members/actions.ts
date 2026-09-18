@@ -67,3 +67,42 @@ export async function setMemberStatus(input: {
   revalidatePath("/admin/members");
   return { ok: true };
 }
+
+/**
+ * Set a member's ETEN readiness level (V0–V5). Ops-only (the Verification Desk
+ * / Readiness Panel decision), audit-logged. Written with service_role after
+ * the ops check, mirroring setMemberStatus.
+ */
+export async function setMemberVLevel(input: {
+  memberId: string;
+  vLevel: number;
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to set V-levels." };
+  }
+  if (!Number.isInteger(input.vLevel) || input.vLevel < 0 || input.vLevel > 5) {
+    return { error: "V-level must be between 0 and 5." };
+  }
+
+  const me = await getCurrentMember();
+  const admin = getSupabaseAdmin();
+
+  const { error } = await admin
+    .from("members")
+    .update({ v_level: input.vLevel })
+    .eq("id", input.memberId);
+  if (error) {
+    return { error: "Couldn't update the V-level. Please try again." };
+  }
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: "member.v_level",
+    targetType: "member",
+    targetId: input.memberId,
+    metadata: { v_level: input.vLevel },
+  });
+
+  revalidatePath("/admin/members");
+  return { ok: true };
+}

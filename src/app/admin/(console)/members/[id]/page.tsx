@@ -14,6 +14,8 @@ import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { MemberStatusControl } from "../member-status-control";
+import { MemberVLevelControl } from "../member-vlevel-control";
+import { vLevelLabel } from "@/lib/eten/v-levels";
 
 export const metadata: Metadata = {
   title: "Member",
@@ -49,7 +51,7 @@ export default async function AdminMemberDetailPage({
 
   const { data: member } = await admin
     .from("members")
-    .select("id, status, role, origin, claimed_at, created_at")
+    .select("id, status, role, origin, claimed_at, created_at, v_level")
     .eq("id", id)
     .maybeSingle();
   if (!member) notFound();
@@ -216,6 +218,18 @@ export default async function AdminMemberDetailPage({
             }
           />
         </dl>
+        <div className="border-eten-line-soft mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <div>
+            <dt className="text-eten-faint font-mono text-[11px] tracking-wider uppercase">
+              Readiness level (V0–V5)
+            </dt>
+            <dd className="text-eten-ink-muted mt-1 text-xs">
+              Set by the Readiness Panel. Currently V{member.v_level} ·{" "}
+              {vLevelLabel(member.v_level)}.
+            </dd>
+          </div>
+          <MemberVLevelControl memberId={member.id} vLevel={member.v_level} />
+        </div>
       </Section>
 
       {/* Specialization */}

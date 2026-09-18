@@ -23,6 +23,8 @@ export type MemberIdentity = {
   /** null = account provisioned but not yet activated (claimed). */
   claimedAt: string | null;
   fullName: string | null;
+  /** ETEN readiness level 0–5 (V0–V5); set by operations. */
+  vLevel: number;
 };
 
 export const getCurrentMember = cache(
@@ -38,7 +40,7 @@ export const getCurrentMember = cache(
     const [{ data: member }, { data: profile }] = await Promise.all([
       supabase
         .from("members")
-        .select("role, status, origin, claimed_at")
+        .select("role, status, origin, claimed_at, v_level")
         .eq("id", user.id)
         .maybeSingle(),
       supabase
@@ -57,6 +59,7 @@ export const getCurrentMember = cache(
       origin: member?.origin ?? "self_signup",
       claimedAt: member?.claimed_at ?? null,
       fullName: profile?.full_name ?? null,
+      vLevel: member?.v_level ?? 0,
     };
   },
 );
