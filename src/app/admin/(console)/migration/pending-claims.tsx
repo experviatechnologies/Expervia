@@ -72,6 +72,8 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
     const header = [
       "Name",
       "Email",
+      "Phone",
+      "Source",
       "Location",
       "Job title",
       "Industry",
@@ -81,6 +83,8 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
       [
         p.fullName,
         p.email,
+        p.phone,
+        p.source,
         p.location,
         p.jobTitle,
         p.industryExperience,
@@ -163,6 +167,7 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
             <tr className="border-eten-line-soft border-b text-left">
               <Th>Name</Th>
               <Th>Email</Th>
+              <Th>Phone</Th>
               <Th>Location</Th>
               <Th>Invited</Th>
               <Th> </Th>
@@ -179,6 +184,18 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
                 </td>
                 <td className="text-eten-ink-muted px-4 py-3">
                   {p.email ?? "—"}
+                </td>
+                <td className="text-eten-ink-muted px-4 py-3 whitespace-nowrap">
+                  {p.phone ? (
+                    <a
+                      href={`tel:${p.phone}`}
+                      className="hover:text-eten-ink hover:underline"
+                    >
+                      {p.phone}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="text-eten-ink-muted px-4 py-3">
                   {p.location ?? "—"}

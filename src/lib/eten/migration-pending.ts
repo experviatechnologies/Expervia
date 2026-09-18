@@ -11,6 +11,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type PendingMember = {
   memberId: string;
   email: string | null;
+  phone: string | null;
+  source: string | null;
   fullName: string | null;
   location: string | null;
   jobTitle: string | null;
@@ -46,21 +48,60 @@ export async function listPendingMigration(
   const ids = (members ?? []).map((m) => m.id);
   if (ids.length === 0) return [];
 
-  const [{ data: profiles }, emails] = await Promise.all([
-    admin
-      .from("profiles")
-      .select("member_id, full_name, location, job_title, industry_experience")
-      .in("member_id", ids),
-    emailById(admin),
-  ]);
+  // Phone wasn't copied into the ETEN profile at migration — it stayed on the
+  // original signup rows. Join it back by email (prefer the application's phone,
+  // fall back to the event registration's) and note which source they came from.
+  const [{ data: profiles }, { data: apps }, { data: events }, emails] =
+    await Promise.all([
+      admin
+        .from("profiles")
+        .select(
+          "member_id, full_name, location, job_title, industry_experience",
+        )
+        .in("member_id", ids),
+      admin.from("community_applications").select("email, phone"),
+      admin.from("event_registrations").select("email, phone"),
+      emailById(admin),
+    ]);
+
+  const norm = (e: string | null | undefined) =>
+    (e ?? "").trim().toLowerCase() || null;
+  const appByEmail = new Map<string, string | null>();
+  for (const a of apps ?? []) {
+    const e = norm(a.email);
+    if (e) appByEmail.set(e, a.phone ?? null);
+  }
+  const eventByEmail = new Map<string, string | null>();
+  for (const ev of events ?? []) {
+    const e = norm(ev.email);
+    if (e) eventByEmail.set(e, ev.phone ?? null);
+  }
 
   const pById = new Map((profiles ?? []).map((p) => [p.member_id, p]));
 
   return (members ?? []).map((m) => {
     const p = pById.get(m.id);
+    const email = emails.get(m.id) ?? null;
+    const key = norm(email);
+    const inApp = key ? appByEmail.has(key) : false;
+    const inEvent = key ? eventByEmail.has(key) : false;
+    const phone =
+      (key ? appByEmail.get(key) : null) ||
+      (key ? eventByEmail.get(key) : null) ||
+      null;
+    const source =
+      inApp && inEvent
+        ? "Application + event"
+        : inApp
+          ? "Application"
+          : inEvent
+            ? "Event"
+            : null;
     return {
       memberId: m.id,
-      email: emails.get(m.id) ?? null,
+      email,
+      phone,
+      source,
       fullName: p?.full_name ?? null,
       location: p?.location ?? null,
       jobTitle: p?.job_title ?? null,
