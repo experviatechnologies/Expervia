@@ -78,6 +78,7 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
       "Job title",
       "Industry",
       "Invited",
+      "Last re-sent",
     ];
     const rows = pending.map((p) =>
       [
@@ -89,6 +90,7 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
         p.jobTitle,
         p.industryExperience,
         formatDate(p.invitedAt),
+        p.lastResentAt ? formatDate(p.lastResentAt) : "Not yet",
       ]
         .map(csvCell)
         .join(","),
@@ -123,7 +125,10 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
             Not yet claimed · {pending.length}
           </h2>
           <p className="text-eten-faint mt-0.5 text-xs">
-            Migrated members who were invited but haven&apos;t signed in.
+            Migrated members who were invited but haven&apos;t signed in. Sorted
+            least-recently-contacted first — &ldquo;Resend to first 50&rdquo;
+            targets fresh people each time, and re-sent people move to the
+            bottom (see the Re-sent column). Click again for the next batch.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -170,6 +175,7 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
               <Th>Phone</Th>
               <Th>Location</Th>
               <Th>Invited</Th>
+              <Th>Re-sent</Th>
               <Th> </Th>
             </tr>
           </thead>
@@ -202,6 +208,15 @@ export function PendingClaims({ pending }: { pending: PendingMember[] }) {
                 </td>
                 <td className="text-eten-ink-muted px-4 py-3 text-xs whitespace-nowrap tabular-nums">
                   {formatDate(p.invitedAt)}
+                </td>
+                <td className="px-4 py-3 text-xs whitespace-nowrap">
+                  {p.lastResentAt ? (
+                    <span className="text-eten-verified tabular-nums">
+                      {formatDate(p.lastResentAt)}
+                    </span>
+                  ) : (
+                    <span className="text-eten-faint/70">Not yet</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Button
