@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { EventsHero } from "@/components/sections/events/events-hero";
+import { UpcomingEvent } from "@/components/sections/events/upcoming-event";
 import { WhyAttend } from "@/components/sections/events/why-attend";
 import { EventTopics } from "@/components/sections/events/event-topics";
 import { EventFormats } from "@/components/sections/events/event-formats";
@@ -16,6 +17,7 @@ export default function EventsPage() {
   return (
     <>
       <EventsHero />
+      <UpcomingEvent />
       <WhyAttend />
       <EventTopics />
       <EventFormats />
