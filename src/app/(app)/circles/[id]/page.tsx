@@ -5,6 +5,8 @@ import { ArrowLeft, CalendarDays, GraduationCap, Users } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { vLevelBadge } from "@/lib/eten/v-levels";
+import { SetGoalControl } from "./set-goal-control";
+import { ActivateCircleControl } from "./activate-circle-control";
 
 export const metadata: Metadata = {
   title: "Mentorship Circle",
@@ -54,25 +56,45 @@ export default async function CircleDetailPage({
     .eq("circle_id", id);
   const memberships = memberRows ?? [];
 
-  const [{ data: pod }, { data: profileRows }] = await Promise.all([
-    supabase
-      .from("pods")
-      .select("slug, name")
-      .eq("id", circle.pod_id)
-      .maybeSingle(),
-    supabase
-      .from("profiles")
-      .select("member_id, full_name")
-      .in("member_id", [
-        circle.mentor_id,
-        ...memberships.map((m) => m.member_id),
-      ]),
-  ]);
+  const [{ data: pod }, { data: profileRows }, { data: myPodMembership }] =
+    await Promise.all([
+      supabase
+        .from("pods")
+        .select("slug, name")
+        .eq("id", circle.pod_id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("member_id, full_name")
+        .in("member_id", [
+          circle.mentor_id,
+          ...memberships.map((m) => m.member_id),
+        ]),
+      supabase
+        .from("pod_memberships")
+        .select("role_in_pod")
+        .eq("pod_id", circle.pod_id)
+        .eq("member_id", member.id)
+        .maybeSingle(),
+    ]);
   const nameById = new Map(
     (profileRows ?? []).map((p) => [p.member_id, p.full_name ?? "A member"]),
   );
 
-  const withGoal = memberships.filter((m) => m.target_v_level != null).length;
+  const activeMemberships = memberships.filter((m) => m.status === "active");
+  const withGoal = activeMemberships.filter(
+    (m) => m.target_v_level != null,
+  ).length;
+  const allGoalsSet =
+    activeMemberships.length > 0 && withGoal === activeMemberships.length;
+
+  const viewerMembership =
+    memberships.find((m) => m.member_id === member.id) ?? null;
+  const isMentor = circle.mentor_id === member.id;
+  const isPodLead =
+    myPodMembership?.role_in_pod === "lead" ||
+    myPodMembership?.role_in_pod === "co_lead";
+  const canManage = isMentor || isPodLead || member.role === "operations";
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
@@ -120,12 +142,31 @@ export default async function CircleDetailPage({
           </span>
         </div>
         {circle.status === "draft" && (
-          <p className="text-eten-ink-muted mt-4 text-sm">
-            Draft — {withGoal}/{memberships.length} mentees have set their goal.
-            The Circle can be activated once everyone has.
-          </p>
+          <div className="mt-4">
+            <p className="text-eten-ink-muted text-sm">
+              Draft — {withGoal}/{activeMemberships.length} mentees have set
+              their goal.
+              {canManage
+                ? " Activate once everyone has."
+                : " The Circle starts once your lead activates it."}
+            </p>
+            {canManage && (
+              <ActivateCircleControl
+                circleId={circle.id}
+                allGoalsSet={allGoalsSet}
+              />
+            )}
+          </div>
         )}
       </header>
+
+      {viewerMembership && circle.status !== "completed" && (
+        <SetGoalControl
+          circleId={circle.id}
+          currentVLevel={viewerMembership.target_v_level}
+          currentCapability={viewerMembership.target_capability}
+        />
+      )}
 
       <section className="mt-6">
         <h2 className="text-eten-faint mb-3 font-mono text-xs tracking-wider uppercase">

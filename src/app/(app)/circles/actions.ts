@@ -1,10 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { writeAudit } from "@/lib/eten/audit";
 
 type CreateResult = { circleId: string } | { error: string };
+type ActionResult = { ok: true } | { error: string };
 
 const isDate = (d: string | null) =>
   d === null || /^\d{4}-\d{2}-\d{2}$/.test(d);
@@ -120,4 +122,103 @@ export async function createCircle(input: {
   });
 
   return { circleId: circle.id };
+}
+
+/**
+ * A mentee sets/updates their goal (target V-level + capability) for a Circle
+ * they're enrolled in (M2.3). Written via service_role after confirming the
+ * caller is actually a member of that Circle.
+ */
+export async function setCircleGoal(input: {
+  circleId: string;
+  targetVLevel: number;
+  targetCapability: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const vl = Math.trunc(Number(input.targetVLevel));
+  if (!Number.isInteger(vl) || vl < 0 || vl > 5) {
+    return { error: "Choose a target V-level." };
+  }
+  const capability = input.targetCapability?.trim();
+  if (!capability) return { error: "Enter a capability area." };
+
+  const admin = getSupabaseAdmin();
+  const { data: membership } = await admin
+    .from("circle_memberships")
+    .select("id")
+    .eq("circle_id", input.circleId)
+    .eq("member_id", me.id)
+    .maybeSingle();
+  if (!membership) return { error: "You're not a member of this Circle." };
+
+  const { error } = await admin
+    .from("circle_memberships")
+    .update({ target_v_level: vl, target_capability: capability })
+    .eq("id", membership.id);
+  if (error) return { error: "Couldn't save your goal. Please try again." };
+
+  revalidatePath(`/circles/${input.circleId}`);
+  return { ok: true };
+}
+
+/**
+ * Activate a draft Circle (M2.3). The mentor, a lead of the Circle's pod, or
+ * ops may activate — but only once every enrolled mentee has set a goal.
+ */
+export async function activateCircle(input: {
+  circleId: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  const { data: circle } = await admin
+    .from("mentorship_circles")
+    .select("id, pod_id, mentor_id, status")
+    .eq("id", input.circleId)
+    .maybeSingle();
+  if (!circle) return { error: "That Circle no longer exists." };
+  if (circle.status !== "draft") {
+    return { error: "This Circle isn't a draft." };
+  }
+
+  let allowed = me.role === "operations" || circle.mentor_id === me.id;
+  if (!allowed) {
+    const { data: lead } = await admin
+      .from("pod_memberships")
+      .select("role_in_pod")
+      .eq("pod_id", circle.pod_id)
+      .eq("member_id", me.id)
+      .maybeSingle();
+    allowed = lead?.role_in_pod === "lead" || lead?.role_in_pod === "co_lead";
+  }
+  if (!allowed) return { error: "You can't activate this Circle." };
+
+  const { data: mems } = await admin
+    .from("circle_memberships")
+    .select("target_v_level, status")
+    .eq("circle_id", input.circleId);
+  const active = (mems ?? []).filter((m) => m.status === "active");
+  if (active.length === 0) return { error: "Add at least one mentee first." };
+  if (!active.every((m) => m.target_v_level != null)) {
+    return { error: "Every mentee must set a goal before activating." };
+  }
+
+  const { error } = await admin
+    .from("mentorship_circles")
+    .update({ status: "active" })
+    .eq("id", input.circleId);
+  if (error) return { error: "Couldn't activate. Please try again." };
+
+  await writeAudit({
+    actorId: me.id,
+    action: "circle.activated",
+    targetType: "circle",
+    targetId: input.circleId,
+  });
+
+  revalidatePath(`/circles/${input.circleId}`);
+  return { ok: true };
 }
