@@ -49,6 +49,99 @@ export async function setPodRole(input: {
 }
 
 /**
+ * Nominate a member of your pod as a Mentor Candidate (Mentorship M1.2).
+ *
+ * Pod-Leader action, gated in code and written via service_role (mentor_
+ * nominations has no client write policy). Requires: the caller leads this pod
+ * (lead/co_lead), the nominee is a V2+ member of the same pod, isn't already a
+ * mentor, and has no open nomination. The Verification Desk (ops) decides next.
+ */
+export async function nominateMentor(input: {
+  podId: string;
+  memberId: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+  if (me.status !== "active") return { error: "Your account isn't active." };
+  if (me.id === input.memberId) {
+    return { error: "You can't nominate yourself." };
+  }
+
+  const admin = getSupabaseAdmin();
+
+  // Caller must lead this pod.
+  const { data: myMembership } = await admin
+    .from("pod_memberships")
+    .select("role_in_pod")
+    .eq("pod_id", input.podId)
+    .eq("member_id", me.id)
+    .maybeSingle();
+  if (
+    !myMembership ||
+    (myMembership.role_in_pod !== "lead" &&
+      myMembership.role_in_pod !== "co_lead")
+  ) {
+    return { error: "Only this pod's leads can nominate mentors." };
+  }
+
+  // Nominee must be a member of the same pod.
+  const { data: theirMembership } = await admin
+    .from("pod_memberships")
+    .select("member_id")
+    .eq("pod_id", input.podId)
+    .eq("member_id", input.memberId)
+    .maybeSingle();
+  if (!theirMembership) {
+    return { error: "That member isn't in this pod." };
+  }
+
+  // Nominee must be V2+ and not already a mentor.
+  const [{ data: nominee }, { data: existingMentor }] = await Promise.all([
+    admin
+      .from("members")
+      .select("v_level")
+      .eq("id", input.memberId)
+      .maybeSingle(),
+    admin
+      .from("mentor_profiles")
+      .select("member_id")
+      .eq("member_id", input.memberId)
+      .maybeSingle(),
+  ]);
+  if ((nominee?.v_level ?? 0) < 2) {
+    return { error: "Only V2+ members can be nominated as mentors." };
+  }
+  if (existingMentor) {
+    return { error: "That member is already a mentor." };
+  }
+
+  const { error } = await admin.from("mentor_nominations").insert({
+    member_id: input.memberId,
+    pod_id: input.podId,
+    nominated_by: me.id,
+    status: "pending",
+  });
+  // 23505 = the partial unique (one pending per member) — already nominated.
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "That member already has a pending nomination." };
+    }
+    return { error: "Couldn't submit the nomination. Please try again." };
+  }
+
+  await writeAudit({
+    actorId: me.id,
+    action: "mentor.nominated",
+    targetType: "member",
+    targetId: input.memberId,
+    metadata: { podId: input.podId },
+  });
+
+  revalidatePath("/pods/[slug]", "page");
+  return { ok: true };
+}
+
+/**
  * Join a pod as an ordinary member. Writes through the member's OWN session
  * client so RLS enforces it: pod_memberships_join_self only permits an insert
  * where member_id = auth.uid() and role_in_pod = 'member' (no self-appointing to

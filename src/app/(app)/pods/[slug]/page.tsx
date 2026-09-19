@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, MessageSquare, Star, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  GraduationCap,
+  MessageSquare,
+  Star,
+  Users,
+} from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { PodMembershipButton } from "./pod-membership-button";
 import { PodRoleControl } from "./pod-role-control";
+import { NominateMentorButton } from "./nominate-mentor-button";
 
 export const metadata: Metadata = {
   title: "Pod",
@@ -20,6 +28,12 @@ type RosterMember = {
   role: "member" | "lead" | "co_lead";
   /** Whether the viewer can see this member's profile (link + details). */
   visible: boolean;
+  /** Mentor-nomination context, populated only when a pod lead is viewing. */
+  mentor?: {
+    vLevel: number;
+    isMentor: boolean;
+    pending: boolean;
+  };
 };
 
 const ROLE_RANK = { lead: 0, co_lead: 1, member: 2 } as const;
@@ -92,6 +106,39 @@ export default async function PodDetailPage({
   const isOps = member.role === "operations";
   const myRole = roster.find((r) => r.memberId === member.id)?.role;
   const leads = roster.filter((r) => r.role !== "member");
+
+  // Pod-lead view: enrich the roster with mentor-nomination context (V-level,
+  // whether they're already a mentor, and any open nomination). Read via
+  // service_role since members.v_level isn't peer-readable by RLS — gated on
+  // the viewer actually leading this pod.
+  const isLeadHere = myRole === "lead" || myRole === "co_lead";
+  if (isLeadHere && memberIds.length) {
+    const admin = getSupabaseAdmin();
+    const [{ data: vRows }, { data: mentorRows }, { data: nomRows }] =
+      await Promise.all([
+        admin.from("members").select("id, v_level").in("id", memberIds),
+        admin
+          .from("mentor_profiles")
+          .select("member_id")
+          .in("member_id", memberIds),
+        admin
+          .from("mentor_nominations")
+          .select("member_id")
+          .eq("pod_id", pod.id)
+          .eq("status", "pending")
+          .in("member_id", memberIds),
+      ]);
+    const vById = new Map((vRows ?? []).map((r) => [r.id, r.v_level]));
+    const mentorSet = new Set((mentorRows ?? []).map((r) => r.member_id));
+    const pendingSet = new Set((nomRows ?? []).map((r) => r.member_id));
+    for (const r of roster) {
+      r.mentor = {
+        vLevel: vById.get(r.memberId) ?? 0,
+        isMentor: mentorSet.has(r.memberId),
+        pending: pendingSet.has(r.memberId),
+      };
+    }
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-5xl gap-8 px-4 py-6 lg:px-8">
@@ -206,6 +253,26 @@ export default async function PodDetailPage({
                       </div>
                     );
                   })()}
+                  {r.mentor?.isMentor && (
+                    <span className="bg-eten-verified-soft text-eten-verified inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
+                      <GraduationCap className="size-3.5" />
+                      Mentor
+                    </span>
+                  )}
+                  {isLeadHere &&
+                    r.mentor &&
+                    !r.mentor.isMentor &&
+                    r.memberId !== member.id &&
+                    (r.mentor.pending ? (
+                      <span className="text-eten-faint shrink-0 text-xs">
+                        Nomination pending
+                      </span>
+                    ) : r.mentor.vLevel >= 2 ? (
+                      <NominateMentorButton
+                        podId={pod.id}
+                        memberId={r.memberId}
+                      />
+                    ) : null)}
                   {isOps && (
                     <PodRoleControl
                       podId={pod.id}
