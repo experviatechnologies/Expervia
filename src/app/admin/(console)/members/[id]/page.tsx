@@ -15,7 +15,12 @@ import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { MemberStatusControl } from "../member-status-control";
 import { MemberVLevelControl } from "../member-vlevel-control";
+import { AddEvidence } from "../add-evidence";
 import { vLevelLabel } from "@/lib/eten/v-levels";
+import {
+  EVIDENCE_CATEGORY_LABEL,
+  type EvidenceCategory,
+} from "@/lib/eten/evidence-types";
 
 export const metadata: Metadata = {
   title: "Member",
@@ -63,6 +68,7 @@ export default async function AdminMemberDetailPage({
     { data: skillRows },
     { data: certRows },
     { data: verificationRows },
+    { data: evidenceRows },
   ] = await Promise.all([
     admin
       .from("profiles")
@@ -92,6 +98,13 @@ export default async function AdminMemberDetailPage({
       .select("kind, status, document_type, file_path, review_note")
       .eq("member_id", id)
       .order("created_at", { ascending: false }),
+    admin
+      .from("evidence_records")
+      .select(
+        "id, title, description, category, capability_area, v_level, occurred_at, created_at",
+      )
+      .eq("member_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   type VRow = {
@@ -104,6 +117,18 @@ export default async function AdminMemberDetailPage({
   const vrows = (verificationRows ?? []) as VRow[];
   const identityV = vrows.find((v) => v.kind === "identity") ?? null;
   const addressV = vrows.find((v) => v.kind === "address") ?? null;
+
+  type EvidenceRow = {
+    id: string;
+    title: string;
+    description: string | null;
+    category: string;
+    capability_area: string | null;
+    v_level: number | null;
+    occurred_at: string | null;
+    created_at: string;
+  };
+  const evidence = (evidenceRows ?? []) as EvidenceRow[];
 
   const email = authUser?.user?.email ?? null;
 
@@ -324,6 +349,45 @@ export default async function AdminMemberDetailPage({
           <VerificationLine label="Identity" row={identityV} />
           <VerificationLine label="Proof of address" row={addressV} />
         </div>
+      </Section>
+
+      {/* Capability passport */}
+      <Section title={`Capability passport · ${evidence.length}`}>
+        {evidence.length === 0 ? (
+          <p className="text-eten-faint text-sm">No evidence records yet.</p>
+        ) : (
+          <ul className="mb-4 flex flex-col gap-3">
+            {evidence.map((e) => (
+              <li
+                key={e.id}
+                className="border-eten-line-soft flex flex-wrap items-start justify-between gap-3 border-b pb-3 last:border-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <div className="text-eten-ink font-medium">{e.title}</div>
+                  {e.description && (
+                    <div className="text-eten-faint mt-0.5 text-xs">
+                      {e.description}
+                    </div>
+                  )}
+                  <div className="text-eten-faint mt-1 text-xs">
+                    {[
+                      e.capability_area,
+                      e.v_level != null ? `V${e.v_level}` : null,
+                      formatDate(e.occurred_at ?? e.created_at),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                </div>
+                <span className="bg-eten-accent-soft text-eten-accent shrink-0 rounded-full px-2.5 py-1 text-xs font-medium">
+                  {EVIDENCE_CATEGORY_LABEL[e.category as EvidenceCategory] ??
+                    "Other"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <AddEvidence memberId={member.id} />
       </Section>
 
       {/* About + details */}

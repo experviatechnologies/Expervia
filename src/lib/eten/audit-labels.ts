@@ -5,6 +5,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "member.status.deactivated": "Deactivated a member",
   "member.v_level": "Changed a member's V-level",
   "member.invite_resent": "Re-sent a migration invite",
+  "member.evidence_added": "Added a capability evidence record",
   "cert.verified": "Verified a certification",
   "cert.rejected": "Rejected a certification",
   "cert.unverified": "Reset a certification to pending",

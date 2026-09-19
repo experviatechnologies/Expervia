@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { writeAudit } from "@/lib/eten/audit";
+import { addEvidenceRecord } from "@/lib/eten/evidence";
+import {
+  EVIDENCE_CATEGORIES,
+  type EvidenceCategory,
+} from "@/lib/eten/evidence-types";
 
 type MemberStatus = "active" | "suspended" | "deactivated";
 type ActionResult = { ok: true } | { error: string };
@@ -104,5 +109,64 @@ export async function setMemberVLevel(input: {
   });
 
   revalidatePath("/admin/members");
+  return { ok: true };
+}
+
+/**
+ * Add an attested capability-passport evidence record for a member. Ops-only,
+ * audit-logged. Members can never self-add (integrity); this is the manual
+ * ops entry path — the mentorship module will write records the same way.
+ */
+export async function addMemberEvidence(input: {
+  memberId: string;
+  title: string;
+  description?: string;
+  category?: string;
+  capabilityArea?: string;
+  vLevel?: number | null;
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to add evidence." };
+  }
+  const title = input.title?.trim();
+  if (!title) return { error: "A title is required." };
+  if (title.length > 200) return { error: "That title is too long (200 max)." };
+
+  const category = EVIDENCE_CATEGORIES.includes(
+    input.category as EvidenceCategory,
+  )
+    ? (input.category as EvidenceCategory)
+    : "other";
+  const vLevel =
+    typeof input.vLevel === "number" &&
+    Number.isInteger(input.vLevel) &&
+    input.vLevel >= 0 &&
+    input.vLevel <= 5
+      ? input.vLevel
+      : null;
+
+  const me = await getCurrentMember();
+  const res = await addEvidenceRecord({
+    memberId: input.memberId,
+    title,
+    description: input.description?.trim() || null,
+    category,
+    capabilityArea: input.capabilityArea?.trim() || null,
+    vLevel,
+    sourceType: "manual",
+    issuedBy: me?.id ?? null,
+  });
+  if ("error" in res) {
+    return { error: "Couldn't add the evidence record. Please try again." };
+  }
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: "member.evidence_added",
+    targetType: "member",
+    targetId: input.memberId,
+  });
+
+  revalidatePath(`/admin/members/${input.memberId}`);
   return { ok: true };
 }
