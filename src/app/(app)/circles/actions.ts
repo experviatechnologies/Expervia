@@ -348,3 +348,90 @@ export async function setAttendance(input: {
   revalidatePath(`/circles/${session.circle_id}`);
   return { ok: true };
 }
+
+/**
+ * Post an assignment to a Circle (M3.3). Mentor / lead / ops, active Circle.
+ */
+export async function postAssignment(input: {
+  circleId: string;
+  title: string;
+  instructions?: string;
+  dueDate?: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const title = input.title?.trim();
+  if (!title) return { error: "A title is required." };
+  if (title.length > 200) return { error: "That title is too long (200 max)." };
+
+  const admin = getSupabaseAdmin();
+  const mgr = await canManageCircle(admin, input.circleId, me);
+  if ("error" in mgr) return mgr;
+  if (mgr.circle.status !== "active") {
+    return { error: "Assignments can be posted once the Circle is active." };
+  }
+  const dueDate = input.dueDate?.trim() || null;
+  if (!isDate(dueDate)) return { error: "Please enter a valid due date." };
+
+  const { error } = await admin.from("circle_assignments").insert({
+    circle_id: input.circleId,
+    title,
+    instructions: input.instructions?.trim() || null,
+    due_date: dueDate,
+  });
+  if (error)
+    return { error: "Couldn't post the assignment. Please try again." };
+
+  revalidatePath(`/circles/${input.circleId}`);
+  return { ok: true };
+}
+
+/**
+ * A mentee submits (or resubmits) evidence for an assignment (M3.3). Written
+ * via service_role after confirming the caller is an enrolled mentee of the
+ * assignment's Circle. Resubmitting resets the row to 'submitted'.
+ */
+export async function submitEvidence(input: {
+  assignmentId: string;
+  content: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const content = input.content?.trim();
+  if (!content) return { error: "Add your evidence (text or a link)." };
+
+  const admin = getSupabaseAdmin();
+  const { data: assignment } = await admin
+    .from("circle_assignments")
+    .select("id, circle_id")
+    .eq("id", input.assignmentId)
+    .maybeSingle();
+  if (!assignment) return { error: "That assignment no longer exists." };
+
+  const { data: membership } = await admin
+    .from("circle_memberships")
+    .select("id")
+    .eq("circle_id", assignment.circle_id)
+    .eq("member_id", me.id)
+    .maybeSingle();
+  if (!membership) return { error: "You're not a member of this Circle." };
+
+  const { error } = await admin.from("evidence_submissions").upsert(
+    {
+      assignment_id: input.assignmentId,
+      member_id: me.id,
+      content,
+      status: "submitted",
+      review_note: null,
+      reviewed_by: null,
+      reviewed_at: null,
+    },
+    { onConflict: "assignment_id,member_id" },
+  );
+  if (error) return { error: "Couldn't submit. Please try again." };
+
+  revalidatePath(`/circles/${assignment.circle_id}`);
+  return { ok: true };
+}

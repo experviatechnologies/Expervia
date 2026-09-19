@@ -9,6 +9,8 @@ import { SetGoalControl } from "./set-goal-control";
 import { ActivateCircleControl } from "./activate-circle-control";
 import { AddSessionControl } from "./add-session-control";
 import { AttendanceToggle } from "./attendance-toggle";
+import { PostAssignmentControl } from "./post-assignment-control";
+import { SubmitEvidenceControl } from "./submit-evidence-control";
 
 export const metadata: Metadata = {
   title: "Mentorship Circle",
@@ -128,6 +130,42 @@ export default async function CircleDetailPage({
   function formatSessionDate(iso: string | null): string {
     return iso ? formatDate(iso) : "Session";
   }
+
+  // Assignments + submissions (RLS: mentees see their own; managers see all).
+  type Submission = {
+    id: string;
+    assignment_id: string;
+    member_id: string;
+    content: string | null;
+    status: "submitted" | "approved" | "needs_revision";
+    review_note: string | null;
+  };
+  const { data: assignmentRows } = await supabase
+    .from("circle_assignments")
+    .select("id, title, instructions, due_date, created_at")
+    .eq("circle_id", id)
+    .order("created_at", { ascending: true });
+  const assignments = assignmentRows ?? [];
+  const assignmentIds = assignments.map((a) => a.id);
+
+  const { data: submissionRows } = assignmentIds.length
+    ? await supabase
+        .from("evidence_submissions")
+        .select("id, assignment_id, member_id, content, status, review_note")
+        .in("assignment_id", assignmentIds)
+    : { data: [] };
+  const submissions = (submissionRows ?? []) as Submission[];
+  const subsByAssignment = new Map<string, Submission[]>();
+  for (const s of submissions) {
+    const list = subsByAssignment.get(s.assignment_id) ?? [];
+    list.push(s);
+    subsByAssignment.set(s.assignment_id, list);
+  }
+  const mySubByAssignment = new Map(
+    submissions
+      .filter((s) => s.member_id === member.id)
+      .map((s) => [s.assignment_id, s]),
+  );
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
@@ -304,6 +342,103 @@ export default async function CircleDetailPage({
           )}
         </section>
       )}
+
+      {/* Assignments */}
+      {(circle.status === "active" || assignments.length > 0) && (
+        <section className="mt-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-eten-faint font-mono text-xs tracking-wider uppercase">
+              Assignments · {assignments.length}
+            </h2>
+            {canManage && circle.status === "active" && (
+              <PostAssignmentControl circleId={circle.id} />
+            )}
+          </div>
+          {assignments.length === 0 ? (
+            <div className="border-eten-line text-eten-faint rounded-2xl border border-dashed p-5 text-sm">
+              No assignments yet.
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {assignments.map((a) => {
+                const subs = subsByAssignment.get(a.id) ?? [];
+                const mine = mySubByAssignment.get(a.id) ?? null;
+                return (
+                  <li
+                    key={a.id}
+                    className="bg-eten-panel border-eten-line rounded-2xl border p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-eten-ink font-semibold">{a.title}</h3>
+                      {a.due_date && (
+                        <span className="text-eten-faint text-xs">
+                          Due {formatDate(a.due_date)}
+                        </span>
+                      )}
+                    </div>
+                    {a.instructions && (
+                      <p className="text-eten-ink-muted mt-1 text-sm whitespace-pre-line">
+                        {a.instructions}
+                      </p>
+                    )}
+                    {canManage ? (
+                      <div className="mt-3">
+                        <p className="text-eten-faint mb-2 text-xs">
+                          {subs.length}/{activeMentees.length} submitted
+                        </p>
+                        {subs.length > 0 && (
+                          <ul className="flex flex-col gap-1">
+                            {subs.map((s) => (
+                              <li
+                                key={s.id}
+                                className="flex items-center justify-between gap-2 text-sm"
+                              >
+                                <span className="text-eten-ink-muted">
+                                  {nameById.get(s.member_id) ?? "A member"}
+                                </span>
+                                <SubStatus status={s.status} />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ) : viewerMembership ? (
+                      <SubmitEvidenceControl
+                        assignmentId={a.id}
+                        status={mine?.status ?? null}
+                        content={mine?.content ?? null}
+                        reviewNote={mine?.review_note ?? null}
+                      />
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
+  );
+}
+
+function SubStatus({
+  status,
+}: {
+  status: "submitted" | "approved" | "needs_revision";
+}) {
+  const map = {
+    submitted: "text-eten-ink-muted",
+    approved: "text-eten-verified",
+    needs_revision: "text-amber-400",
+  } as const;
+  const label = {
+    submitted: "Submitted",
+    approved: "Approved",
+    needs_revision: "Needs revision",
+  } as const;
+  return (
+    <span className={"text-xs font-semibold " + map[status]}>
+      {label[status]}
+    </span>
   );
 }
