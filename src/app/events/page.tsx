@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { EventsHero } from "@/components/sections/events/events-hero";
-import { UpcomingEvent } from "@/components/sections/events/upcoming-event";
+import { EventsBoard } from "@/components/sections/events/events-board";
 import { WhyAttend } from "@/components/sections/events/why-attend";
 import { EventTopics } from "@/components/sections/events/event-topics";
 import { EventFormats } from "@/components/sections/events/event-formats";
@@ -13,11 +13,15 @@ export const metadata: Metadata = {
     "Join the Expervia Technology Experts Network (ETEN) — webinars, masterclasses, workshops, and meetups across Africa on Microsoft, Cloud, AI, Cybersecurity, Data, and Digital Transformation.",
 };
 
+// Re-generate periodically so the events board's live / upcoming / ended state
+// stays current without a redeploy.
+export const revalidate = 600;
+
 export default function EventsPage() {
   return (
     <>
       <EventsHero />
-      <UpcomingEvent />
+      <EventsBoard />
       <WhyAttend />
       <EventTopics />
       <EventFormats />
