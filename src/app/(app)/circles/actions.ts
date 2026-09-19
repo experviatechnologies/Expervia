@@ -222,3 +222,129 @@ export async function activateCircle(input: {
   revalidatePath(`/circles/${input.circleId}`);
   return { ok: true };
 }
+
+// ----------------------------------------------------------------------------
+// M3 — running a Circle. Shared authz: mentor / pod-lead / ops may manage.
+// ----------------------------------------------------------------------------
+type CircleRow = {
+  id: string;
+  pod_id: string;
+  mentor_id: string;
+  status: "draft" | "active" | "completed";
+};
+
+async function canManageCircle(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  circleId: string,
+  me: { id: string; role: string },
+): Promise<{ circle: CircleRow } | { error: string }> {
+  const { data: circle } = await admin
+    .from("mentorship_circles")
+    .select("id, pod_id, mentor_id, status")
+    .eq("id", circleId)
+    .maybeSingle();
+  if (!circle) return { error: "That Circle no longer exists." };
+
+  let allowed = me.role === "operations" || circle.mentor_id === me.id;
+  if (!allowed) {
+    const { data: lead } = await admin
+      .from("pod_memberships")
+      .select("role_in_pod")
+      .eq("pod_id", circle.pod_id)
+      .eq("member_id", me.id)
+      .maybeSingle();
+    allowed = lead?.role_in_pod === "lead" || lead?.role_in_pod === "co_lead";
+  }
+  if (!allowed) return { error: "You can't manage this Circle." };
+  return { circle: circle as CircleRow };
+}
+
+/**
+ * Log a session for an active Circle (M3.2). Mentor / lead / ops only. Creates
+ * an attendance row (unmarked) for each active mentee so attendance can be
+ * toggled.
+ */
+export async function addSession(input: {
+  circleId: string;
+  sessionDate?: string;
+  title?: string;
+  notes?: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  const mgr = await canManageCircle(admin, input.circleId, me);
+  if ("error" in mgr) return mgr;
+  if (mgr.circle.status !== "active") {
+    return { error: "Sessions can be logged once the Circle is active." };
+  }
+  const sessionDate = input.sessionDate?.trim() || null;
+  if (!isDate(sessionDate)) return { error: "Please enter a valid date." };
+
+  const { data: session, error } = await admin
+    .from("circle_sessions")
+    .insert({
+      circle_id: input.circleId,
+      session_date: sessionDate,
+      title: input.title?.trim() || null,
+      notes: input.notes?.trim() || null,
+    })
+    .select("id")
+    .single();
+  if (error || !session) {
+    return { error: "Couldn't add the session. Please try again." };
+  }
+
+  const { data: mentees } = await admin
+    .from("circle_memberships")
+    .select("member_id")
+    .eq("circle_id", input.circleId)
+    .eq("status", "active");
+  if (mentees?.length) {
+    await admin.from("session_attendance").insert(
+      mentees.map((m) => ({
+        session_id: session.id,
+        member_id: m.member_id,
+        attended: false,
+      })),
+    );
+  }
+
+  revalidatePath(`/circles/${input.circleId}`);
+  return { ok: true };
+}
+
+/** Mark a mentee present/absent for a session (M3.2). Mentor / lead / ops. */
+export async function setAttendance(input: {
+  sessionId: string;
+  memberId: string;
+  attended: boolean;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  const { data: session } = await admin
+    .from("circle_sessions")
+    .select("circle_id")
+    .eq("id", input.sessionId)
+    .maybeSingle();
+  if (!session) return { error: "That session no longer exists." };
+
+  const mgr = await canManageCircle(admin, session.circle_id, me);
+  if ("error" in mgr) return mgr;
+
+  const { error } = await admin.from("session_attendance").upsert(
+    {
+      session_id: input.sessionId,
+      member_id: input.memberId,
+      attended: input.attended,
+    },
+    { onConflict: "session_id,member_id" },
+  );
+  if (error) return { error: "Couldn't update attendance. Please try again." };
+
+  revalidatePath(`/circles/${session.circle_id}`);
+  return { ok: true };
+}

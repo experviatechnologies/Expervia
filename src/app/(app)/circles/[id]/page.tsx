@@ -7,6 +7,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { vLevelBadge } from "@/lib/eten/v-levels";
 import { SetGoalControl } from "./set-goal-control";
 import { ActivateCircleControl } from "./activate-circle-control";
+import { AddSessionControl } from "./add-session-control";
+import { AttendanceToggle } from "./attendance-toggle";
 
 export const metadata: Metadata = {
   title: "Mentorship Circle",
@@ -95,6 +97,37 @@ export default async function CircleDetailPage({
     myPodMembership?.role_in_pod === "lead" ||
     myPodMembership?.role_in_pod === "co_lead";
   const canManage = isMentor || isPodLead || member.role === "operations";
+
+  // Sessions + attendance for this Circle (RLS-scoped).
+  const { data: sessionRows } = await supabase
+    .from("circle_sessions")
+    .select("id, session_date, title, notes")
+    .eq("circle_id", id)
+    .order("created_at", { ascending: true });
+  const sessions = sessionRows ?? [];
+  const sessionIds = sessions.map((s) => s.id);
+
+  const { data: attendanceRows } = sessionIds.length
+    ? await supabase
+        .from("session_attendance")
+        .select("session_id, member_id, attended")
+        .in("session_id", sessionIds)
+    : { data: [] };
+  const attendedBySession = new Map<string, Map<string, boolean>>();
+  for (const a of attendanceRows ?? []) {
+    const m = attendedBySession.get(a.session_id) ?? new Map();
+    m.set(a.member_id, a.attended);
+    attendedBySession.set(a.session_id, m);
+  }
+
+  const activeMentees = activeMemberships.map((m) => ({
+    memberId: m.member_id,
+    name: nameById.get(m.member_id) ?? "A member",
+  }));
+
+  function formatSessionDate(iso: string | null): string {
+    return iso ? formatDate(iso) : "Session";
+  }
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
@@ -198,6 +231,79 @@ export default async function CircleDetailPage({
           ))}
         </ul>
       </section>
+
+      {/* Sessions */}
+      {(circle.status === "active" || sessions.length > 0) && (
+        <section className="mt-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-eten-faint font-mono text-xs tracking-wider uppercase">
+              Sessions · {sessions.length}
+            </h2>
+            {canManage && circle.status === "active" && (
+              <AddSessionControl circleId={circle.id} />
+            )}
+          </div>
+          {sessions.length === 0 ? (
+            <div className="border-eten-line text-eten-faint rounded-2xl border border-dashed p-5 text-sm">
+              No sessions logged yet.
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {sessions.map((s, i) => {
+                const att = attendedBySession.get(s.id) ?? new Map();
+                return (
+                  <li
+                    key={s.id}
+                    className="bg-eten-panel border-eten-line rounded-2xl border p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-eten-ink font-semibold">
+                        {s.title ?? `Session ${i + 1}`}
+                      </h3>
+                      <span className="text-eten-faint text-xs">
+                        {formatSessionDate(s.session_date)}
+                      </span>
+                    </div>
+                    {s.notes && (
+                      <p className="text-eten-ink-muted mt-1 text-sm whitespace-pre-line">
+                        {s.notes}
+                      </p>
+                    )}
+                    {canManage ? (
+                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                        {activeMentees.map((mn) => (
+                          <span
+                            key={mn.memberId}
+                            className="inline-flex items-center gap-2"
+                          >
+                            <span className="text-eten-ink-muted text-xs">
+                              {mn.name}
+                            </span>
+                            <AttendanceToggle
+                              sessionId={s.id}
+                              memberId={mn.memberId}
+                              attended={att.get(mn.memberId) ?? false}
+                            />
+                          </span>
+                        ))}
+                      </div>
+                    ) : viewerMembership ? (
+                      <p className="text-eten-faint mt-2 text-xs">
+                        You:{" "}
+                        {att.get(member.id)
+                          ? "Present"
+                          : att.has(member.id)
+                            ? "Absent"
+                            : "—"}
+                      </p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   );
 }
