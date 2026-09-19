@@ -9,6 +9,8 @@ import {
   EVIDENCE_CATEGORIES,
   type EvidenceCategory,
 } from "@/lib/eten/evidence-types";
+import { recordRecognition } from "@/lib/eten/recognition";
+import { BADGE_BY_KEY } from "@/lib/eten/recognition-types";
 
 type MemberStatus = "active" | "suspended" | "deactivated";
 type ActionResult = { ok: true } | { error: string };
@@ -163,6 +165,69 @@ export async function addMemberEvidence(input: {
   await writeAudit({
     actorId: me?.id ?? null,
     action: "member.evidence_added",
+    targetType: "member",
+    targetId: input.memberId,
+  });
+
+  revalidatePath(`/admin/members/${input.memberId}`);
+  return { ok: true };
+}
+
+/**
+ * Award recognition to a member — a badge or an Expert Score credit. Ops-only,
+ * audit-logged. Members never self-award; the mentorship module awards the same
+ * way (via service_role) later.
+ */
+export async function addMemberRecognition(input: {
+  memberId: string;
+  kind: "badge" | "score_credit";
+  badgeKey?: string;
+  points?: number;
+  label?: string;
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to award recognition." };
+  }
+
+  const me = await getCurrentMember();
+
+  if (input.kind === "badge") {
+    const badge = input.badgeKey ? BADGE_BY_KEY[input.badgeKey] : undefined;
+    if (!badge) return { error: "Choose a valid badge." };
+    const res = await recordRecognition({
+      memberId: input.memberId,
+      kind: "badge",
+      badgeKey: badge.key,
+      label: input.label?.trim() || badge.label,
+      sourceType: "manual",
+      awardedBy: me?.id ?? null,
+    });
+    if ("error" in res) {
+      return { error: "Couldn't award the badge. Please try again." };
+    }
+  } else {
+    const points = Math.trunc(Number(input.points));
+    if (!Number.isFinite(points) || points === 0) {
+      return { error: "Enter a non-zero points value." };
+    }
+    const label = input.label?.trim();
+    if (!label) return { error: "A reason/label is required." };
+    const res = await recordRecognition({
+      memberId: input.memberId,
+      kind: "score_credit",
+      points,
+      label,
+      sourceType: "manual",
+      awardedBy: me?.id ?? null,
+    });
+    if ("error" in res) {
+      return { error: "Couldn't award the credit. Please try again." };
+    }
+  }
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: "member.recognition_awarded",
     targetType: "member",
     targetId: input.memberId,
   });

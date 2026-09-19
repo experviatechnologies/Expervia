@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft,
+  Award,
   BadgeCheck,
   Clock,
   FileText,
@@ -16,11 +17,16 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { MemberStatusControl } from "../member-status-control";
 import { MemberVLevelControl } from "../member-vlevel-control";
 import { AddEvidence } from "../add-evidence";
+import { AwardRecognition } from "../award-recognition";
 import { vLevelLabel } from "@/lib/eten/v-levels";
 import {
   EVIDENCE_CATEGORY_LABEL,
   type EvidenceCategory,
 } from "@/lib/eten/evidence-types";
+import {
+  summarizeRecognition,
+  type RecognitionRow,
+} from "@/lib/eten/recognition-types";
 
 export const metadata: Metadata = {
   title: "Member",
@@ -69,6 +75,7 @@ export default async function AdminMemberDetailPage({
     { data: certRows },
     { data: verificationRows },
     { data: evidenceRows },
+    { data: recognitionRows },
   ] = await Promise.all([
     admin
       .from("profiles")
@@ -105,6 +112,11 @@ export default async function AdminMemberDetailPage({
       )
       .eq("member_id", id)
       .order("created_at", { ascending: false }),
+    admin
+      .from("recognition_events")
+      .select("kind, badge_key, points, label, created_at")
+      .eq("member_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   type VRow = {
@@ -129,6 +141,11 @@ export default async function AdminMemberDetailPage({
     created_at: string;
   };
   const evidence = (evidenceRows ?? []) as EvidenceRow[];
+
+  const recEvents = (recognitionRows ?? []) as (RecognitionRow & {
+    label: string;
+  })[];
+  const recognition = summarizeRecognition(recEvents);
 
   const email = authUser?.user?.email ?? null;
 
@@ -388,6 +405,61 @@ export default async function AdminMemberDetailPage({
           </ul>
         )}
         <AddEvidence memberId={member.id} />
+      </Section>
+
+      {/* Recognition — Expert Score + badges */}
+      <Section title="Recognition">
+        <div className="mb-4 flex flex-wrap items-center gap-6">
+          <div>
+            <dt className="text-eten-faint font-mono text-[11px] tracking-wider uppercase">
+              Expert Score
+            </dt>
+            <dd className="text-eten-ink mt-1 text-2xl font-extrabold tabular-nums">
+              {recognition.score}
+            </dd>
+          </div>
+          <div className="min-w-0 flex-1">
+            <dt className="text-eten-faint font-mono text-[11px] tracking-wider uppercase">
+              Badges
+            </dt>
+            <dd className="mt-1 flex flex-wrap gap-2">
+              {recognition.badges.length === 0 ? (
+                <span className="text-eten-faint text-sm">None yet</span>
+              ) : (
+                recognition.badges.map((b) => (
+                  <span
+                    key={b.key}
+                    title={b.description}
+                    className="bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                  >
+                    <Award className="size-3" />
+                    {b.label}
+                  </span>
+                ))
+              )}
+            </dd>
+          </div>
+        </div>
+
+        {recEvents.length > 0 && (
+          <ul className="mb-4 flex flex-col gap-2">
+            {recEvents.slice(0, 8).map((r, i) => (
+              <li
+                key={i}
+                className="border-eten-line-soft flex items-center justify-between gap-3 border-b pb-2 text-sm last:border-0 last:pb-0"
+              >
+                <span className="text-eten-ink-muted">{r.label}</span>
+                <span className="text-eten-faint text-xs tabular-nums">
+                  {r.kind === "score_credit"
+                    ? `${(r.points ?? 0) >= 0 ? "+" : ""}${r.points ?? 0} pts`
+                    : "Badge"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <AwardRecognition memberId={member.id} />
       </Section>
 
       {/* About + details */}

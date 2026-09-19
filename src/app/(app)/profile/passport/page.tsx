@@ -8,6 +8,10 @@ import {
   EVIDENCE_CATEGORY_LABEL,
   type EvidenceCategory,
 } from "@/lib/eten/evidence-types";
+import {
+  summarizeRecognition,
+  type RecognitionRow,
+} from "@/lib/eten/recognition-types";
 import { vLevelBadge } from "@/lib/eten/v-levels";
 
 export const metadata: Metadata = {
@@ -28,15 +32,23 @@ export default async function PassportPage() {
   if (!member) redirect("/signin");
 
   const supabase = await createSupabaseServerClient();
-  const { data: rows } = await supabase
-    .from("evidence_records")
-    .select(
-      "id, title, description, category, capability_area, v_level, occurred_at, created_at",
-    )
-    .eq("member_id", member.id)
-    .order("created_at", { ascending: false });
+  const [{ data: rows }, { data: recRows }] = await Promise.all([
+    supabase
+      .from("evidence_records")
+      .select(
+        "id, title, description, category, capability_area, v_level, occurred_at, created_at",
+      )
+      .eq("member_id", member.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("recognition_events")
+      .select("kind, badge_key, points, label, created_at")
+      .eq("member_id", member.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const records = rows ?? [];
+  const recognition = summarizeRecognition((recRows ?? []) as RecognitionRow[]);
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl px-6 py-12">
@@ -60,6 +72,41 @@ export default async function PassportPage() {
           you progress.
         </p>
       </header>
+
+      {/* Expert Score + badges */}
+      <div className="bg-eten-panel border-eten-line mb-6 flex flex-wrap items-center gap-x-8 gap-y-4 rounded-2xl border p-6">
+        <div>
+          <p className="text-label-sm text-eten-ink-muted font-mono tracking-wider uppercase">
+            Expert Score
+          </p>
+          <p className="text-eten-ink mt-1 text-3xl font-extrabold tabular-nums">
+            {recognition.score}
+          </p>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-label-sm text-eten-ink-muted mb-2 font-mono tracking-wider uppercase">
+            Badges
+          </p>
+          {recognition.badges.length === 0 ? (
+            <p className="text-eten-ink-muted text-sm">
+              None yet — earn badges through mentorship and milestones.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {recognition.badges.map((b) => (
+                <span
+                  key={b.key}
+                  title={b.description}
+                  className="border-eten-verified/30 bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium"
+                >
+                  <Award className="size-3.5" />
+                  {b.label}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {records.length === 0 ? (
         <div className="bg-eten-panel border-eten-line text-eten-ink-muted flex flex-col items-center gap-3 rounded-2xl border p-12 text-center">

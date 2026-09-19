@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BadgeCheck, MapPin, Pencil } from "lucide-react";
+import { ArrowLeft, Award, BadgeCheck, MapPin, Pencil } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { vLevelBadge } from "@/lib/eten/v-levels";
+import {
+  summarizeRecognition,
+  type RecognitionRow,
+} from "@/lib/eten/recognition-types";
 import { MessageButton } from "./message-button";
 import { BlockButton } from "./block-button";
 
@@ -89,6 +93,7 @@ export default async function MemberProfilePage({
     { data: verifiedCerts },
     { data: verifiedKycRows },
     { data: memberRow },
+    { data: recognitionRows },
   ] = await Promise.all([
     // member_skills_select allows any active member to read; join to names.
     supabase
@@ -124,6 +129,12 @@ export default async function MemberProfilePage({
       .select("v_level")
       .eq("id", id)
       .maybeSingle(),
+    // Recognition (Expert Score + badges) — public reputation signals; read via
+    // service_role (recognition_events RLS is own-or-ops).
+    getSupabaseAdmin()
+      .from("recognition_events")
+      .select("kind, badge_key, points, label, created_at")
+      .eq("member_id", id),
   ]);
 
   const skills = (mySkillRows ?? [])
@@ -148,6 +159,9 @@ export default async function MemberProfilePage({
 
   const certs = verifiedCerts ?? [];
   const vLevel = memberRow?.v_level ?? 0;
+  const recognition = summarizeRecognition(
+    (recognitionRows ?? []) as RecognitionRow[],
+  );
   const verifiedKinds = new Set((verifiedKycRows ?? []).map((v) => v.kind));
   const languages = profile.languages ?? [];
   const initials = (profile.full_name ?? "?").trim().charAt(0).toUpperCase();
@@ -259,6 +273,36 @@ export default async function MemberProfilePage({
           </ul>
         )}
       </Section>
+
+      {/* Recognition — Expert Score + badges */}
+      {(recognition.score > 0 || recognition.badges.length > 0) && (
+        <Section title="Recognition">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+            <div>
+              <p className="text-label-sm text-eten-ink-muted font-mono tracking-wider uppercase">
+                Expert Score
+              </p>
+              <p className="text-eten-ink mt-1 text-2xl font-bold tabular-nums">
+                {recognition.score}
+              </p>
+            </div>
+            {recognition.badges.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {recognition.badges.map((b) => (
+                  <span
+                    key={b.key}
+                    title={b.description}
+                    className="border-eten-verified/30 bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium"
+                  >
+                    <Award className="size-3.5" />
+                    {b.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
 
       {/* About */}
       {profile.bio && (
