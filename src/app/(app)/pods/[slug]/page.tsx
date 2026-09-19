@@ -112,22 +112,38 @@ export default async function PodDetailPage({
   // service_role since members.v_level isn't peer-readable by RLS — gated on
   // the viewer actually leading this pod.
   const isLeadHere = myRole === "lead" || myRole === "co_lead";
+  let podCircles: {
+    id: string;
+    title: string | null;
+    status: "draft" | "active" | "completed";
+    mentorName: string;
+    menteeCount: number;
+  }[] = [];
   if (isLeadHere && memberIds.length) {
     const admin = getSupabaseAdmin();
-    const [{ data: vRows }, { data: mentorRows }, { data: nomRows }] =
-      await Promise.all([
-        admin.from("members").select("id, v_level").in("id", memberIds),
-        admin
-          .from("mentor_profiles")
-          .select("member_id")
-          .in("member_id", memberIds),
-        admin
-          .from("mentor_nominations")
-          .select("member_id")
-          .eq("pod_id", pod.id)
-          .eq("status", "pending")
-          .in("member_id", memberIds),
-      ]);
+    const [
+      { data: vRows },
+      { data: mentorRows },
+      { data: nomRows },
+      { data: circleRows },
+    ] = await Promise.all([
+      admin.from("members").select("id, v_level").in("id", memberIds),
+      admin
+        .from("mentor_profiles")
+        .select("member_id")
+        .in("member_id", memberIds),
+      admin
+        .from("mentor_nominations")
+        .select("member_id")
+        .eq("pod_id", pod.id)
+        .eq("status", "pending")
+        .in("member_id", memberIds),
+      admin
+        .from("mentorship_circles")
+        .select("id, title, status, mentor_id, circle_memberships(count)")
+        .eq("pod_id", pod.id)
+        .order("created_at", { ascending: false }),
+    ]);
     const vById = new Map((vRows ?? []).map((r) => [r.id, r.v_level]));
     const mentorSet = new Set((mentorRows ?? []).map((r) => r.member_id));
     const pendingSet = new Set((nomRows ?? []).map((r) => r.member_id));
@@ -138,6 +154,21 @@ export default async function PodDetailPage({
         pending: pendingSet.has(r.memberId),
       };
     }
+    podCircles = (
+      (circleRows ?? []) as unknown as {
+        id: string;
+        title: string | null;
+        status: "draft" | "active" | "completed";
+        mentor_id: string;
+        circle_memberships: { count: number }[];
+      }[]
+    ).map((c) => ({
+      id: c.id,
+      title: c.title,
+      status: c.status,
+      mentorName: profileById.get(c.mentor_id)?.full_name ?? "A member",
+      menteeCount: c.circle_memberships?.[0]?.count ?? 0,
+    }));
   }
 
   return (
@@ -200,6 +231,54 @@ export default async function PodDetailPage({
             the feed composer.
           </span>
         </div>
+
+        {/* Mentorship Circles (lead view) */}
+        {isLeadHere && (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-eten-faint font-mono text-xs tracking-wider uppercase">
+                Mentorship Circles · {podCircles.length}
+              </h2>
+              <Link
+                href={`/pods/${pod.slug}/circles/new`}
+                className="text-eten-accent inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+              >
+                <GraduationCap className="size-4" />
+                Create a Circle
+              </Link>
+            </div>
+            {podCircles.length === 0 ? (
+              <div className="border-eten-line text-eten-faint rounded-2xl border border-dashed p-5 text-sm">
+                No Circles yet. Create one with a Verified Mentor and mentees
+                from this pod.
+              </div>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {podCircles.map((c) => (
+                  <li key={c.id}>
+                    <Link
+                      href={`/circles/${c.id}`}
+                      className="bg-eten-panel border-eten-line hover:border-eten-accent/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 transition-colors"
+                    >
+                      <span className="min-w-0">
+                        <span className="text-eten-ink block font-semibold">
+                          {c.title ?? "Mentorship Circle"}
+                        </span>
+                        <span className="text-eten-faint text-xs">
+                          Mentor: {c.mentorName} · {c.menteeCount} mentee
+                          {c.menteeCount === 1 ? "" : "s"}
+                        </span>
+                      </span>
+                      <span className="bg-eten-panel-hi text-eten-ink-muted shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize">
+                        {c.status}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
         {/* Roster */}
         <section className="mt-6">
