@@ -12,6 +12,8 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "mentor.rejected": "Rejected a mentor nomination",
   "circle.created": "Created a Mentorship Circle",
   "circle.activated": "Activated a Mentorship Circle",
+  "circle.evidence_approved": "Approved Circle evidence",
+  "circle.evidence_revision": "Requested revision on Circle evidence",
   "cert.verified": "Verified a certification",
   "cert.rejected": "Rejected a certification",
   "cert.unverified": "Reset a certification to pending",

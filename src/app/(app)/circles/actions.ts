@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { writeAudit } from "@/lib/eten/audit";
+import { addEvidenceRecord } from "@/lib/eten/evidence";
 
 type CreateResult = { circleId: string } | { error: string };
 type ActionResult = { ok: true } | { error: string };
@@ -431,6 +432,92 @@ export async function submitEvidence(input: {
     { onConflict: "assignment_id,member_id" },
   );
   if (error) return { error: "Couldn't submit. Please try again." };
+
+  revalidatePath(`/circles/${assignment.circle_id}`);
+  return { ok: true };
+}
+
+/**
+ * Mentor / lead / ops reviews an evidence submission (M3.4). Approve flips it
+ * to 'approved', stamps the reviewer, and writes a capability-passport record
+ * for the mentee (using their Circle goal, attributed to the mentor).
+ * "needs_revision" records a note the mentee sees. Idempotent: the passport
+ * record is only written on the transition INTO approved.
+ */
+export async function reviewSubmission(input: {
+  submissionId: string;
+  decision: "approved" | "needs_revision";
+  note?: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+  if (input.decision !== "approved" && input.decision !== "needs_revision") {
+    return { error: "Invalid decision." };
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data: submission } = await admin
+    .from("evidence_submissions")
+    .select("id, assignment_id, member_id, status")
+    .eq("id", input.submissionId)
+    .maybeSingle();
+  if (!submission) return { error: "That submission no longer exists." };
+
+  const { data: assignment } = await admin
+    .from("circle_assignments")
+    .select("id, circle_id, title")
+    .eq("id", submission.assignment_id)
+    .maybeSingle();
+  if (!assignment) return { error: "That assignment no longer exists." };
+
+  const mgr = await canManageCircle(admin, assignment.circle_id, me);
+  if ("error" in mgr) return mgr;
+
+  const alreadyApproved = submission.status === "approved";
+
+  const { error } = await admin
+    .from("evidence_submissions")
+    .update({
+      status: input.decision,
+      review_note:
+        input.decision === "needs_revision" ? input.note?.trim() || null : null,
+      reviewed_by: me.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", input.submissionId);
+  if (error) return { error: "Couldn't save the review. Please try again." };
+
+  if (input.decision === "approved" && !alreadyApproved) {
+    const { data: goal } = await admin
+      .from("circle_memberships")
+      .select("target_v_level, target_capability")
+      .eq("circle_id", assignment.circle_id)
+      .eq("member_id", submission.member_id)
+      .maybeSingle();
+    await addEvidenceRecord({
+      memberId: submission.member_id,
+      title: assignment.title,
+      category: "mentorship",
+      capabilityArea: goal?.target_capability ?? null,
+      vLevel: goal?.target_v_level ?? null,
+      sourceType: "circle_assignment",
+      sourceRef: submission.id,
+      attributedTo: mgr.circle.mentor_id,
+      issuedBy: me.id,
+      occurredAt: new Date().toISOString().slice(0, 10),
+    });
+  }
+
+  await writeAudit({
+    actorId: me.id,
+    action:
+      input.decision === "approved"
+        ? "circle.evidence_approved"
+        : "circle.evidence_revision",
+    targetType: "member",
+    targetId: submission.member_id,
+    metadata: { submissionId: submission.id },
+  });
 
   revalidatePath(`/circles/${assignment.circle_id}`);
   return { ok: true };

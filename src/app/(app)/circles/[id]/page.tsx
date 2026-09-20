@@ -11,6 +11,7 @@ import { AddSessionControl } from "./add-session-control";
 import { AttendanceToggle } from "./attendance-toggle";
 import { PostAssignmentControl } from "./post-assignment-control";
 import { SubmitEvidenceControl } from "./submit-evidence-control";
+import { ReviewSubmissionControl } from "./review-submission-control";
 
 export const metadata: Metadata = {
   title: "Mentorship Circle",
@@ -387,16 +388,28 @@ export default async function CircleDetailPage({
                           {subs.length}/{activeMentees.length} submitted
                         </p>
                         {subs.length > 0 && (
-                          <ul className="flex flex-col gap-1">
+                          <ul className="flex flex-col gap-2">
                             {subs.map((s) => (
                               <li
                                 key={s.id}
-                                className="flex items-center justify-between gap-2 text-sm"
+                                className="border-eten-line-soft rounded-lg border p-3"
                               >
-                                <span className="text-eten-ink-muted">
-                                  {nameById.get(s.member_id) ?? "A member"}
-                                </span>
-                                <SubStatus status={s.status} />
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-eten-ink text-sm font-medium">
+                                    {nameById.get(s.member_id) ?? "A member"}
+                                  </span>
+                                  <SubStatus status={s.status} />
+                                </div>
+                                {s.content && (
+                                  <p className="text-eten-ink-muted mt-1 text-sm whitespace-pre-line">
+                                    {s.content}
+                                  </p>
+                                )}
+                                {s.status !== "approved" && (
+                                  <ReviewSubmissionControl
+                                    submissionId={s.id}
+                                  />
+                                )}
                               </li>
                             ))}
                           </ul>
