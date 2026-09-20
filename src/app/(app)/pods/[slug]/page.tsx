@@ -118,6 +118,7 @@ export default async function PodDetailPage({
     status: "draft" | "active" | "completed";
     mentorName: string;
     menteeCount: number;
+    completedCount: number;
   }[] = [];
   if (isLeadHere && memberIds.length) {
     const admin = getSupabaseAdmin();
@@ -140,7 +141,7 @@ export default async function PodDetailPage({
         .in("member_id", memberIds),
       admin
         .from("mentorship_circles")
-        .select("id, title, status, mentor_id, circle_memberships(count)")
+        .select("id, title, status, mentor_id, circle_memberships(status)")
         .eq("pod_id", pod.id)
         .order("created_at", { ascending: false }),
     ]);
@@ -160,15 +161,19 @@ export default async function PodDetailPage({
         title: string | null;
         status: "draft" | "active" | "completed";
         mentor_id: string;
-        circle_memberships: { count: number }[];
+        circle_memberships: { status: string }[];
       }[]
-    ).map((c) => ({
-      id: c.id,
-      title: c.title,
-      status: c.status,
-      mentorName: profileById.get(c.mentor_id)?.full_name ?? "A member",
-      menteeCount: c.circle_memberships?.[0]?.count ?? 0,
-    }));
+    ).map((c) => {
+      const mems = c.circle_memberships ?? [];
+      return {
+        id: c.id,
+        title: c.title,
+        status: c.status,
+        mentorName: profileById.get(c.mentor_id)?.full_name ?? "A member",
+        menteeCount: mems.length,
+        completedCount: mems.filter((m) => m.status === "completed").length,
+      };
+    });
   }
 
   return (
@@ -267,6 +272,9 @@ export default async function PodDetailPage({
                         <span className="text-eten-faint text-xs">
                           Mentor: {c.mentorName} · {c.menteeCount} mentee
                           {c.menteeCount === 1 ? "" : "s"}
+                          {(c.status === "active" ||
+                            c.status === "completed") &&
+                            ` · ${c.completedCount}/${c.menteeCount} graduated`}
                         </span>
                       </span>
                       <span className="bg-eten-panel-hi text-eten-ink-muted shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize">
