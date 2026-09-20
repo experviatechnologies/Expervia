@@ -12,6 +12,7 @@ import { AttendanceToggle } from "./attendance-toggle";
 import { PostAssignmentControl } from "./post-assignment-control";
 import { SubmitEvidenceControl } from "./submit-evidence-control";
 import { ReviewSubmissionControl } from "./review-submission-control";
+import { CompleteCircleControl } from "./complete-circle-control";
 
 export const metadata: Metadata = {
   title: "Mentorship Circle",
@@ -237,6 +238,9 @@ export default async function CircleDetailPage({
               />
             )}
           </div>
+        )}
+        {circle.status === "active" && canManage && (
+          <CompleteCircleControl circleId={circle.id} />
         )}
       </header>
 
