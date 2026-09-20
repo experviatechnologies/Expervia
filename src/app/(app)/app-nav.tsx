@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
+  GraduationCap,
   Home,
   LayoutGrid,
   LogOut,
@@ -29,6 +30,12 @@ type NavItem = { href: string; label: string; short: string; Icon: LucideIcon };
 const NAV: NavItem[] = [
   { href: "/feed", label: "Home", short: "Home", Icon: Home },
   { href: "/pods", label: "Explore Pods", short: "Pods", Icon: LayoutGrid },
+  {
+    href: "/circles",
+    label: "Mentorship",
+    short: "Mentor",
+    Icon: GraduationCap,
+  },
   {
     href: "/messages",
     label: "Messages",

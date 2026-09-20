@@ -168,6 +168,14 @@ export default async function CircleDetailPage({
       .map((s) => [s.assignment_id, s]),
   );
 
+  // Mentee progress (FR-9): sessions attended + assignments approved.
+  const myAttended = sessions.filter(
+    (s) => attendedBySession.get(s.id)?.get(member.id) === true,
+  ).length;
+  const myApproved = assignments.filter(
+    (a) => mySubByAssignment.get(a.id)?.status === "approved",
+  ).length;
+
   return (
     <div className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
       <Link
@@ -231,6 +239,21 @@ export default async function CircleDetailPage({
           </div>
         )}
       </header>
+
+      {viewerMembership && (sessions.length > 0 || assignments.length > 0) && (
+        <section className="bg-eten-panel border-eten-line mt-6 grid grid-cols-2 gap-4 rounded-2xl border p-6">
+          <ProgressStat
+            label="Sessions attended"
+            value={myAttended}
+            total={sessions.length}
+          />
+          <ProgressStat
+            label="Assignments approved"
+            value={myApproved}
+            total={assignments.length}
+          />
+        </section>
+      )}
 
       {viewerMembership && circle.status !== "completed" && (
         <SetGoalControl
@@ -430,6 +453,36 @@ export default async function CircleDetailPage({
           )}
         </section>
       )}
+    </div>
+  );
+}
+
+function ProgressStat({
+  label,
+  value,
+  total,
+}: {
+  label: string;
+  value: number;
+  total: number;
+}) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-label-sm text-eten-ink-muted font-mono tracking-wider uppercase">
+          {label}
+        </span>
+        <span className="text-eten-ink text-sm font-bold tabular-nums">
+          {value}/{total}
+        </span>
+      </div>
+      <div className="bg-eten-panel-hi mt-2 h-2 w-full overflow-hidden rounded-full">
+        <div
+          className="bg-eten-accent h-full rounded-full"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }
