@@ -7,6 +7,7 @@ import { writeAudit } from "@/lib/eten/audit";
 import { addEvidenceRecord } from "@/lib/eten/evidence";
 import { recordRecognition } from "@/lib/eten/recognition";
 import { SCORE_CREDITS } from "@/lib/eten/recognition-types";
+import { notify } from "@/lib/eten/notifications";
 
 type CreateResult = { circleId: string } | { error: string };
 type ActionResult = { ok: true } | { error: string };
@@ -124,6 +125,16 @@ export async function createCircle(input: {
     metadata: { podId: input.podId, mentees: mentees.length },
   });
 
+  for (const menteeId of mentees) {
+    await notify({
+      recipientId: menteeId,
+      actorId: me.id,
+      type: "mentorship",
+      targetType: "circle",
+      targetId: circle.id,
+    });
+  }
+
   return { circleId: circle.id };
 }
 
@@ -201,7 +212,7 @@ export async function activateCircle(input: {
 
   const { data: mems } = await admin
     .from("circle_memberships")
-    .select("target_v_level, status")
+    .select("member_id, target_v_level, status")
     .eq("circle_id", input.circleId);
   const active = (mems ?? []).filter((m) => m.status === "active");
   if (active.length === 0) return { error: "Add at least one mentee first." };
@@ -221,6 +232,16 @@ export async function activateCircle(input: {
     targetType: "circle",
     targetId: input.circleId,
   });
+
+  for (const m of active) {
+    await notify({
+      recipientId: m.member_id,
+      actorId: me.id,
+      type: "mentorship",
+      targetType: "circle",
+      targetId: input.circleId,
+    });
+  }
 
   revalidatePath(`/circles/${input.circleId}`);
   return { ok: true };
@@ -386,6 +407,21 @@ export async function postAssignment(input: {
   if (error)
     return { error: "Couldn't post the assignment. Please try again." };
 
+  const { data: activeMentees } = await admin
+    .from("circle_memberships")
+    .select("member_id")
+    .eq("circle_id", input.circleId)
+    .eq("status", "active");
+  for (const m of activeMentees ?? []) {
+    await notify({
+      recipientId: m.member_id,
+      actorId: me.id,
+      type: "mentorship",
+      targetType: "circle",
+      targetId: input.circleId,
+    });
+  }
+
   revalidatePath(`/circles/${input.circleId}`);
   return { ok: true };
 }
@@ -521,6 +557,14 @@ export async function reviewSubmission(input: {
     metadata: { submissionId: submission.id },
   });
 
+  await notify({
+    recipientId: submission.member_id,
+    actorId: me.id,
+    type: "mentorship",
+    targetType: "circle",
+    targetId: assignment.circle_id,
+  });
+
   revalidatePath(`/circles/${assignment.circle_id}`);
   return { ok: true };
 }
@@ -627,6 +671,13 @@ export async function completeCircle(input: {
       sourceType: "circle",
       sourceRef: input.circleId,
       awardedBy: me.id,
+    });
+    await notify({
+      recipientId: member_id,
+      actorId: me.id,
+      type: "mentorship",
+      targetType: "circle",
+      targetId: input.circleId,
     });
   }
 

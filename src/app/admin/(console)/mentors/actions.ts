@@ -5,6 +5,7 @@ import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { writeAudit } from "@/lib/eten/audit";
 import { recordRecognition } from "@/lib/eten/recognition";
+import { notify } from "@/lib/eten/notifications";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -92,6 +93,16 @@ export async function decideMentorNomination(input: {
     targetId: nom.member_id,
     metadata: { nominationId: nom.id },
   });
+
+  if (input.decision === "approved" && me) {
+    await notify({
+      recipientId: nom.member_id,
+      actorId: me.id,
+      type: "mentorship",
+      targetType: "member",
+      targetId: null,
+    });
+  }
 
   revalidatePath("/admin/mentors");
   return { ok: true };

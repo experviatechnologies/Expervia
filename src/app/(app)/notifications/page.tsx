@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Bell,
+  GraduationCap,
   MessageSquare,
   Sparkles,
   ThumbsUp,
@@ -22,7 +23,8 @@ type NotificationType =
   | "comment"
   | "reaction"
   | "message"
-  | "pod_activity";
+  | "pod_activity"
+  | "mentorship";
 
 function describe(
   type: NotificationType,
@@ -53,6 +55,12 @@ function describe(
         text: `${actor} mentioned you`,
         href: targetId ? `/feed/${targetId}` : "/feed",
         Icon: Sparkles,
+      };
+    case "mentorship":
+      return {
+        text: `${actor} — mentorship update`,
+        href: targetId ? `/circles/${targetId}` : "/circles",
+        Icon: GraduationCap,
       };
     default:
       return { text: `${actor} — pod activity`, href: "/pods", Icon: Bell };
