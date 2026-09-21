@@ -12,6 +12,10 @@ import { ConsultFab } from "@/components/shared/consult-fab";
  * and the ETEN member app + auth screens), which have their own bare layout and
  * are intentionally excluded from analytics tracking.
  */
+// NOTE: this is a denylist — anything NOT listed here gets the public marketing
+// chrome. Every route under the (app) route group and the /admin console must
+// appear here, or it renders with the marketing navbar/footer wrapped around
+// its own app shell. When you add a new signed-in area, add its prefix here.
 const BARE_PREFIXES = [
   "/admin",
   "/dashboard",
@@ -23,6 +27,7 @@ const BARE_PREFIXES = [
   "/members",
   "/feed",
   "/pods",
+  "/circles",
   "/messages",
   "/notifications",
   "/settings",
