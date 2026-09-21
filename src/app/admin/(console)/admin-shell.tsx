@@ -9,7 +9,6 @@ import {
   Boxes,
   FileText,
   CalendarCheck,
-  CalendarDays,
   BadgeCheck,
   IdCard,
   ShieldAlert,
@@ -49,11 +48,6 @@ const GROUPS: NavGroup[] = [
       { label: "Members", href: "/admin/members", Icon: Users },
       { label: "Pods", href: "/admin/pods", Icon: Boxes },
       { label: "Applications", href: "/admin/applications", Icon: FileText },
-      {
-        label: "Events",
-        href: "/admin/site-events",
-        Icon: CalendarDays,
-      },
       {
         label: "Event Registrations",
         href: "/admin/events",

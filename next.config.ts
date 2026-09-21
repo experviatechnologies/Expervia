@@ -1,12 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images: {
-    // Event flyers are served from the public Supabase Storage bucket
-    // (<ref>.supabase.co/storage/v1/object/public/...), so allow that host for
-    // next/image.
-    remotePatterns: [{ protocol: "https", hostname: "**.supabase.co" }],
-  },
   experimental: {
     // Persist Turbopack's compile cache to .next/ so dev restarts are warm
     // instead of recompiling every route from scratch (stable for dev).

@@ -5,31 +5,24 @@ import {
   CalendarDays,
   Clock,
   MonitorPlay,
-  PlayCircle,
   Radio,
   UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
-import { getPublishedEvents, type PublicEvent } from "@/lib/eten/events";
+import { EVENTS, type EtenEvent } from "@/config/events";
 
 type Status = "live" | "upcoming" | "past";
-type EventWithStatus = PublicEvent & { status: Status };
+type EventWithStatus = EtenEvent & { status: Status };
 
 const WAT = "Africa/Lagos";
 
-function statusOf(e: PublicEvent, now: number): Status {
-  if (!e.start) return "upcoming"; // announced, date to be confirmed
+function statusOf(e: EtenEvent, now: number): Status {
   const start = new Date(e.start).getTime();
-  // No explicit end → assume the session runs ~2h from its start.
-  const end = e.end ? new Date(e.end).getTime() : start + 2 * 60 * 60 * 1000;
+  const end = new Date(e.end).getTime();
   if (now < start) return "upcoming";
   if (now > end) return "past";
   return "live";
-}
-
-function startMs(e: PublicEvent): number {
-  return e.start ? new Date(e.start).getTime() : Number.MAX_SAFE_INTEGER;
 }
 
 function formatDate(iso: string): string {
@@ -42,37 +35,34 @@ function formatDate(iso: string): string {
   });
 }
 
-function formatTimeRange(startIso: string, endIso: string | null): string {
+function formatTimeRange(startIso: string, endIso: string): string {
   const opts: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
     timeZone: WAT,
   };
   const s = new Date(startIso).toLocaleTimeString("en-US", opts);
-  if (!endIso) return `${s} (WAT)`;
   const e = new Date(endIso).toLocaleTimeString("en-US", opts);
   return `${s} – ${e} (WAT)`;
 }
 
-export async function EventsBoard() {
-  const events = await getPublishedEvents();
-
+export function EventsBoard() {
   // Server component, rendered per request/revalidation (see `revalidate` on
   // the events page) — reading the clock here is deterministic for the render,
   // not a client re-render, so the purity rule doesn't apply.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
-  const withStatus: EventWithStatus[] = events.map((e) => ({
+  const withStatus: EventWithStatus[] = EVENTS.map((e) => ({
     ...e,
     status: statusOf(e, now),
   }));
 
   const liveUpcoming = withStatus
     .filter((e) => e.status !== "past")
-    .sort((a, b) => startMs(a) - startMs(b));
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   const past = withStatus
     .filter((e) => e.status === "past")
-    .sort((a, b) => startMs(b) - startMs(a))
+    .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
     .slice(0, 4);
 
   const [featured, ...moreUpcoming] = liveUpcoming;
@@ -169,11 +159,9 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
         <h3 className="font-display text-on-surface mt-4 text-2xl leading-snug font-bold text-balance">
           {event.title}
         </h3>
-        {event.blurb && (
-          <p className="text-body-md text-on-surface-variant mt-3">
-            {event.blurb}
-          </p>
-        )}
+        <p className="text-body-md text-on-surface-variant mt-3">
+          {event.blurb}
+        </p>
 
         <dl className="mt-6 flex flex-col gap-3">
           {event.speaker && (
@@ -187,21 +175,15 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
               )}
             </Detail>
           )}
-          {event.start && (
-            <>
-              <Detail Icon={CalendarDays} label="Date">
-                {formatDate(event.start)}
-              </Detail>
-              <Detail Icon={Clock} label="Time">
-                {formatTimeRange(event.start, event.end)}
-              </Detail>
-            </>
-          )}
-          {event.platform && (
-            <Detail Icon={MonitorPlay} label="Where">
-              {event.platform}
-            </Detail>
-          )}
+          <Detail Icon={CalendarDays} label="Date">
+            {formatDate(event.start)}
+          </Detail>
+          <Detail Icon={Clock} label="Time">
+            {formatTimeRange(event.start, event.end)}
+          </Detail>
+          <Detail Icon={MonitorPlay} label="Where">
+            {event.platform}
+          </Detail>
         </dl>
 
         {event.joinUrl && event.status !== "past" && (
@@ -222,24 +204,6 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
             </p>
           </div>
         )}
-
-        {event.status === "past" && event.recordingUrl && (
-          <div className="mt-8">
-            <Button asChild variant="brand" size="pill" className="font-bold">
-              <Link
-                href={event.recordingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <PlayCircle />
-                Watch the recording
-              </Link>
-            </Button>
-            <p className="text-on-surface-variant/70 mt-3 text-sm">
-              Missed it live? Watch the full session on YouTube.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -250,18 +214,15 @@ function CompactEvent({ event }: { event: EventWithStatus }) {
     <div className="glass-card flex flex-col gap-3 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3">
         <StatusBadge status={event.status} />
-        {event.start && (
-          <span className="text-on-surface-variant/70 text-xs whitespace-nowrap">
-            {formatDate(event.start)}
-          </span>
-        )}
+        <span className="text-on-surface-variant/70 text-xs whitespace-nowrap">
+          {formatDate(event.start)}
+        </span>
       </div>
       <h4 className="font-display text-on-surface font-bold text-balance">
         {event.title}
       </h4>
       <p className="text-on-surface-variant text-sm">
-        {event.start ? `${formatTimeRange(event.start, event.end)} · ` : ""}
-        {event.platform}
+        {formatTimeRange(event.start, event.end)} · {event.platform}
       </p>
       {event.joinUrl && event.status !== "past" && (
         <Link
@@ -272,17 +233,6 @@ function CompactEvent({ event }: { event: EventWithStatus }) {
         >
           {event.status === "live" ? "Join now" : "Join the session"}
           <ArrowRight className="size-4" />
-        </Link>
-      )}
-      {event.status === "past" && event.recordingUrl && (
-        <Link
-          href={event.recordingUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary mt-1 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
-        >
-          <PlayCircle className="size-4" />
-          Watch the recording
         </Link>
       )}
     </div>
