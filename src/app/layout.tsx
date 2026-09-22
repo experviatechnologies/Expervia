@@ -1,25 +1,32 @@
 import type { Metadata } from "next";
-import { Manrope, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { SiteChrome } from "@/components/shared/site-chrome";
 import { siteConfig } from "@/config/site";
 
-const manrope = Manrope({
-  subsets: ["latin"],
+// Self-hosted (not next/font/google): the fonts are stored in ./fonts and
+// bundled at build, so the build never fetches from Google — which was failing
+// on the Vercel build (NextFontGoogleFontFileReplacer). These are the latin
+// variable subsets, so a single file per family covers its whole weight range.
+const manrope = localFont({
+  src: "./fonts/Manrope.woff2",
   variable: "--font-manrope",
-  weight: ["600", "700", "800"],
+  weight: "600 800",
+  display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "./fonts/Inter.woff2",
   variable: "--font-inter",
-  weight: ["400", "500", "600"],
+  weight: "400 600",
+  display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono.woff2",
   variable: "--font-jetbrains",
-  weight: ["500"],
+  weight: "500",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
