@@ -41,6 +41,10 @@ export const POST_MEDIA_BUCKET = "post-media";
 // writes/reads, downloads go out as short-lived signed URLs. Create it as a
 // PRIVATE bucket in Supabase Storage.
 export const VERIFICATIONS_BUCKET = "verifications";
+// PUBLIC bucket for event flyer images (admin Events manager). Unlike the
+// private buckets above, this is public: flyers are marketing content rendered
+// via their public URL. Create it as a PUBLIC bucket in Supabase Storage.
+export const EVENT_MEDIA_BUCKET = "event-media";
 
 // Thrown when a submission collides with an existing one (same email — and, for
 // community applications, same vendor track). Route Handlers catch this to
