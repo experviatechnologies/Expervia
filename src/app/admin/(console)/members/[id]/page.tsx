@@ -15,6 +15,7 @@ import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { MemberStatusControl } from "../member-status-control";
+import { DeleteMemberControl } from "../delete-member-control";
 import { MemberVLevelControl } from "../member-vlevel-control";
 import { AddEvidence } from "../add-evidence";
 import { AwardRecognition } from "../award-recognition";
@@ -498,6 +499,24 @@ export default async function AdminMemberDetailPage({
           </dl>
         </Section>
       )}
+
+      {/* Danger zone — permanent deletion */}
+      <section className="border-destructive/30 mt-8 rounded-2xl border border-dashed p-5">
+        <h2 className="text-destructive font-mono text-xs tracking-wider uppercase">
+          Danger zone
+        </h2>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-eten-ink-muted max-w-md text-sm">
+            Permanently delete this account and everything linked to it. Use for
+            spam or fake sign-ups — this can&apos;t be undone.
+          </p>
+          <DeleteMemberControl
+            memberId={member.id}
+            email={email}
+            isOperations={member.role === "operations"}
+          />
+        </div>
+      </section>
     </div>
   );
 }

@@ -3,6 +3,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "member.status.active": "Reactivated a member",
   "member.status.suspended": "Suspended a member",
   "member.status.deactivated": "Deactivated a member",
+  "member.deleted": "Permanently deleted a member",
   "member.v_level": "Changed a member's V-level",
   "member.invite_resent": "Re-sent a migration invite",
   "member.evidence_added": "Added a capability evidence record",
@@ -42,6 +43,7 @@ export function auditTone(action: string): "good" | "warn" | "danger" | "info" {
   if (
     action.endsWith(".removed") ||
     action.endsWith(".rejected") ||
+    action === "member.deleted" ||
     action === "member.status.suspended" ||
     action === "member.status.deactivated"
   )

@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import {
+  getSupabaseAdmin,
+  CERTIFICATES_BUCKET,
+  VERIFICATIONS_BUCKET,
+  POST_MEDIA_BUCKET,
+} from "@/lib/supabase";
 import { writeAudit } from "@/lib/eten/audit";
 import { addEvidenceRecord } from "@/lib/eten/evidence";
 import {
@@ -67,6 +72,121 @@ export async function setMemberStatus(input: {
   await writeAudit({
     actorId: me?.id ?? null,
     action: `member.status.${input.status}`,
+    targetType: "member",
+    targetId: input.memberId,
+  });
+
+  revalidatePath("/admin/members");
+  return { ok: true };
+}
+
+/**
+ * PERMANENTLY delete a member and everything tied to them. Ops-only, and
+ * irreversible — intended for spam / fake sign-ups.
+ *
+ * `members.id` references `auth.users(id) ON DELETE CASCADE`, and every member-
+ * owned table cascades off `members`, so deleting the auth user removes the
+ * whole relational graph (profile, pods, posts, comments, messages,
+ * notifications, evidence, recognition, verifications, circle memberships…) in
+ * one shot. Storage objects do NOT cascade, so we collect the member's file
+ * paths first and remove them afterwards (best-effort).
+ *
+ * Guards: can't delete yourself, can't delete another operations account, and
+ * can't delete a verified mentor who still owns Circles (mentorship_circles.
+ * mentor_id is ON DELETE RESTRICT — we surface that clearly instead of letting
+ * the delete fail on a foreign key).
+ */
+export async function deleteMember(input: {
+  memberId: string;
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to delete members." };
+  }
+
+  const me = await getCurrentMember();
+  if (me && me.id === input.memberId) {
+    return { error: "You can't delete your own account." };
+  }
+
+  const admin = getSupabaseAdmin();
+
+  const { data: target } = await admin
+    .from("members")
+    .select("id, role")
+    .eq("id", input.memberId)
+    .maybeSingle();
+  if (!target) return { error: "That member no longer exists." };
+  if (target.role === "operations") {
+    return { error: "Operations accounts can't be deleted from here." };
+  }
+
+  // A mentor who still owns Circles can't be removed (FK restrict). Say so.
+  const { count: circleCount } = await admin
+    .from("mentorship_circles")
+    .select("*", { count: "exact", head: true })
+    .eq("mentor_id", input.memberId);
+  if (circleCount && circleCount > 0) {
+    return {
+      error: `This member mentors ${circleCount} Circle${
+        circleCount === 1 ? "" : "s"
+      }. Reassign or complete them before deleting this account.`,
+    };
+  }
+
+  // Collect the member's storage objects BEFORE the cascade removes their rows.
+  const [{ data: certs }, { data: vers }, { data: myPosts }] =
+    await Promise.all([
+      admin
+        .from("certifications")
+        .select("certificate_path")
+        .eq("member_id", input.memberId),
+      admin
+        .from("member_verifications")
+        .select("file_path")
+        .eq("member_id", input.memberId),
+      admin.from("posts").select("id").eq("author_id", input.memberId),
+    ]);
+
+  const postIds = (myPosts ?? []).map((p) => p.id);
+  const { data: postAtt } = postIds.length
+    ? await admin
+        .from("post_attachments")
+        .select("storage_path")
+        .in("post_id", postIds)
+    : { data: [] };
+
+  const certPaths = (certs ?? [])
+    .map((c) => c.certificate_path)
+    .filter((p): p is string => Boolean(p));
+  const verPaths = (vers ?? [])
+    .map((v) => v.file_path)
+    .filter((p): p is string => Boolean(p));
+  const postPaths = (postAtt ?? [])
+    .map((a) => a.storage_path)
+    .filter((p): p is string => Boolean(p));
+
+  // The delete itself: removing the auth user cascades to public.members and
+  // every table that references it.
+  const { error: delError } = await admin.auth.admin.deleteUser(input.memberId);
+  if (delError) {
+    return { error: "Couldn't delete the account. Please try again." };
+  }
+
+  // Best-effort storage cleanup — orphaned files are low-harm, so a failure
+  // here doesn't fail the delete.
+  if (certPaths.length) {
+    await admin.storage.from(CERTIFICATES_BUCKET).remove(certPaths);
+  }
+  if (verPaths.length) {
+    await admin.storage.from(VERIFICATIONS_BUCKET).remove(verPaths);
+  }
+  if (postPaths.length) {
+    await admin.storage.from(POST_MEDIA_BUCKET).remove(postPaths);
+  }
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: "member.deleted",
     targetType: "member",
     targetId: input.memberId,
   });
