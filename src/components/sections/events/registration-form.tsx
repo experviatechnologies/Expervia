@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Container } from "@/components/shared/container";
 import { SectionLabel } from "@/components/shared/section-label";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 
 const countries = ["Kenya", "Nigeria", "South Africa", "Ghana", "Other"];
 
@@ -56,6 +57,7 @@ export function RegistrationForm() {
         .filter((v): v is string => typeof v === "string"),
       learningGoals: String(formData.get("learningGoals") ?? ""),
       consent: formData.get("consent") === "on",
+      [HONEYPOT_FIELD]: String(formData.get(HONEYPOT_FIELD) ?? ""),
     };
 
     setSubmitting(true);
@@ -117,6 +119,31 @@ export function RegistrationForm() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-10">
+                {/* Honeypot: hidden from real users, off-screen (not display:none
+                    so bots still autofill it). A filled value flags a bot. */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    left: "-9999px",
+                    top: 0,
+                    width: 1,
+                    height: 1,
+                    overflow: "hidden",
+                  }}
+                >
+                  <label htmlFor={HONEYPOT_FIELD}>
+                    Company URL (leave this empty)
+                  </label>
+                  <input
+                    id={HONEYPOT_FIELD}
+                    name={HONEYPOT_FIELD}
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    defaultValue=""
+                  />
+                </div>
                 {/* About You */}
                 <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <legend className="text-label-sm text-primary col-span-full mb-2 font-mono tracking-widest uppercase">

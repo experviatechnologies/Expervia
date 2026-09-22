@@ -3,6 +3,12 @@ import {
   saveEventRegistration,
   DuplicateRegistrationError,
 } from "@/lib/supabase";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import {
+  isDisposableEmail,
+  clientIp,
+  checkRateLimit,
+} from "@/lib/eten/spam-guard";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,11 +29,32 @@ type RegistrationPayload = {
 };
 
 export async function POST(request: Request) {
-  let body: Partial<RegistrationPayload>;
+  let body: Partial<RegistrationPayload> & Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  // Honeypot: real users never see or fill this field. A filled one is a bot —
+  // pretend it worked (200) so it doesn't learn to adapt, but store nothing.
+  const honeypot = body[HONEYPOT_FIELD];
+  if (typeof honeypot === "string" && honeypot.trim() !== "") {
+    return Response.json({ ok: true });
+  }
+
+  // Best-effort per-IP throttle to blunt rapid floods.
+  const ip = clientIp(request.headers);
+  if (
+    !checkRateLimit(`event-register:${ip}`, {
+      limit: 5,
+      windowMs: 15 * 60 * 1000,
+    })
+  ) {
+    return Response.json(
+      { error: "Too many attempts. Please try again in a little while." },
+      { status: 429 },
+    );
   }
 
   const {
@@ -56,6 +83,13 @@ export async function POST(request: Request) {
   if (!EMAIL_RE.test(email.trim())) {
     return Response.json(
       { error: "Please provide a valid email address." },
+      { status: 400 },
+    );
+  }
+
+  if (isDisposableEmail(email.trim())) {
+    return Response.json(
+      { error: "Please register with a permanent email address." },
       { status: 400 },
     );
   }
