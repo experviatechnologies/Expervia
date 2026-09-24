@@ -329,3 +329,73 @@
     cursor: not-allowed;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* ETEN Mentorship product — motion + accordion helpers.              */
+/* Namespaced (mnt-*) so they only affect the standalone product.     */
+/* ------------------------------------------------------------------ */
+
+/* Domains marquee: seamless right-to-left loop (track holds 2 copies). */
+@keyframes mnt-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.mnt-marquee-track {
+  animation: mnt-marquee 34s linear infinite;
+}
+.mnt-marquee:hover .mnt-marquee-track {
+  animation-play-state: paused;
+}
+
+/* Reveal-on-scroll. Progressive enhancement: content is fully visible by
+   default; only browsers that support scroll-driven timelines animate it in,
+   so it never gets stuck hidden. Disabled under reduced-motion. */
+@keyframes mnt-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .mnt-reveal {
+      animation: mnt-fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-timeline: view();
+      animation-range: entry 4% cover 20%;
+    }
+  }
+  .mnt-float {
+    animation: mnt-floaty 7s ease-in-out infinite;
+  }
+}
+@keyframes mnt-floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+/* FAQ accordion: hide the native marker; plus icon rotates to a cross. */
+.mnt-faq > summary {
+  list-style: none;
+}
+.mnt-faq > summary::-webkit-details-marker {
+  display: none;
+}
+.mnt-faq-plus {
+  transition: transform 0.22s ease;
+}
+.mnt-faq[open] .mnt-faq-plus {
+  transform: rotate(45deg);
+}
