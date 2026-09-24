@@ -28,6 +28,7 @@ const BARE_PREFIXES = [
   "/feed",
   "/pods",
   "/circles",
+  "/mentorship",
   "/messages",
   "/notifications",
   "/settings",

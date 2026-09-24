@@ -102,6 +102,27 @@
   --color-eten-verified: #3ec98a;
   --color-eten-verified-soft: #10241c;
 
+  /* ---------------------------------------------------------------- */
+  /* ETEN Mentorship standalone product palette (mnt-*).              */
+  /* Same dark family as the app, but a LIGHTER purple brand accent   */
+  /* (vs the marketing --color-brand #8a5cf5). amber = Prospect,      */
+  /* green = ETEN-Validated — the two-tier funnel colour system.      */
+  /* ---------------------------------------------------------------- */
+  --color-mnt-bg: #0b0e13; /* page ground */
+  --color-mnt-panel: #141922; /* cards */
+  --color-mnt-panel-2: #1b212c; /* raised / inputs */
+  --color-mnt-line: #28303c;
+  --color-mnt-line-strong: #39424f;
+  --color-mnt-ink: #e9edf3;
+  --color-mnt-ink-muted: #9aa6b5;
+  --color-mnt-faint: #6b7688;
+  --color-mnt-brand: #a78bfa; /* lighter purple — primary actions */
+  --color-mnt-brand-2: #7c6cf0; /* gradient partner */
+  --color-mnt-on-brand: #17102e; /* text on the brand fill */
+  --color-mnt-green: #34d399; /* ETEN-Validated */
+  --color-mnt-amber: #f5b13d; /* Prospect */
+  --color-mnt-blue: #5b8def; /* secondary category */
+
   /* Layout spacing tokens. */
   --spacing-section: 120px;
   --spacing-gutter: 32px;
