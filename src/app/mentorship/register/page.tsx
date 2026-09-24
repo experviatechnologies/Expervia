@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const DOMAINS = [
   "Cloud and Infrastructure",
@@ -26,6 +27,7 @@ const inputClass =
 const labelClass = "text-mnt-ink-muted text-[12.5px] font-medium";
 
 export default function MentorshipRegisterPage() {
+  const router = useRouter();
   const [role, setRole] = useState<"mentee" | "mentor">("mentee");
 
   return (
@@ -74,7 +76,7 @@ export default function MentorshipRegisterPage() {
 
         <div className="text-mnt-faint text-[12px]">
           Already have an account?{" "}
-          <Link href="/mentorship/signin" className="text-mnt-brand">
+          <Link href="/mentorship/dashboard" className="text-mnt-brand">
             Sign in
           </Link>
         </div>
@@ -123,6 +125,13 @@ export default function MentorshipRegisterPage() {
             className="mt-6"
             onSubmit={(e) => {
               e.preventDefault();
+              // Demo shortcut: land on the matching dashboard. Real account
+              // creation and the Prospect record arrive in Phase 3 (MP-3.2).
+              router.push(
+                role === "mentor"
+                  ? "/mentorship/mentor"
+                  : "/mentorship/dashboard",
+              );
             }}
           >
             <div className="grid gap-3.5 sm:grid-cols-2">

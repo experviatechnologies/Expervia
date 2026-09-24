@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MntDashShell } from "@/components/mentorship/mnt-dash-shell";
 
 export const metadata = { title: "Mentor dashboard" };
@@ -55,8 +56,8 @@ export default function MentorDashboardPage() {
       user={{ initials: "CN", name: "Chidi Nwosu", role: "Mentor · V4" }}
       nav={[
         { label: "Dashboard", href: "/mentorship/mentor", active: true },
-        { label: "My Circles" },
-        { label: "Reviews" },
+        { label: "My Circles", href: "/mentorship/circles/1" },
+        { label: "Reviews", href: "/mentorship/circles/1" },
         { label: "Mentees" },
         { label: "Profile" },
       ]}
@@ -92,9 +93,10 @@ export default function MentorDashboardPage() {
             <div className={`${lbl} mb-3.5`}>Circles I lead</div>
             <div className="flex flex-col gap-3">
               {CIRCLES.map((c) => (
-                <div
+                <Link
                   key={c.t}
-                  className="bg-mnt-panel-2 border-mnt-line rounded-xl border p-3.5"
+                  href="/mentorship/circles/1"
+                  className="bg-mnt-panel-2 border-mnt-line hover:border-mnt-brand/40 block rounded-xl border p-3.5 transition"
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="font-display text-[15px] font-bold">
@@ -116,7 +118,7 @@ export default function MentorDashboardPage() {
                   <div className="text-mnt-faint mt-1.5 text-[11px]">
                     {c.grad}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

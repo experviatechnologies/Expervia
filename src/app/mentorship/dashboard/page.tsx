@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MntDashShell } from "@/components/mentorship/mnt-dash-shell";
 
 export const metadata = { title: "Dashboard" };
@@ -52,8 +53,8 @@ export default function MenteeDashboardPage() {
       user={{ initials: "AO", name: "Amara Okoye", role: "Mentee" }}
       nav={[
         { label: "Dashboard", href: "/mentorship/dashboard", active: true },
-        { label: "My Circle" },
-        { label: "Assignments" },
+        { label: "My Circle", href: "/mentorship/circles/1" },
+        { label: "Assignments", href: "/mentorship/circles/1" },
         { label: "Progress" },
         { label: "Profile" },
       ]}
@@ -126,7 +127,10 @@ export default function MenteeDashboardPage() {
 
         {/* circle + assignments */}
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.25fr]">
-          <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+          <Link
+            href="/mentorship/circles/1"
+            className="bg-mnt-panel border-mnt-line hover:border-mnt-brand/40 block rounded-2xl border p-[18px] transition"
+          >
             <div className="flex items-center justify-between">
               <div className={lbl}>My Circle</div>
               <span className="text-mnt-green bg-mnt-green/12 rounded-full px-2.5 py-1 font-mono text-[10px]">
@@ -157,7 +161,7 @@ export default function MenteeDashboardPage() {
                 Session 4 · Thu 25 Sep, 7:00pm WAT
               </div>
             </div>
-          </div>
+          </Link>
 
           <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
             <div className="flex items-center justify-between">
