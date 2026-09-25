@@ -31,6 +31,18 @@ export async function applyAsMentor(input: {
     .maybeSingle();
   if (!area) return { error: "Choose a valid capability area." };
 
+  // Mentoring is for full ETEN members. A Prospect must validate first.
+  const { data: m } = await admin
+    .from("members")
+    .select("validated_at")
+    .eq("id", me.id)
+    .maybeSingle();
+  if (!m?.validated_at) {
+    return {
+      error: "Validate your ETEN membership before applying to mentor.",
+    };
+  }
+
   const { data: mp } = await admin
     .from("mentor_profiles")
     .select("mentor_status")

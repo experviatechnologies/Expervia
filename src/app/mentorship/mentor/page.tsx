@@ -34,7 +34,7 @@ export default async function MentorDashboardPage() {
   const [{ data: member }, { data: profile }] = await Promise.all([
     supabase
       .from("members")
-      .select("mentorship_intent")
+      .select("mentorship_intent, validated_at")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -48,6 +48,7 @@ export default async function MentorDashboardPage() {
   if (member?.mentorship_intent !== "mentor") redirect("/mentorship/dashboard");
 
   const name = profile?.full_name ?? "there";
+  const isValidated = Boolean(member?.validated_at);
 
   const { data: mp } = await supabase
     .from("mentor_profiles")
@@ -211,12 +212,29 @@ export default async function MentorDashboardPage() {
                 <div className="text-[14px] font-bold">
                   Become a verified mentor
                 </div>
-                <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
-                  Apply for verification in your capability area. The ETEN
-                  Readiness Panel reviews every mentor before they can lead a
-                  Circle.
-                </div>
-                {areas.length > 0 && <ApplyMentorControl areas={areas} />}
+                {isValidated ? (
+                  <>
+                    <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                      Apply for verification in your capability area. The ETEN
+                      Readiness Panel reviews every mentor before they can lead
+                      a Circle.
+                    </div>
+                    {areas.length > 0 && <ApplyMentorControl areas={areas} />}
+                  </>
+                ) : (
+                  <>
+                    <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                      Mentoring is for validated ETEN members. Complete your
+                      ETEN membership first, then apply for verification.
+                    </div>
+                    <a
+                      href="/onboarding"
+                      className="bg-mnt-amber mt-3 inline-block rounded-[10px] px-4 py-2 text-[13px] font-bold text-[#241a05]"
+                    >
+                      Validate my account
+                    </a>
+                  </>
+                )}
               </>
             )}
           </div>
