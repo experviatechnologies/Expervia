@@ -3,6 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import {
+  TurnstileWidget,
+  TURNSTILE_ENABLED,
+} from "@/components/shared/turnstile-widget";
 
 const DOMAINS = [
   { slug: "cloud-infrastructure", label: "Cloud & Infrastructure" },
@@ -37,10 +41,15 @@ export default function MentorshipRegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (TURNSTILE_ENABLED && !captchaToken) {
+      setError("Please complete the verification below.");
+      return;
+    }
     const fd = new FormData(e.currentTarget);
     const email = String(fd.get("email") ?? "").trim();
     const payload = {
@@ -50,6 +59,7 @@ export default function MentorshipRegisterPage() {
       intent: role,
       capabilityArea: String(fd.get("domain") ?? ""),
       [HONEYPOT_FIELD]: String(fd.get(HONEYPOT_FIELD) ?? ""),
+      turnstileToken: captchaToken,
     };
 
     setSubmitting(true);
@@ -249,6 +259,12 @@ export default function MentorshipRegisterPage() {
                     placeholder="At least 8 characters"
                   />
                 </div>
+
+                {TURNSTILE_ENABLED && (
+                  <div className="mt-4">
+                    <TurnstileWidget onToken={setCaptchaToken} theme="dark" />
+                  </div>
+                )}
 
                 {error && (
                   <p className="text-destructive mt-4 text-[13px]">{error}</p>

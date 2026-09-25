@@ -5,6 +5,7 @@ import {
   clientIp,
   checkRateLimit,
 } from "@/lib/eten/spam-guard";
+import { verifyTurnstile } from "@/lib/eten/turnstile";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -77,6 +78,18 @@ export async function POST(request: Request) {
   if (password.length < 8) {
     return Response.json(
       { error: "Password must be at least 8 characters long." },
+      { status: 400 },
+    );
+  }
+
+  // Bot check (Cloudflare Turnstile). No-op until TURNSTILE_SECRET_KEY is set.
+  const turnstileToken =
+    typeof body.turnstileToken === "string" ? body.turnstileToken : null;
+  if (!(await verifyTurnstile(turnstileToken, ip))) {
+    return Response.json(
+      {
+        error: "Verification failed. Please complete the check and try again.",
+      },
       { status: 400 },
     );
   }
