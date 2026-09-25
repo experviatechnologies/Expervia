@@ -9,6 +9,9 @@ import {
   activateCircle,
   addSession,
   setAttendance,
+  postAssignment,
+  submitEvidence,
+  reviewSubmission,
 } from "../actions";
 
 const field =
@@ -230,5 +233,227 @@ export function AttendanceToggle({
     >
       {attended ? "Present" : "Absent"}
     </button>
+  );
+}
+
+/** Mentor: post an assignment. */
+export function PostAssignmentControl({ circleId }: { circleId: string }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  if (!open) {
+    return (
+      <button type="button" className={btn} onClick={() => setOpen(true)}>
+        + Assignment
+      </button>
+    );
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    startTransition(async () => {
+      setError(null);
+      const res = await postAssignment({
+        circleId,
+        title: String(fd.get("title") ?? ""),
+        instructions: String(fd.get("instructions") ?? ""),
+        dueDate: String(fd.get("dueDate") ?? ""),
+      });
+      if ("error" in res) setError(res.error);
+      else {
+        form.reset();
+        setOpen(false);
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-mnt-panel-2 border-mnt-line mt-3 w-full rounded-xl border p-3"
+    >
+      <input name="title" placeholder="Assignment title" className={field} />
+      <textarea
+        name="instructions"
+        rows={2}
+        placeholder="Instructions (optional)"
+        className={field + " mt-2"}
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input name="dueDate" type="date" className={field + " w-[150px]"} />
+        <button type="submit" className={btn} disabled={pending}>
+          {pending ? "Posting…" : "Post"}
+        </button>
+        <button
+          type="button"
+          className="text-mnt-faint text-[12px]"
+          onClick={() => setOpen(false)}
+        >
+          Cancel
+        </button>
+      </div>
+      {error && <p className="text-destructive mt-2 text-[12px]">{error}</p>}
+    </form>
+  );
+}
+
+/** Mentee: submit or resubmit evidence. */
+export function SubmitEvidenceControl({
+  assignmentId,
+  status,
+  content,
+  reviewNote,
+}: {
+  assignmentId: string;
+  status: "submitted" | "approved" | "needs_revision" | null;
+  content: string | null;
+  reviewNote: string | null;
+}) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  if (status === "approved") {
+    return (
+      <div className="text-mnt-green bg-mnt-green/12 mt-3 rounded-lg px-3 py-2 text-[12px]">
+        Approved — added to your capability passport.
+      </div>
+    );
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    startTransition(async () => {
+      setError(null);
+      const res = await submitEvidence({
+        assignmentId,
+        content: String(fd.get("content") ?? ""),
+      });
+      if ("error" in res) setError(res.error);
+      else router.refresh();
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3">
+      {status === "needs_revision" && reviewNote && (
+        <p className="border-mnt-line bg-mnt-panel text-mnt-ink-muted mb-2 rounded-lg border p-2 text-[12px]">
+          <span className="text-mnt-ink font-semibold">
+            Revision requested:
+          </span>{" "}
+          {reviewNote}
+        </p>
+      )}
+      <textarea
+        name="content"
+        rows={3}
+        required
+        defaultValue={content ?? ""}
+        placeholder="Your evidence — describe what you did, or paste a link."
+        className={field}
+      />
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span className="text-mnt-faint text-[11.5px]">
+          {status === "submitted"
+            ? "Submitted — awaiting review."
+            : status === "needs_revision"
+              ? "Needs revision."
+              : "Not submitted yet."}
+        </span>
+        <button type="submit" className={btn} disabled={pending}>
+          {pending ? "…" : status ? "Resubmit" : "Submit evidence"}
+        </button>
+      </div>
+      {error && <p className="text-destructive mt-2 text-[12px]">{error}</p>}
+    </form>
+  );
+}
+
+/** Mentor: approve a submission or request a revision. */
+export function ReviewSubmissionControl({
+  submissionId,
+}: {
+  submissionId: string;
+}) {
+  const router = useRouter();
+  const [revising, setRevising] = useState(false);
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function decide(decision: "approved" | "needs_revision") {
+    startTransition(async () => {
+      setError(null);
+      const res = await reviewSubmission({ submissionId, decision, note });
+      if ("error" in res) setError(res.error);
+      else {
+        setRevising(false);
+        setNote("");
+        router.refresh();
+      }
+    });
+  }
+
+  if (revising) {
+    return (
+      <div className="mt-2">
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={2}
+          placeholder="What needs changing?"
+          className={field}
+        />
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            className="border-mnt-line-strong text-mnt-ink rounded-[10px] border px-3 py-1.5 text-[12px] font-semibold"
+            onClick={() => setRevising(false)}
+            disabled={pending}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="bg-mnt-amber rounded-[10px] px-3 py-1.5 text-[12px] font-bold text-[#241a05]"
+            onClick={() => decide("needs_revision")}
+            disabled={pending}
+          >
+            Request revision
+          </button>
+        </div>
+        {error && <p className="text-destructive mt-2 text-[12px]">{error}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="border-mnt-line-strong text-mnt-ink rounded-[10px] border px-3 py-1.5 text-[12px] font-semibold"
+          onClick={() => setRevising(true)}
+          disabled={pending}
+        >
+          Request revision
+        </button>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => decide("approved")}
+          disabled={pending}
+        >
+          Approve
+        </button>
+      </div>
+      {error && <p className="text-destructive mt-2 text-[12px]">{error}</p>}
+    </div>
   );
 }

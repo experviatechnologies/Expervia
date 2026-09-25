@@ -8,6 +8,9 @@ import {
   SetGoalControl,
   AddSessionControl,
   AttendanceToggle,
+  PostAssignmentControl,
+  SubmitEvidenceControl,
+  ReviewSubmissionControl,
 } from "./circle-controls";
 
 export const metadata = { title: "Circle" };
@@ -31,9 +34,12 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 type Submission = {
+  id: string;
   assignment_id: string;
   member_id: string;
   status: "submitted" | "approved" | "needs_revision";
+  content: string | null;
+  review_note: string | null;
 };
 
 export default async function MentorshipCircleDetailPage({
@@ -106,7 +112,7 @@ export default async function MentorshipCircleDetailPage({
   const { data: subRows } = assignmentIds.length
     ? await supabase
         .from("evidence_submissions")
-        .select("assignment_id, member_id, status")
+        .select("id, assignment_id, member_id, status, content, review_note")
         .in("assignment_id", assignmentIds)
     : { data: [] };
   const submissions = (subRows ?? []) as Submission[];
@@ -293,8 +299,11 @@ export default async function MentorshipCircleDetailPage({
 
         {/* ASSIGNMENTS */}
         <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
-          <div className={`${lbl} mb-3.5`}>
-            Assignments · {assignments.length}
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+            <div className={lbl}>Assignments · {assignments.length}</div>
+            {isMentor && circle.status === "active" && (
+              <PostAssignmentControl circleId={circle.id} />
+            )}
           </div>
           {assignments.length === 0 ? (
             <p className="text-mnt-faint text-[13px]">No assignments yet.</p>
@@ -304,9 +313,9 @@ export default async function MentorshipCircleDetailPage({
                 const mine = submissions.find(
                   (s) => s.assignment_id === a.id && s.member_id === user.id,
                 );
-                const subCount = submissions.filter(
+                const subs = submissions.filter(
                   (s) => s.assignment_id === a.id,
-                ).length;
+                );
                 return (
                   <div
                     key={a.id}
@@ -322,13 +331,49 @@ export default async function MentorshipCircleDetailPage({
                         </span>
                       )}
                     </div>
-                    <div className="text-mnt-faint mt-1.5 text-[11.5px]">
-                      {isMentor
-                        ? `${subCount}/${memberships.length} submitted`
-                        : mine
-                          ? `Your submission: ${mine.status.replace("_", " ")}`
-                          : "Not submitted"}
-                    </div>
+                    {a.instructions && (
+                      <p className="text-mnt-ink-muted mt-1.5 text-[12.5px] whitespace-pre-line">
+                        {a.instructions}
+                      </p>
+                    )}
+
+                    {isMentor ? (
+                      <div className="mt-2">
+                        <div className="text-mnt-faint text-[11.5px]">
+                          {subs.length}/{activeMentees.length} submitted
+                        </div>
+                        {subs.map((s) => (
+                          <div
+                            key={s.id}
+                            className="border-mnt-line mt-2 rounded-lg border p-2.5"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[13px] font-semibold">
+                                {nameById.get(s.member_id) ?? "A member"}
+                              </span>
+                              <span className="text-mnt-faint font-mono text-[10px] capitalize">
+                                {s.status.replace("_", " ")}
+                              </span>
+                            </div>
+                            {s.content && (
+                              <p className="text-mnt-ink-muted mt-1 text-[12px] whitespace-pre-line">
+                                {s.content}
+                              </p>
+                            )}
+                            {s.status !== "approved" && (
+                              <ReviewSubmissionControl submissionId={s.id} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : viewerMembership ? (
+                      <SubmitEvidenceControl
+                        assignmentId={a.id}
+                        status={mine?.status ?? null}
+                        content={mine?.content ?? null}
+                        reviewNote={mine?.review_note ?? null}
+                      />
+                    ) : null}
                   </div>
                 );
               })}

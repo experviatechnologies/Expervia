@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
+import { addEvidenceRecord } from "@/lib/eten/evidence";
+import { writeAudit } from "@/lib/eten/audit";
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 type ActionResult = { ok: true } | { error: string };
@@ -351,5 +353,210 @@ export async function setAttendance(input: {
   if (error) return { error: "Couldn't update attendance. Please try again." };
 
   revalidatePath(`/mentorship/circles/${session.circle_id}`);
+  return { ok: true };
+}
+
+/** Mentor/ops post an assignment to an active Circle; notify mentees. */
+export async function postAssignment(input: {
+  circleId: string;
+  title: string;
+  instructions?: string;
+  dueDate?: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const title = input.title?.trim();
+  if (!title) return { error: "A title is required." };
+  if (title.length > 200) return { error: "That title is too long (200 max)." };
+
+  const admin = getSupabaseAdmin();
+  if (!(await mentorOrOps(admin, input.circleId, me.id))) {
+    return { error: "Only this Circle's mentor can post assignments." };
+  }
+  const { data: circle } = await admin
+    .from("mentorship_circles")
+    .select("status")
+    .eq("id", input.circleId)
+    .maybeSingle();
+  if (!circle) return { error: "That Circle no longer exists." };
+  if (circle.status !== "active") {
+    return { error: "Assignments can be posted once the Circle is active." };
+  }
+
+  const dueDate = input.dueDate?.trim() || null;
+  if (!isDate(dueDate)) return { error: "Please enter a valid due date." };
+
+  const { error } = await admin.from("circle_assignments").insert({
+    circle_id: input.circleId,
+    title,
+    instructions: input.instructions?.trim() || null,
+    due_date: dueDate,
+  });
+  if (error)
+    return { error: "Couldn't post the assignment. Please try again." };
+
+  const { data: mentees } = await admin
+    .from("circle_memberships")
+    .select("member_id")
+    .eq("circle_id", input.circleId)
+    .eq("status", "active");
+  for (const m of mentees ?? []) {
+    await notify({
+      recipientId: m.member_id,
+      actorId: me.id,
+      type: "mentorship",
+      targetType: "circle",
+      targetId: input.circleId,
+    });
+  }
+
+  revalidatePath(`/mentorship/circles/${input.circleId}`);
+  return { ok: true };
+}
+
+/** A mentee submits or resubmits evidence for an assignment. */
+export async function submitEvidence(input: {
+  assignmentId: string;
+  content: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const content = input.content?.trim();
+  if (!content) return { error: "Add your evidence (text or a link)." };
+
+  const admin = getSupabaseAdmin();
+  const { data: assignment } = await admin
+    .from("circle_assignments")
+    .select("id, circle_id")
+    .eq("id", input.assignmentId)
+    .maybeSingle();
+  if (!assignment) return { error: "That assignment no longer exists." };
+
+  const { data: membership } = await admin
+    .from("circle_memberships")
+    .select("id")
+    .eq("circle_id", assignment.circle_id)
+    .eq("member_id", me.id)
+    .maybeSingle();
+  if (!membership) return { error: "You're not a member of this Circle." };
+
+  const { error } = await admin.from("evidence_submissions").upsert(
+    {
+      assignment_id: input.assignmentId,
+      member_id: me.id,
+      content,
+      status: "submitted",
+      review_note: null,
+      reviewed_by: null,
+      reviewed_at: null,
+    },
+    { onConflict: "assignment_id,member_id" },
+  );
+  if (error) return { error: "Couldn't submit. Please try again." };
+
+  revalidatePath(`/mentorship/circles/${assignment.circle_id}`);
+  return { ok: true };
+}
+
+/**
+ * Mentor/ops review a submission. Approve flips it to 'approved' and writes a
+ * capability-passport record for the mentee (their goal, attributed to the
+ * mentor); "needs_revision" records a note. Passport write only on the
+ * transition into approved.
+ */
+export async function reviewSubmission(input: {
+  submissionId: string;
+  decision: "approved" | "needs_revision";
+  note?: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+  if (input.decision !== "approved" && input.decision !== "needs_revision") {
+    return { error: "Invalid decision." };
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data: submission } = await admin
+    .from("evidence_submissions")
+    .select("id, assignment_id, member_id, status")
+    .eq("id", input.submissionId)
+    .maybeSingle();
+  if (!submission) return { error: "That submission no longer exists." };
+
+  const { data: assignment } = await admin
+    .from("circle_assignments")
+    .select("id, circle_id, title")
+    .eq("id", submission.assignment_id)
+    .maybeSingle();
+  if (!assignment) return { error: "That assignment no longer exists." };
+
+  if (!(await mentorOrOps(admin, assignment.circle_id, me.id))) {
+    return { error: "Only this Circle's mentor can review evidence." };
+  }
+
+  const alreadyApproved = submission.status === "approved";
+
+  const { error } = await admin
+    .from("evidence_submissions")
+    .update({
+      status: input.decision,
+      review_note:
+        input.decision === "needs_revision" ? input.note?.trim() || null : null,
+      reviewed_by: me.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", input.submissionId);
+  if (error) return { error: "Couldn't save the review. Please try again." };
+
+  if (input.decision === "approved" && !alreadyApproved) {
+    const [{ data: goal }, { data: circle }] = await Promise.all([
+      admin
+        .from("circle_memberships")
+        .select("target_v_level, target_capability")
+        .eq("circle_id", assignment.circle_id)
+        .eq("member_id", submission.member_id)
+        .maybeSingle(),
+      admin
+        .from("mentorship_circles")
+        .select("mentor_id")
+        .eq("id", assignment.circle_id)
+        .maybeSingle(),
+    ]);
+    await addEvidenceRecord({
+      memberId: submission.member_id,
+      title: assignment.title,
+      category: "mentorship",
+      capabilityArea: goal?.target_capability ?? null,
+      vLevel: goal?.target_v_level ?? null,
+      sourceType: "circle_assignment",
+      sourceRef: submission.id,
+      attributedTo: circle?.mentor_id ?? null,
+      issuedBy: me.id,
+      occurredAt: new Date().toISOString().slice(0, 10),
+    });
+  }
+
+  await writeAudit({
+    actorId: me.id,
+    action:
+      input.decision === "approved"
+        ? "circle.evidence_approved"
+        : "circle.evidence_revision",
+    targetType: "member",
+    targetId: submission.member_id,
+    metadata: { submissionId: submission.id },
+  });
+
+  await notify({
+    recipientId: submission.member_id,
+    actorId: me.id,
+    type: "mentorship",
+    targetType: "circle",
+    targetId: assignment.circle_id,
+  });
+
+  revalidatePath(`/mentorship/circles/${assignment.circle_id}`);
   return { ok: true };
 }
