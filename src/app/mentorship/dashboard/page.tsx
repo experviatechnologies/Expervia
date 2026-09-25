@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { MntDashShell } from "@/components/mentorship/mnt-dash-shell";
 import { vLevelBadge } from "@/lib/eten/v-levels";
+import {
+  summarizeRecognition,
+  type RecognitionRow,
+} from "@/lib/eten/recognition-types";
 
 export const metadata = { title: "Dashboard" };
 
@@ -86,6 +90,24 @@ export default async function MenteeDashboardPage() {
       };
     }
   }
+
+  // Recognition (Expert Score + badges) and recent passport evidence.
+  const [{ data: recRows }, { data: evidenceRows }] = await Promise.all([
+    supabase
+      .from("recognition_events")
+      .select("kind, badge_key, points")
+      .eq("member_id", user.id),
+    supabase
+      .from("evidence_records")
+      .select("title, capability_area, v_level")
+      .eq("member_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+  const { score, badges } = summarizeRecognition(
+    (recRows ?? []) as RecognitionRow[],
+  );
+  const evidence = evidenceRows ?? [];
 
   const footer = isValidated ? (
     <div className="border-mnt-green/30 rounded-xl border p-3.5 [background:rgba(52,211,153,0.06)]">
@@ -219,6 +241,63 @@ export default async function MenteeDashboardPage() {
                   ? "You will be matched to one in your capability area."
                   : "Validate your account to be placed in a live Circle."}
               </p>
+            )}
+          </div>
+        </div>
+
+        {/* Recognition + capability passport */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+            <div className={lbl}>Recognition</div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="font-display text-mnt-brand text-[28px] font-extrabold tabular-nums">
+                {score}
+              </span>
+              <span className="text-mnt-ink-muted text-[13px]">
+                Expert Score
+              </span>
+            </div>
+            {badges.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {badges.map((b) => (
+                  <span
+                    key={b.key}
+                    title={b.description}
+                    className="bg-mnt-green/12 text-mnt-green rounded-full px-2.5 py-1 text-[11.5px] font-medium"
+                  >
+                    {b.label}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-mnt-faint mt-3 text-[12.5px]">
+                Badges appear as you complete Circles and earn approvals.
+              </p>
+            )}
+          </div>
+
+          <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+            <div className={lbl}>Capability passport</div>
+            {evidence.length === 0 ? (
+              <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+                Evidence your mentor approves is recorded here as verified
+                capability.
+              </p>
+            ) : (
+              <ul className="mt-3 flex flex-col gap-2">
+                {evidence.map((e, i) => (
+                  <li
+                    key={i}
+                    className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                  >
+                    <span className="text-[13px] font-medium">{e.title}</span>
+                    <span className="text-mnt-faint text-[11px] whitespace-nowrap">
+                      {e.v_level != null ? `V${e.v_level}` : ""}
+                      {e.capability_area ? ` · ${e.capability_area}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
