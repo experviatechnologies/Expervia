@@ -1,44 +1,124 @@
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { vLevelBadge } from "@/lib/eten/v-levels";
 
-export const metadata = { title: "Cloud Security Circle" };
+export const metadata = { title: "Circle" };
 
 const lbl =
   "text-mnt-faint font-mono text-[10.5px] tracking-[0.13em] uppercase";
 
-const MENTEES = [
-  { name: "Amara Okoye", goal: "V2 to V3 · Landing-zone design" },
-  { name: "Tunde Bello", goal: "V1 to V2 · Threat detection" },
-  { name: "Kemi Eze", goal: "V2 to V3 · IAM hardening" },
-  { name: "Femi Adé", goal: "V1 to V2 · Network security" },
-];
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 
-const SESSIONS = [
-  {
-    t: "Session 1 · Kickoff and goals",
-    date: "04 Sep",
-    att: ["y", "y", "y", "n"],
-  },
-  {
-    t: "Session 2 · Landing-zone patterns",
-    date: "11 Sep",
-    att: ["y", "y", "n", "y"],
-  },
-  {
-    t: "Session 3 · NSG and policy",
-    date: "18 Sep",
-    att: ["y", "y", "y", "y"],
-  },
-];
-const INITIALS = ["AO", "TB", "KE", "FA"];
+const STATUS_TONE: Record<string, string> = {
+  draft: "text-mnt-ink-muted bg-mnt-panel-2",
+  active: "text-mnt-green bg-mnt-green/12",
+  completed: "text-mnt-brand bg-mnt-brand/12",
+};
 
-export default function MentorshipCircleDetailPage() {
+type Submission = {
+  assignment_id: string;
+  member_id: string;
+  status: "submitted" | "approved" | "needs_revision";
+};
+
+export default async function MentorshipCircleDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/mentorship/signin");
+
+  // RLS (can_see_circle) returns the row only to the mentor, members or ops.
+  const { data: circle } = await supabase
+    .from("mentorship_circles")
+    .select("id, title, cadence, start_date, end_date, status, mentor_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!circle) notFound();
+
+  const { data: memberRows } = await supabase
+    .from("circle_memberships")
+    .select("member_id, target_v_level, target_capability, status")
+    .eq("circle_id", id);
+  const memberships = memberRows ?? [];
+  const isMentor = circle.mentor_id === user.id;
+
+  const { data: profileRows } = await supabase
+    .from("profiles")
+    .select("member_id, full_name")
+    .in("member_id", [
+      circle.mentor_id,
+      ...memberships.map((m) => m.member_id),
+    ]);
+  const nameById = new Map(
+    (profileRows ?? []).map((p) => [p.member_id, p.full_name ?? "A member"]),
+  );
+
+  const { data: sessionRows } = await supabase
+    .from("circle_sessions")
+    .select("id, session_date, title")
+    .eq("circle_id", id)
+    .order("created_at", { ascending: true });
+  const sessions = sessionRows ?? [];
+  const sessionIds = sessions.map((s) => s.id);
+
+  const { data: attRows } = sessionIds.length
+    ? await supabase
+        .from("session_attendance")
+        .select("session_id, member_id, attended")
+        .in("session_id", sessionIds)
+    : { data: [] };
+  const attended = new Map<string, boolean>();
+  for (const a of attRows ?? [])
+    attended.set(`${a.session_id}:${a.member_id}`, a.attended);
+
+  const { data: assignmentRows } = await supabase
+    .from("circle_assignments")
+    .select("id, title, instructions, due_date")
+    .eq("circle_id", id)
+    .order("created_at", { ascending: true });
+  const assignments = assignmentRows ?? [];
+  const assignmentIds = assignments.map((a) => a.id);
+
+  const { data: subRows } = assignmentIds.length
+    ? await supabase
+        .from("evidence_submissions")
+        .select("assignment_id, member_id, status")
+        .in("assignment_id", assignmentIds)
+    : { data: [] };
+  const submissions = (subRows ?? []) as Submission[];
+  const myApproved = assignments.filter((a) =>
+    submissions.some(
+      (s) =>
+        s.assignment_id === a.id &&
+        s.member_id === user.id &&
+        s.status === "approved",
+    ),
+  ).length;
+  const myAttended = sessions.filter(
+    (s) => attended.get(`${s.id}:${user.id}`) === true,
+  ).length;
+
   return (
     <div className="mx-auto max-w-[1140px] px-6 py-8">
       <Link
-        href="/mentorship/mentor"
+        href={isMentor ? "/mentorship/mentor" : "/mentorship/dashboard"}
         className="text-mnt-faint hover:text-mnt-ink text-[13px]"
       >
-        ← My Circles
+        ← Back
       </Link>
 
       {/* HEADER */}
@@ -46,180 +126,162 @@ export default function MentorshipCircleDetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-extrabold">
-              Cloud Security Circle
+              {circle.title ?? "Circle"}
             </h1>
             <div className="text-mnt-ink-muted mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[13.5px]">
-              <span className="inline-flex items-center gap-2">
-                <span className="bg-mnt-green/14 text-mnt-green grid size-[26px] place-items-center rounded-[7px] text-[11px] font-bold">
-                  CN
-                </span>
-                Mentor: Chidi Nwosu · V4
+              <span>
+                Mentor: {nameById.get(circle.mentor_id) ?? "A mentor"}
               </span>
-              <span>5 mentees</span>
-              <span>Weekly · Thu 7:00pm WAT</span>
-              <span className="text-mnt-faint">18 Sep to 30 Oct 2026</span>
+              <span>
+                {memberships.length} mentee{memberships.length === 1 ? "" : "s"}
+              </span>
+              <span className="capitalize">{circle.cadence}</span>
+              <span className="text-mnt-faint">
+                {fmtDate(circle.start_date)} to {fmtDate(circle.end_date)}
+              </span>
             </div>
           </div>
-          <span className="text-mnt-green bg-mnt-green/12 rounded-full px-2.5 py-1 font-mono text-[10px]">
-            Active
+          <span
+            className={
+              "rounded-full px-2.5 py-1 font-mono text-[10px] capitalize " +
+              (STATUS_TONE[circle.status] ??
+                "text-mnt-ink-muted bg-mnt-panel-2")
+            }
+          >
+            {circle.status}
           </span>
         </div>
-        <div className="border-mnt-line mt-5 grid gap-7 border-t pt-[18px] sm:grid-cols-2">
-          <Progress
-            label="Sessions attended"
-            value="3/5"
-            pct="60%"
-            bar="bg-mnt-brand"
-          />
-          <Progress
-            label="Assignments approved"
-            value="2/3"
-            pct="66%"
-            bar="bg-mnt-green"
-          />
-        </div>
+
+        {/* viewer progress (mentee) */}
+        {!isMentor && (sessions.length > 0 || assignments.length > 0) && (
+          <div className="border-mnt-line mt-5 grid gap-7 border-t pt-4 sm:grid-cols-2">
+            <Progress
+              label="Sessions attended"
+              value={myAttended}
+              total={sessions.length}
+              bar="bg-mnt-brand"
+            />
+            <Progress
+              label="Assignments approved"
+              value={myApproved}
+              total={assignments.length}
+              bar="bg-mnt-green"
+            />
+          </div>
+        )}
       </div>
 
       {/* MENTEES */}
       <div className="mt-[18px]">
-        <div className={`${lbl} mb-2.5`}>Mentees · 5</div>
-        <div className="grid gap-2.5 sm:grid-cols-2">
-          {MENTEES.map((m) => (
-            <div
-              key={m.name}
-              className="bg-mnt-panel border-mnt-line flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3"
-            >
-              <span className="text-[13.5px] font-semibold">{m.name}</span>
-              <span className="text-mnt-faint text-[11.5px]">
-                Goal · {m.goal}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-[18px] grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-        {/* SESSIONS */}
-        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
-          <div className="mb-3.5 flex items-center justify-between">
-            <div className={lbl}>Sessions · 3</div>
-            <button
-              type="button"
-              className="border-mnt-line-strong text-mnt-ink rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold"
-            >
-              + Add session
-            </button>
+        <div className={`${lbl} mb-2.5`}>Mentees · {memberships.length}</div>
+        {memberships.length === 0 ? (
+          <div className="border-mnt-line text-mnt-faint rounded-2xl border border-dashed p-5 text-[13px]">
+            No mentees enrolled yet.
           </div>
-          <div className="flex flex-col gap-2.5">
-            {SESSIONS.map((s) => (
+        ) : (
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {memberships.map((m) => (
               <div
-                key={s.t}
-                className="bg-mnt-panel-2 border-mnt-line rounded-xl border p-3.5"
+                key={m.member_id}
+                className="bg-mnt-panel border-mnt-line flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3"
               >
-                <div className="flex items-center justify-between">
-                  <h4 className="font-display text-[14px] font-bold">{s.t}</h4>
-                  <span className="text-mnt-faint text-[11.5px]">{s.date}</span>
-                </div>
-                <div className="mt-2.5 flex gap-1.5">
-                  {s.att.map((a, i) => (
-                    <span
-                      key={i}
-                      className={
-                        "rounded-full px-2 py-0.5 font-mono text-[10px] " +
-                        (a === "y"
-                          ? "bg-mnt-green/12 text-mnt-green"
-                          : "bg-mnt-panel text-mnt-faint")
-                      }
-                    >
-                      {INITIALS[i]} {a === "y" ? "✓" : "–"}
-                    </span>
-                  ))}
-                </div>
+                <span className="text-[13.5px] font-semibold">
+                  {nameById.get(m.member_id) ?? "A member"}
+                </span>
+                <span className="text-mnt-faint text-[11.5px]">
+                  {m.target_v_level != null
+                    ? `Goal · ${vLevelBadge(m.target_v_level)}`
+                    : "Goal not set"}
+                </span>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* ASSIGNMENTS + REVIEW */}
-        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
-          <div className="mb-3.5 flex items-center justify-between">
-            <div className={lbl}>Assignments · 3</div>
-            <button
-              type="button"
-              className="border-mnt-line-strong text-mnt-ink rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold"
-            >
-              + Post assignment
-            </button>
-          </div>
-
-          <div className="bg-mnt-panel-2 border-mnt-line rounded-xl border p-3.5">
-            <div className="flex items-center justify-between">
-              <h4 className="font-display text-[14.5px] font-bold">
-                Write an NSG baseline policy
-              </h4>
-              <span className="text-mnt-faint text-[11.5px]">Due 26 Sep</span>
-            </div>
-            <div className="text-mnt-ink-muted mt-1.5 text-[12px]">
-              3/5 submitted
-            </div>
-            <div className="bg-mnt-panel border-mnt-line mt-3 rounded-[10px] border p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] font-semibold">Amara Okoye</span>
-                <span className="text-mnt-amber bg-mnt-amber/12 rounded-full px-2.5 py-0.5 font-mono text-[10px]">
-                  Submitted
-                </span>
-              </div>
-              <p className="text-mnt-ink-muted mt-2 text-[12px] leading-relaxed">
-                Attached my baseline as a deny-by-default NSG set with
-                justification per rule, link in the doc.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  className="border-mnt-line-strong text-mnt-ink rounded-lg border px-3 py-1.5 text-[12px] font-semibold"
-                >
-                  Request revision
-                </button>
-                <button
-                  type="button"
-                  className="bg-mnt-brand text-mnt-on-brand rounded-lg px-3 py-1.5 text-[12px] font-bold"
-                >
-                  Approve to passport
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-mnt-panel-2 border-mnt-line mt-2.5 rounded-xl border p-3.5">
-            <div className="flex items-center justify-between">
-              <h4 className="font-display text-[14.5px] font-bold">
-                Design a hub-and-spoke topology
-              </h4>
-              <span className="text-mnt-green bg-mnt-green/12 rounded-full px-2.5 py-0.5 font-mono text-[10px]">
-                All approved
-              </span>
-            </div>
-            <div className="text-mnt-ink-muted mt-1.5 text-[12px]">
-              5/5 approved · added to capability passports
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* COMPLETION BAND */}
-      <div className="border-mnt-line mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-[18px] [background:linear-gradient(120deg,rgba(167,140,250,0.08),rgba(52,211,153,0.06))]">
-        <div className="text-mnt-ink-muted text-[13px] leading-relaxed">
-          <b className="text-mnt-ink">Completion:</b> a mentee graduates with at
-          least one approved assignment and 50% or more attendance. Graduates
-          earn <span className="text-mnt-green">+50 Expert Score</span> and the
-          Circle Graduate badge.
+      <div className="mt-[18px] grid gap-4 lg:grid-cols-2">
+        {/* SESSIONS */}
+        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+          <div className={`${lbl} mb-3.5`}>Sessions · {sessions.length}</div>
+          {sessions.length === 0 ? (
+            <p className="text-mnt-faint text-[13px]">
+              No sessions logged yet.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {sessions.map((s, i) => (
+                <div
+                  key={s.id}
+                  className="bg-mnt-panel-2 border-mnt-line rounded-xl border p-3.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-display text-[14px] font-bold">
+                      {s.title ?? `Session ${i + 1}`}
+                    </h4>
+                    <span className="text-mnt-faint text-[11.5px]">
+                      {fmtDate(s.session_date)}
+                    </span>
+                  </div>
+                  {!isMentor && (
+                    <p className="text-mnt-faint mt-1.5 text-[11.5px]">
+                      You:{" "}
+                      {attended.get(`${s.id}:${user.id}`)
+                        ? "Present"
+                        : attended.has(`${s.id}:${user.id}`)
+                          ? "Absent"
+                          : "—"}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <button
-          type="button"
-          className="bg-mnt-brand text-mnt-on-brand rounded-[10px] px-4 py-2.5 text-[13px] font-bold whitespace-nowrap"
-        >
-          Complete Circle
-        </button>
+
+        {/* ASSIGNMENTS */}
+        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+          <div className={`${lbl} mb-3.5`}>
+            Assignments · {assignments.length}
+          </div>
+          {assignments.length === 0 ? (
+            <p className="text-mnt-faint text-[13px]">No assignments yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {assignments.map((a) => {
+                const mine = submissions.find(
+                  (s) => s.assignment_id === a.id && s.member_id === user.id,
+                );
+                const subCount = submissions.filter(
+                  (s) => s.assignment_id === a.id,
+                ).length;
+                return (
+                  <div
+                    key={a.id}
+                    className="bg-mnt-panel-2 border-mnt-line rounded-xl border p-3.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-display text-[14px] font-bold">
+                        {a.title}
+                      </h4>
+                      {a.due_date && (
+                        <span className="text-mnt-faint text-[11.5px]">
+                          Due {fmtDate(a.due_date)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-mnt-faint mt-1.5 text-[11.5px]">
+                      {isMentor
+                        ? `${subCount}/${memberships.length} submitted`
+                        : mine
+                          ? `Your submission: ${mine.status.replace("_", " ")}`
+                          : "Not submitted"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -228,22 +290,28 @@ export default function MentorshipCircleDetailPage() {
 function Progress({
   label,
   value,
-  pct,
+  total,
   bar,
 }: {
   label: string;
-  value: string;
-  pct: string;
+  value: number;
+  total: number;
   bar: string;
 }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div>
       <div className="flex items-center justify-between text-[12px]">
         <span className={lbl}>{label}</span>
-        <span className="font-bold">{value}</span>
+        <span className="font-bold tabular-nums">
+          {value}/{total}
+        </span>
       </div>
       <div className="bg-mnt-panel-2 mt-2 h-[7px] overflow-hidden rounded-full">
-        <div className={`h-full rounded-full ${bar}`} style={{ width: pct }} />
+        <div
+          className={`h-full rounded-full ${bar}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
