@@ -19,7 +19,12 @@ export async function createSupabaseServerClient() {
     );
   }
 
+  const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+
   return createServerClient(url, key, {
+    // Shared-session cookie domain (e.g. ".expervia.com") when set; host-only
+    // otherwise. Must match the browser client's domain.
+    cookieOptions: cookieDomain ? { domain: cookieDomain } : undefined,
     cookies: {
       getAll() {
         return cookieStore.getAll();
