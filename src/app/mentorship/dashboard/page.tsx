@@ -128,6 +128,7 @@ export default async function MenteeDashboardPage() {
           label: "My Circle",
           href: circle ? `/mentorship/circles/${circle.id}` : undefined,
         },
+        { label: "Notifications", href: "/mentorship/notifications" },
         { label: "Profile" },
       ]}
       footer={footer}

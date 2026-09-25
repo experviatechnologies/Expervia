@@ -170,6 +170,7 @@ export default async function MentorDashboardPage() {
       nav={[
         { label: "Dashboard", href: "/mentorship/mentor", active: true },
         { label: "My Circles" },
+        { label: "Notifications", href: "/mentorship/notifications" },
         { label: "Profile" },
       ]}
       footer={footer}
