@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "./actions";
@@ -34,6 +35,7 @@ export function OnboardingForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const next = useSearchParams().get("next") ?? undefined;
 
   const hasSkills = skillGroups.some((g) => g.skills.length > 0);
 
@@ -78,6 +80,7 @@ export function OnboardingForm({
         primaryPodId: selectedPodId,
         secondaryPodIds: Array.from(secondaryPodIds),
         skillIds: Array.from(selectedSkillIds),
+        next,
       });
       // On success the action redirects; only an error comes back here.
       if (result?.error) setError(result.error);

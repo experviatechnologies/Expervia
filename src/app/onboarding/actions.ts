@@ -21,6 +21,7 @@ export async function completeOnboarding(input: {
   primaryPodId: string;
   secondaryPodIds?: string[];
   skillIds: string[];
+  next?: string;
 }): Promise<{ error: string } | void> {
   const member = await getCurrentMember();
   if (!member) {
@@ -109,6 +110,11 @@ export async function completeOnboarding(input: {
     }
   }
 
-  // Success — leave first-run setup for the dashboard.
-  redirect("/dashboard");
+  // Success. Return to an internal `next` when one was passed (e.g. a
+  // mentorship Prospect validating), otherwise the member dashboard.
+  const next =
+    input.next && input.next.startsWith("/") && !input.next.startsWith("//")
+      ? input.next
+      : "/dashboard";
+  redirect(next);
 }

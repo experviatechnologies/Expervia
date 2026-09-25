@@ -111,7 +111,7 @@ export default async function MenteeDashboardPage() {
         Validate with ETEN membership to join live Circles.
       </p>
       <Link
-        href="/onboarding"
+        href="/mentorship/validate"
         className="bg-mnt-amber block rounded-[9px] py-2 text-center text-[12.5px] font-bold text-[#241a05]"
       >
         Validate now
@@ -156,7 +156,7 @@ export default async function MenteeDashboardPage() {
               </div>
             </div>
             <Link
-              href="/onboarding"
+              href="/mentorship/validate"
               className="bg-mnt-amber rounded-[10px] px-4 py-2.5 text-[13px] font-bold whitespace-nowrap text-[#241a05]"
             >
               Validate account

@@ -228,7 +228,7 @@ export default async function MentorDashboardPage() {
                       ETEN membership first, then apply for verification.
                     </div>
                     <a
-                      href="/onboarding"
+                      href="/mentorship/validate"
                       className="bg-mnt-amber mt-3 inline-block rounded-[10px] px-4 py-2 text-[13px] font-bold text-[#241a05]"
                     >
                       Validate my account
