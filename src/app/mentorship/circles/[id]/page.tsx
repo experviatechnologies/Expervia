@@ -2,6 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { vLevelBadge } from "@/lib/eten/v-levels";
+import {
+  ActivateCircleControl,
+  EnrolMenteeControl,
+  SetGoalControl,
+} from "./circle-controls";
 
 export const metadata = { title: "Circle" };
 
@@ -55,6 +60,8 @@ export default async function MentorshipCircleDetailPage({
     .eq("circle_id", id);
   const memberships = memberRows ?? [];
   const isMentor = circle.mentor_id === user.id;
+  const viewerMembership =
+    memberships.find((m) => m.member_id === user.id) ?? null;
 
   const { data: profileRows } = await supabase
     .from("profiles")
@@ -169,11 +176,28 @@ export default async function MentorshipCircleDetailPage({
             />
           </div>
         )}
+
+        {isMentor && circle.status === "draft" && (
+          <ActivateCircleControl circleId={circle.id} />
+        )}
       </div>
+
+      {viewerMembership && circle.status !== "completed" && (
+        <SetGoalControl
+          circleId={circle.id}
+          currentVLevel={viewerMembership.target_v_level}
+          currentCapability={viewerMembership.target_capability}
+        />
+      )}
 
       {/* MENTEES */}
       <div className="mt-[18px]">
-        <div className={`${lbl} mb-2.5`}>Mentees · {memberships.length}</div>
+        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-3">
+          <div className={lbl}>Mentees · {memberships.length}</div>
+          {isMentor && circle.status !== "completed" && (
+            <EnrolMenteeControl circleId={circle.id} />
+          )}
+        </div>
         {memberships.length === 0 ? (
           <div className="border-mnt-line text-mnt-faint rounded-2xl border border-dashed p-5 text-[13px]">
             No mentees enrolled yet.

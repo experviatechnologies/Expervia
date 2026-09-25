@@ -143,10 +143,22 @@ export default async function MentorDashboardPage() {
       footer={footer}
     >
       <div className="px-6 py-8 md:px-9">
-        <div className={lbl}>Mentor workspace</div>
-        <h1 className="font-display mt-1.5 text-[26px] font-extrabold">
-          Welcome, {name.split(" ")[0]}
-        </h1>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className={lbl}>Mentor workspace</div>
+            <h1 className="font-display mt-1.5 text-[26px] font-extrabold">
+              Welcome, {name.split(" ")[0]}
+            </h1>
+          </div>
+          {verified && (
+            <Link
+              href="/mentorship/circles/new"
+              className="bg-mnt-brand text-mnt-on-brand rounded-[10px] px-4 py-2.5 text-[13px] font-bold"
+            >
+              + New Circle
+            </Link>
+          )}
+        </div>
 
         {!verified && (
           <div className="border-mnt-amber/30 mt-5 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">
