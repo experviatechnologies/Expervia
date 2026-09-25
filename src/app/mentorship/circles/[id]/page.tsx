@@ -11,6 +11,7 @@ import {
   PostAssignmentControl,
   SubmitEvidenceControl,
   ReviewSubmissionControl,
+  CompleteCircleControl,
 } from "./circle-controls";
 
 export const metadata = { title: "Circle" };
@@ -188,6 +189,18 @@ export default async function MentorshipCircleDetailPage({
 
         {isMentor && circle.status === "draft" && (
           <ActivateCircleControl circleId={circle.id} />
+        )}
+
+        {isMentor && circle.status === "active" && (
+          <div className="border-mnt-line mt-4 border-t pt-4">
+            <p className="text-mnt-ink-muted text-[12.5px] leading-relaxed">
+              Completing awards graduates who have at least one approved
+              assignment and 50% or more attendance:{" "}
+              <span className="text-mnt-green">+50 Expert Score</span> and the
+              Circle Graduate badge.
+            </p>
+            <CompleteCircleControl circleId={circle.id} />
+          </div>
         )}
       </div>
 

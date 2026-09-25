@@ -6,6 +6,10 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
 import { addEvidenceRecord } from "@/lib/eten/evidence";
 import { writeAudit } from "@/lib/eten/audit";
+import { recordRecognition } from "@/lib/eten/recognition";
+import { SCORE_CREDITS } from "@/lib/eten/recognition-types";
+
+const COMPLETION_MIN_ATTENDANCE = 0.5;
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 type ActionResult = { ok: true } | { error: string };
@@ -558,5 +562,157 @@ export async function reviewSubmission(input: {
   });
 
   revalidatePath(`/mentorship/circles/${assignment.circle_id}`);
+  return { ok: true };
+}
+
+/**
+ * Mentor/ops complete an active Circle. Each active mentee who has >=1 approved
+ * assignment and >=50% attendance (waived if no sessions) graduates: membership
+ * completed + Expert Score credit + Circle Graduate badge. The mentor is
+ * recognised too. Idempotent on active -> completed.
+ */
+export async function completeCircle(input: {
+  circleId: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  if (!(await mentorOrOps(admin, input.circleId, me.id))) {
+    return { error: "Only this Circle's mentor can complete it." };
+  }
+
+  const { data: circle } = await admin
+    .from("mentorship_circles")
+    .select("mentor_id, status")
+    .eq("id", input.circleId)
+    .maybeSingle();
+  if (!circle) return { error: "That Circle no longer exists." };
+  if (circle.status !== "active") {
+    return { error: "Only an active Circle can be completed." };
+  }
+
+  const [{ data: mentees }, { data: sessions }, { data: assignments }] =
+    await Promise.all([
+      admin
+        .from("circle_memberships")
+        .select("member_id")
+        .eq("circle_id", input.circleId)
+        .eq("status", "active"),
+      admin
+        .from("circle_sessions")
+        .select("id")
+        .eq("circle_id", input.circleId),
+      admin
+        .from("circle_assignments")
+        .select("id")
+        .eq("circle_id", input.circleId),
+    ]);
+
+  const sessionIds = (sessions ?? []).map((s) => s.id);
+  const assignmentIds = (assignments ?? []).map((a) => a.id);
+  const totalSessions = sessionIds.length;
+
+  const [{ data: attendance }, { data: subs }] = await Promise.all([
+    sessionIds.length
+      ? admin
+          .from("session_attendance")
+          .select("member_id, attended")
+          .in("session_id", sessionIds)
+      : Promise.resolve({ data: [] }),
+    assignmentIds.length
+      ? admin
+          .from("evidence_submissions")
+          .select("member_id, status")
+          .in("assignment_id", assignmentIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const attendedBy = new Map<string, number>();
+  for (const a of attendance ?? []) {
+    if (a.attended)
+      attendedBy.set(a.member_id, (attendedBy.get(a.member_id) ?? 0) + 1);
+  }
+  const approvedBy = new Map<string, number>();
+  for (const s of subs ?? []) {
+    if (s.status === "approved")
+      approvedBy.set(s.member_id, (approvedBy.get(s.member_id) ?? 0) + 1);
+  }
+
+  for (const { member_id } of mentees ?? []) {
+    const approved = approvedBy.get(member_id) ?? 0;
+    const attendanceOk =
+      totalSessions === 0 ||
+      (attendedBy.get(member_id) ?? 0) / totalSessions >=
+        COMPLETION_MIN_ATTENDANCE;
+    if (approved < 1 || !attendanceOk) continue;
+
+    await admin
+      .from("circle_memberships")
+      .update({ status: "completed" })
+      .eq("circle_id", input.circleId)
+      .eq("member_id", member_id);
+    await recordRecognition({
+      memberId: member_id,
+      kind: "score_credit",
+      points: SCORE_CREDITS.circle_completed_mentee,
+      label: "Completed a Mentorship Circle",
+      sourceType: "circle",
+      sourceRef: input.circleId,
+      awardedBy: me.id,
+    });
+    await recordRecognition({
+      memberId: member_id,
+      kind: "badge",
+      badgeKey: "circle_graduate",
+      label: "Circle Graduate",
+      sourceType: "circle",
+      sourceRef: input.circleId,
+      awardedBy: me.id,
+    });
+    await notify({
+      recipientId: member_id,
+      actorId: me.id,
+      type: "mentorship",
+      targetType: "circle",
+      targetId: input.circleId,
+    });
+  }
+
+  await recordRecognition({
+    memberId: circle.mentor_id,
+    kind: "badge",
+    badgeKey: "circle_mentor",
+    label: "Ran a Mentorship Circle to completion",
+    sourceType: "circle",
+    sourceRef: input.circleId,
+    awardedBy: me.id,
+  });
+  await recordRecognition({
+    memberId: circle.mentor_id,
+    kind: "score_credit",
+    points: SCORE_CREDITS.circle_completed_mentor,
+    label: "Ran a Mentorship Circle to completion",
+    sourceType: "circle",
+    sourceRef: input.circleId,
+    awardedBy: me.id,
+  });
+
+  const { error } = await admin
+    .from("mentorship_circles")
+    .update({ status: "completed" })
+    .eq("id", input.circleId);
+  if (error) {
+    return { error: "Couldn't complete the Circle. Please try again." };
+  }
+
+  await writeAudit({
+    actorId: me.id,
+    action: "circle.completed",
+    targetType: "circle",
+    targetId: input.circleId,
+  });
+
+  revalidatePath(`/mentorship/circles/${input.circleId}`);
   return { ok: true };
 }

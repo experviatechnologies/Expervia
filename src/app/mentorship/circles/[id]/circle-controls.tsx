@@ -12,6 +12,7 @@ import {
   postAssignment,
   submitEvidence,
   reviewSubmission,
+  completeCircle,
 } from "../actions";
 
 const field =
@@ -453,6 +454,56 @@ export function ReviewSubmissionControl({
           Approve
         </button>
       </div>
+      {error && <p className="text-destructive mt-2 text-[12px]">{error}</p>}
+    </div>
+  );
+}
+
+/** Mentor: complete the Circle (awards recognition to graduating mentees). */
+export function CompleteCircleControl({ circleId }: { circleId: string }) {
+  const router = useRouter();
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function run() {
+    startTransition(async () => {
+      setError(null);
+      const res = await completeCircle({ circleId });
+      if ("error" in res) setError(res.error);
+      else router.refresh();
+    });
+  }
+
+  return (
+    <div className="mt-4">
+      {confirm ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-mnt-ink-muted text-[12.5px]">
+            Complete this Circle and award recognition?
+          </span>
+          <button
+            type="button"
+            className="border-mnt-line-strong text-mnt-ink rounded-[10px] border px-3 py-1.5 text-[12px] font-semibold"
+            onClick={() => setConfirm(false)}
+            disabled={pending}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={run}
+            disabled={pending}
+          >
+            {pending ? "Completing…" : "Confirm"}
+          </button>
+        </div>
+      ) : (
+        <button type="button" className={btn} onClick={() => setConfirm(true)}>
+          Complete Circle
+        </button>
+      )}
       {error && <p className="text-destructive mt-2 text-[12px]">{error}</p>}
     </div>
   );
