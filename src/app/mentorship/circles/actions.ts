@@ -148,13 +148,11 @@ export async function enrolMentee(input: {
     return { error: "A Circle can have at most 10 mentees." };
   }
 
-  const { error } = await admin
-    .from("circle_memberships")
-    .insert({
-      circle_id: input.circleId,
-      member_id: member.id,
-      status: "active",
-    });
+  const { error } = await admin.from("circle_memberships").insert({
+    circle_id: input.circleId,
+    member_id: member.id,
+    status: "active",
+  });
   if (error) {
     if (error.code === "23505") {
       return { error: "That member is already in this Circle." };
@@ -260,5 +258,98 @@ export async function activateCircle(input: {
   }
 
   revalidatePath(`/mentorship/circles/${input.circleId}`);
+  return { ok: true };
+}
+
+/** Mentor/ops log a session on an active Circle (seeds attendance rows). */
+export async function addSession(input: {
+  circleId: string;
+  title?: string;
+  sessionDate?: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  if (!(await mentorOrOps(admin, input.circleId, me.id))) {
+    return { error: "Only this Circle's mentor can log sessions." };
+  }
+
+  const { data: circle } = await admin
+    .from("mentorship_circles")
+    .select("status")
+    .eq("id", input.circleId)
+    .maybeSingle();
+  if (!circle) return { error: "That Circle no longer exists." };
+  if (circle.status !== "active") {
+    return { error: "Sessions can be logged once the Circle is active." };
+  }
+
+  const sessionDate = input.sessionDate?.trim() || null;
+  if (!isDate(sessionDate)) return { error: "Please enter a valid date." };
+
+  const { data: session, error } = await admin
+    .from("circle_sessions")
+    .insert({
+      circle_id: input.circleId,
+      session_date: sessionDate,
+      title: input.title?.trim() || null,
+    })
+    .select("id")
+    .single();
+  if (error || !session) {
+    return { error: "Couldn't add the session. Please try again." };
+  }
+
+  const { data: mentees } = await admin
+    .from("circle_memberships")
+    .select("member_id")
+    .eq("circle_id", input.circleId)
+    .eq("status", "active");
+  if (mentees?.length) {
+    await admin.from("session_attendance").insert(
+      mentees.map((m) => ({
+        session_id: session.id,
+        member_id: m.member_id,
+        attended: false,
+      })),
+    );
+  }
+
+  revalidatePath(`/mentorship/circles/${input.circleId}`);
+  return { ok: true };
+}
+
+/** Mentor/ops mark a mentee present/absent for a session. */
+export async function setAttendance(input: {
+  sessionId: string;
+  memberId: string;
+  attended: boolean;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  const { data: session } = await admin
+    .from("circle_sessions")
+    .select("circle_id")
+    .eq("id", input.sessionId)
+    .maybeSingle();
+  if (!session) return { error: "That session no longer exists." };
+  if (!(await mentorOrOps(admin, session.circle_id, me.id))) {
+    return { error: "Only this Circle's mentor can mark attendance." };
+  }
+
+  const { error } = await admin.from("session_attendance").upsert(
+    {
+      session_id: input.sessionId,
+      member_id: input.memberId,
+      attended: input.attended,
+    },
+    { onConflict: "session_id,member_id" },
+  );
+  if (error) return { error: "Couldn't update attendance. Please try again." };
+
+  revalidatePath(`/mentorship/circles/${session.circle_id}`);
   return { ok: true };
 }

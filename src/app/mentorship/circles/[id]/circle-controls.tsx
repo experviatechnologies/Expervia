@@ -3,7 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { V_LEVELS } from "@/lib/eten/v-levels";
-import { enrolMentee, setCircleGoal, activateCircle } from "../actions";
+import {
+  enrolMentee,
+  setCircleGoal,
+  activateCircle,
+  addSession,
+  setAttendance,
+} from "../actions";
 
 const field =
   "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand w-full rounded-[10px] border px-3.5 py-2.5 text-[14px] outline-none";
@@ -149,5 +155,80 @@ export function SetGoalControl({
         </button>
       </div>
     </form>
+  );
+}
+
+/** Mentor: log a session (title + date). */
+export function AddSessionControl({ circleId }: { circleId: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    startTransition(async () => {
+      setError(null);
+      const res = await addSession({
+        circleId,
+        title: String(fd.get("title") ?? ""),
+        sessionDate: String(fd.get("sessionDate") ?? ""),
+      });
+      if ("error" in res) setError(res.error);
+      else {
+        form.reset();
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
+      <input
+        name="title"
+        placeholder="Session title"
+        className={field + " max-w-[200px] flex-1"}
+      />
+      <input name="sessionDate" type="date" className={field + " w-[150px]"} />
+      <button type="submit" className={btn} disabled={pending}>
+        {pending ? "Adding…" : "Add"}
+      </button>
+      {error && <p className="text-destructive w-full text-[12px]">{error}</p>}
+    </form>
+  );
+}
+
+/** Mentor: toggle a mentee's attendance for a session. */
+export function AttendanceToggle({
+  sessionId,
+  memberId,
+  attended,
+}: {
+  sessionId: string;
+  memberId: string;
+  attended: boolean;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() =>
+        startTransition(async () => {
+          await setAttendance({ sessionId, memberId, attended: !attended });
+          router.refresh();
+        })
+      }
+      className={
+        "rounded-full px-2.5 py-1 font-mono text-[10px] transition disabled:opacity-60 " +
+        (attended
+          ? "bg-mnt-green/14 text-mnt-green"
+          : "bg-mnt-panel border-mnt-line text-mnt-faint border")
+      }
+    >
+      {attended ? "Present" : "Absent"}
+    </button>
   );
 }

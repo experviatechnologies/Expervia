@@ -6,6 +6,8 @@ import {
   ActivateCircleControl,
   EnrolMenteeControl,
   SetGoalControl,
+  AddSessionControl,
+  AttendanceToggle,
 } from "./circle-controls";
 
 export const metadata = { title: "Circle" };
@@ -62,6 +64,7 @@ export default async function MentorshipCircleDetailPage({
   const isMentor = circle.mentor_id === user.id;
   const viewerMembership =
     memberships.find((m) => m.member_id === user.id) ?? null;
+  const activeMentees = memberships.filter((m) => m.status === "active");
 
   const { data: profileRows } = await supabase
     .from("profiles")
@@ -226,7 +229,12 @@ export default async function MentorshipCircleDetailPage({
       <div className="mt-[18px] grid gap-4 lg:grid-cols-2">
         {/* SESSIONS */}
         <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
-          <div className={`${lbl} mb-3.5`}>Sessions · {sessions.length}</div>
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+            <div className={lbl}>Sessions · {sessions.length}</div>
+            {isMentor && circle.status === "active" && (
+              <AddSessionControl circleId={circle.id} />
+            )}
+          </div>
           {sessions.length === 0 ? (
             <p className="text-mnt-faint text-[13px]">
               No sessions logged yet.
@@ -255,6 +263,27 @@ export default async function MentorshipCircleDetailPage({
                           ? "Absent"
                           : "—"}
                     </p>
+                  )}
+                  {isMentor && activeMentees.length > 0 && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                      {activeMentees.map((m) => (
+                        <span
+                          key={m.member_id}
+                          className="flex items-center gap-1.5"
+                        >
+                          <span className="text-mnt-faint text-[11px]">
+                            {nameById.get(m.member_id) ?? "Member"}
+                          </span>
+                          <AttendanceToggle
+                            sessionId={s.id}
+                            memberId={m.member_id}
+                            attended={
+                              attended.get(`${s.id}:${m.member_id}`) ?? false
+                            }
+                          />
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               ))}
