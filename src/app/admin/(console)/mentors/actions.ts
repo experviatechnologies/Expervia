@@ -36,7 +36,7 @@ export async function decideMentorNomination(input: {
 
   const { data: nom } = await admin
     .from("mentor_nominations")
-    .select("id, member_id, pod_id, status")
+    .select("id, member_id, pod_id, capability_area_id, status")
     .eq("id", input.nominationId)
     .maybeSingle();
   if (!nom) return { error: "That nomination no longer exists." };
@@ -65,6 +65,7 @@ export async function decideMentorNomination(input: {
         member_id: nom.member_id,
         mentor_status: "verified",
         capability_pod_id: nom.pod_id,
+        capability_area_id: nom.capability_area_id,
         verified_at: now,
         verified_by: me?.id ?? null,
       },

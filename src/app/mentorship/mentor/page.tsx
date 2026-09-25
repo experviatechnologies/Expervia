@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { MntDashShell } from "@/components/mentorship/mnt-dash-shell";
+import { ApplyMentorControl } from "./apply-control";
 
 export const metadata = { title: "Mentor dashboard" };
 
@@ -63,6 +64,37 @@ export default async function MentorDashboardPage() {
       .eq("id", mp.capability_area_id)
       .maybeSingle();
     areaLabel = area?.label ?? null;
+  }
+
+  // Not verified: is there an application under review, and what areas can they
+  // apply in?
+  let pendingArea: string | null | undefined;
+  let areas: { slug: string; label: string }[] = [];
+  if (!verified) {
+    const { data: pending } = await supabase
+      .from("mentor_nominations")
+      .select("capability_area_id")
+      .eq("member_id", user.id)
+      .eq("status", "pending")
+      .maybeSingle();
+    if (pending) {
+      pendingArea = "your capability area";
+      if (pending.capability_area_id) {
+        const { data: a } = await supabase
+          .from("capability_areas")
+          .select("label")
+          .eq("id", pending.capability_area_id)
+          .maybeSingle();
+        pendingArea = a?.label ?? pendingArea;
+      }
+    } else {
+      const { data: list } = await supabase
+        .from("capability_areas")
+        .select("slug, label")
+        .eq("active", true)
+        .order("sort_order");
+      areas = list ?? [];
+    }
   }
 
   const { data: circleRows } = await supabase
@@ -162,12 +194,30 @@ export default async function MentorDashboardPage() {
 
         {!verified && (
           <div className="border-mnt-amber/30 mt-5 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">
-            <div className="text-[14px] font-bold">Verification pending</div>
-            <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
-              You can set up your profile now. Once the ETEN Readiness Panel
-              verifies you in your capability area, you will be able to create
-              and lead Circles.
-            </div>
+            {pendingArea ? (
+              <>
+                <div className="text-[14px] font-bold">
+                  Application under review
+                </div>
+                <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                  The ETEN Readiness Panel is reviewing your application to
+                  mentor in {pendingArea}. You will be able to create Circles
+                  once you are verified.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-[14px] font-bold">
+                  Become a verified mentor
+                </div>
+                <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                  Apply for verification in your capability area. The ETEN
+                  Readiness Panel reviews every mentor before they can lead a
+                  Circle.
+                </div>
+                {areas.length > 0 && <ApplyMentorControl areas={areas} />}
+              </>
+            )}
           </div>
         )}
 
