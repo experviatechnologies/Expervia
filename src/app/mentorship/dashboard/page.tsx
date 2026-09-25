@@ -1,34 +1,105 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { MntDashShell } from "@/components/mentorship/mnt-dash-shell";
+import { vLevelBadge } from "@/lib/eten/v-levels";
 
 export const metadata = { title: "Dashboard" };
 
 const lbl =
   "text-mnt-faint font-mono text-[10.5px] tracking-[0.13em] uppercase";
 
-const ASSIGNMENTS = [
-  {
-    t: "Design a hub-and-spoke topology",
-    meta: "Due 22 Sep",
-    status: "Approved",
-    tone: "text-mnt-green",
-  },
-  {
-    t: "Write an NSG baseline policy",
-    meta: "Due 26 Sep",
-    status: "In review",
-    tone: "text-mnt-amber",
-  },
-  {
-    t: "Document a landing-zone runbook",
-    meta: "Not started",
-    status: "submit",
-    tone: "",
-  },
-];
+function initials(name: string | null): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
+}
 
-export default function MenteeDashboardPage() {
-  const footer = (
+export default async function MenteeDashboardPage() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/mentorship/signin");
+
+  const [{ data: member }, { data: profile }] = await Promise.all([
+    supabase
+      .from("members")
+      .select("validated_at, mentorship_intent, mentorship_capability_area_id")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("member_id", user.id)
+      .maybeSingle(),
+  ]);
+
+  // Mentors get their own workspace.
+  if (member?.mentorship_intent === "mentor") redirect("/mentorship/mentor");
+
+  const isValidated = Boolean(member?.validated_at);
+  const name = profile?.full_name ?? "there";
+
+  // Capability area label (public read).
+  let areaLabel: string | null = null;
+  if (member?.mentorship_capability_area_id) {
+    const { data: area } = await supabase
+      .from("capability_areas")
+      .select("label")
+      .eq("id", member.mentorship_capability_area_id)
+      .maybeSingle();
+    areaLabel = area?.label ?? null;
+  }
+
+  // Active circle membership (RLS-scoped to the caller).
+  const { data: cm } = await supabase
+    .from("circle_memberships")
+    .select("circle_id, target_v_level, target_capability")
+    .eq("member_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  let circle: {
+    id: string;
+    title: string | null;
+    status: string;
+    mentorName: string;
+  } | null = null;
+  if (cm) {
+    const { data: c } = await supabase
+      .from("mentorship_circles")
+      .select("id, title, status, mentor_id")
+      .eq("id", cm.circle_id)
+      .maybeSingle();
+    if (c) {
+      const { data: mp } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("member_id", c.mentor_id)
+        .maybeSingle();
+      circle = {
+        id: c.id,
+        title: c.title,
+        status: c.status,
+        mentorName: mp?.full_name ?? "A mentor",
+      };
+    }
+  }
+
+  const footer = isValidated ? (
+    <div className="border-mnt-green/30 rounded-xl border p-3.5 [background:rgba(52,211,153,0.06)]">
+      <div className="flex items-center gap-2">
+        <span className="bg-mnt-green size-2 rounded-full" />
+        <span className="text-mnt-green font-mono text-[10.5px] tracking-[0.1em] uppercase">
+          ETEN-Validated
+        </span>
+      </div>
+      <p className="text-mnt-ink-muted mt-2 text-[12px] leading-relaxed">
+        You can join live Circles and earn recognition.
+      </p>
+    </div>
+  ) : (
     <div className="border-mnt-amber/30 rounded-xl border p-3.5 [background:rgba(245,177,61,0.06)]">
       <div className="flex items-center gap-2">
         <span className="bg-mnt-amber size-2 rounded-full" />
@@ -39,192 +110,118 @@ export default function MenteeDashboardPage() {
       <p className="text-mnt-ink-muted mt-2 mb-2.5 text-[12px] leading-relaxed">
         Validate with ETEN membership to join live Circles.
       </p>
-      <button
-        type="button"
-        className="bg-mnt-amber w-full rounded-[9px] py-2 text-[12.5px] font-bold text-[#241a05]"
+      <Link
+        href="/onboarding"
+        className="bg-mnt-amber block rounded-[9px] py-2 text-center text-[12.5px] font-bold text-[#241a05]"
       >
         Validate now
-      </button>
+      </Link>
     </div>
   );
 
   return (
     <MntDashShell
-      user={{ initials: "AO", name: "Amara Okoye", role: "Mentee" }}
+      user={{ initials: initials(profile?.full_name), name, role: "Mentee" }}
       nav={[
         { label: "Dashboard", href: "/mentorship/dashboard", active: true },
-        { label: "My Circle", href: "/mentorship/circles/1" },
-        { label: "Assignments", href: "/mentorship/circles/1" },
-        { label: "Progress" },
+        {
+          label: "My Circle",
+          href: circle ? `/mentorship/circles/${circle.id}` : undefined,
+        },
         { label: "Profile" },
       ]}
       footer={footer}
     >
       <div className="px-6 py-8 md:px-9">
-        <div className="flex items-end justify-between">
-          <div>
-            <div className={lbl}>Wednesday · 24 Sep</div>
-            <h1 className="font-display mt-1.5 text-[26px] font-extrabold">
-              Welcome back, Amara
-            </h1>
-          </div>
-        </div>
+        <div className={lbl}>Mentorship</div>
+        <h1 className="font-display mt-1.5 text-[26px] font-extrabold">
+          Welcome back, {name.split(" ")[0]}
+        </h1>
 
-        {/* validate banner */}
-        <div className="border-mnt-amber/30 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">
-          <div className="flex items-center gap-3">
-            <span className="bg-mnt-amber/18 text-mnt-amber grid size-[26px] place-items-center rounded-lg font-bold">
-              !
-            </span>
-            <div>
-              <div className="text-[14px] font-bold">
-                You are a Prospect, one step from going live
-              </div>
-              <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
-                Validate through ETEN membership to be placed in a live Circle
-                and count toward recognition.
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="bg-mnt-amber rounded-[10px] px-4 py-2.5 text-[13px] font-bold whitespace-nowrap text-[#241a05]"
-          >
-            Validate account
-          </button>
-        </div>
-
-        {/* top stat cards */}
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.15fr_1fr_1fr]">
-          <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
-            <div className={lbl}>My goal</div>
-            <div className="mt-3 flex items-center gap-2.5">
-              <span className="font-display text-xl font-extrabold">V2</span>
-              <span className="text-mnt-faint">→</span>
-              <span className="text-mnt-brand font-display text-xl font-extrabold">
-                V3
-              </span>
-            </div>
-            <div className="text-mnt-ink-muted mt-2 text-[13px]">
-              Azure landing-zone design
-            </div>
-          </div>
-          <Stat
-            label="Sessions attended"
-            value="3"
-            total="/5"
-            pct="60%"
-            bar="bg-mnt-brand"
-          />
-          <Stat
-            label="Assignments approved"
-            value="2"
-            total="/3"
-            pct="66%"
-            bar="bg-mnt-green"
-          />
-        </div>
-
-        {/* circle + assignments */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.25fr]">
-          <Link
-            href="/mentorship/circles/1"
-            className="bg-mnt-panel border-mnt-line hover:border-mnt-brand/40 block rounded-2xl border p-[18px] transition"
-          >
-            <div className="flex items-center justify-between">
-              <div className={lbl}>My Circle</div>
-              <span className="text-mnt-green bg-mnt-green/12 rounded-full px-2.5 py-1 font-mono text-[10px]">
-                Active
-              </span>
-            </div>
-            <h3 className="font-display mt-3 text-[17px] font-bold">
-              Cloud Security Circle
-            </h3>
-            <div className="mt-3 flex items-center gap-2.5">
-              <span className="bg-mnt-green/14 text-mnt-green grid size-[34px] place-items-center rounded-[9px] text-[13px] font-bold">
-                CN
+        {!isValidated && (
+          <div className="border-mnt-amber/30 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">
+            <div className="flex items-center gap-3">
+              <span className="bg-mnt-amber/18 text-mnt-amber grid size-[26px] place-items-center rounded-lg font-bold">
+                !
               </span>
               <div>
-                <div className="text-[13.5px] font-semibold">Chidi Nwosu</div>
-                <div className="text-mnt-faint text-[11.5px]">
-                  Verified Mentor · V4
+                <div className="text-[14px] font-bold">
+                  You are a Prospect, one step from going live
+                </div>
+                <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                  Validate through ETEN membership to be placed in a live Circle
+                  and count toward recognition.
                 </div>
               </div>
             </div>
-            <div className="border-mnt-line text-mnt-ink-muted mt-3.5 flex justify-between border-t pt-3.5 text-[12.5px]">
-              <span>5 mentees</span>
-              <span>Weekly · Thu 7pm</span>
-            </div>
-            <div className="bg-mnt-panel-2 border-mnt-line mt-3.5 rounded-xl border p-3">
-              <div className="text-mnt-faint text-[11.5px]">Next session</div>
-              <div className="mt-0.5 text-[13.5px] font-semibold">
-                Session 4 · Thu 25 Sep, 7:00pm WAT
-              </div>
-            </div>
-          </Link>
+            <Link
+              href="/onboarding"
+              className="bg-mnt-amber rounded-[10px] px-4 py-2.5 text-[13px] font-bold whitespace-nowrap text-[#241a05]"
+            >
+              Validate account
+            </Link>
+          </div>
+        )}
 
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {/* Goal */}
           <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
-            <div className="flex items-center justify-between">
-              <div className={lbl}>Assignments</div>
-              <span className="text-mnt-faint text-[12px]">3 total</span>
-            </div>
-            <div className="mt-3.5 flex flex-col gap-2.5">
-              {ASSIGNMENTS.map((a) => (
-                <div
-                  key={a.t}
-                  className="bg-mnt-panel-2 border-mnt-line flex items-center gap-3 rounded-xl border p-3"
-                >
-                  <div className="flex-1">
-                    <div className="text-[13.5px] font-semibold">{a.t}</div>
-                    <div className="text-mnt-faint mt-0.5 text-[11.5px]">
-                      {a.meta}
-                    </div>
-                  </div>
-                  {a.status === "submit" ? (
-                    <button
-                      type="button"
-                      className="bg-mnt-brand text-mnt-on-brand rounded-lg px-3 py-1.5 text-[12px] font-bold"
-                    >
-                      Submit
-                    </button>
-                  ) : (
-                    <span className={`font-mono text-[10.5px] ${a.tone}`}>
-                      {a.status}
-                    </span>
-                  )}
+            <div className={lbl}>My goal</div>
+            {cm && cm.target_v_level != null ? (
+              <>
+                <div className="font-display mt-3 text-xl font-extrabold">
+                  {vLevelBadge(cm.target_v_level)}
                 </div>
-              ))}
-            </div>
+                {cm.target_capability && (
+                  <div className="text-mnt-ink-muted mt-2 text-[13px]">
+                    {cm.target_capability}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+                {areaLabel ? (
+                  <>
+                    Your area is{" "}
+                    <span className="text-mnt-ink">{areaLabel}</span>. You will
+                    set a target level when you join a Circle.
+                  </>
+                ) : (
+                  "You will set a goal when you join a Circle."
+                )}
+              </p>
+            )}
+          </div>
+
+          {/* Circle */}
+          <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+            <div className={lbl}>My Circle</div>
+            {circle ? (
+              <Link
+                href={`/mentorship/circles/${circle.id}`}
+                className="mt-3 block"
+              >
+                <h3 className="font-display text-[17px] font-bold">
+                  {circle.title ?? "Your Circle"}
+                </h3>
+                <div className="text-mnt-ink-muted mt-1 text-[13px]">
+                  Mentor: {circle.mentorName}
+                </div>
+                <span className="text-mnt-brand mt-2 inline-block text-[13px] font-semibold">
+                  Open Circle
+                </span>
+              </Link>
+            ) : (
+              <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+                You are not in a Circle yet.{" "}
+                {isValidated
+                  ? "You will be matched to one in your capability area."
+                  : "Validate your account to be placed in a live Circle."}
+              </p>
+            )}
           </div>
         </div>
       </div>
     </MntDashShell>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  total,
-  pct,
-  bar,
-}: {
-  label: string;
-  value: string;
-  total: string;
-  pct: string;
-  bar: string;
-}) {
-  return (
-    <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
-      <div className={lbl}>{label}</div>
-      <div className="mt-3 flex items-baseline">
-        <span className="font-display text-[22px] font-extrabold">{value}</span>
-        <span className="text-mnt-faint text-[15px]">{total}</span>
-      </div>
-      <div className="bg-mnt-panel-2 mt-2.5 h-[7px] overflow-hidden rounded-full">
-        <div className={`h-full rounded-full ${bar}`} style={{ width: pct }} />
-      </div>
-    </div>
   );
 }

@@ -44,7 +44,7 @@ export function MntNav() {
             FAQ
           </Link>
           <Link
-            href="/mentorship/dashboard"
+            href="/mentorship/signin"
             className="text-mnt-muted hover:text-mnt-ink hidden transition-colors sm:inline"
           >
             Sign in

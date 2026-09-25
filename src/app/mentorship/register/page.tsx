@@ -114,7 +114,7 @@ export default function MentorshipRegisterPage() {
         </div>
         <div className="text-mnt-faint text-[12px]">
           Already have an account?{" "}
-          <Link href="/mentorship/dashboard" className="text-mnt-brand">
+          <Link href="/mentorship/signin" className="text-mnt-brand">
             Sign in
           </Link>
         </div>
