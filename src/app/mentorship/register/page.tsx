@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import { PasswordInput } from "@/components/shared/password-input";
 import {
   TurnstileWidget,
   TURNSTILE_ENABLED,
@@ -248,14 +249,14 @@ export default function MentorshipRegisterPage() {
                   <label htmlFor="password" className={labelClass}>
                     Password
                   </label>
-                  <input
+                  <PasswordInput
                     id="password"
                     name="password"
-                    type="password"
                     autoComplete="new-password"
                     required
                     minLength={8}
-                    className={inputClass}
+                    className={inputClass.replace("mt-1.5", "")}
+                    wrapperClassName="mt-1.5"
                     placeholder="At least 8 characters"
                   />
                 </div>

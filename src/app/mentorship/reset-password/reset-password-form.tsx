@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { PasswordInput } from "@/components/shared/password-input";
 
 const inputClass =
   "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand mt-1.5 w-full rounded-[10px] border px-3.5 py-3 text-[14px] outline-none transition-colors placeholder:text-[#586273]";
@@ -66,15 +67,15 @@ export function ResetPasswordForm() {
       >
         New password
       </label>
-      <input
+      <PasswordInput
         id="password"
-        type="password"
         autoComplete="new-password"
         required
         minLength={8}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className={inputClass}
+        className={inputClass.replace("mt-1.5", "")}
+        wrapperClassName="mt-1.5"
         placeholder="At least 8 characters"
       />
 
@@ -85,15 +86,15 @@ export function ResetPasswordForm() {
         >
           Confirm new password
         </label>
-        <input
+        <PasswordInput
           id="confirm"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          className={inputClass}
+          className={inputClass.replace("mt-1.5", "")}
+          wrapperClassName="mt-1.5"
           placeholder="Re-enter your new password"
         />
       </div>

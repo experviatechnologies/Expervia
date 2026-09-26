@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { PasswordInput } from "@/components/shared/password-input";
 
 const inputClass =
   "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand mt-1.5 w-full rounded-[10px] border px-3.5 py-3 text-[14px] outline-none transition-colors placeholder:text-[#586273]";
@@ -86,14 +87,14 @@ export default function MentorshipSignInPage() {
                 Forgot password?
               </Link>
             </div>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
+              className={inputClass.replace("mt-1.5", "")}
+              wrapperClassName="mt-1.5"
               placeholder="Your password"
             />
           </div>
