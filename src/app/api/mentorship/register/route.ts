@@ -44,9 +44,11 @@ type Body = {
 /**
  * Creates a mentorship Prospect account. The register form posts here (rather
  * than calling signUp directly) so the anti-spam guards run server-side before
- * an account is created. On success Supabase sends the confirmation email; the
- * auth trigger (migration 23) writes signup_source / intent / capability area
- * onto the members row with validated_at null (Prospect).
+ * an account is created. The confirmation email is sent via Resend, not
+ * Supabase's built-in SMTP: we generateLink({ type: "signup" }) to create the
+ * account + token, then email the /auth/confirm link ourselves. The auth
+ * trigger (migration 23) writes signup_source / intent / capability area onto
+ * the members row with validated_at null (Prospect).
  */
 export async function POST(request: Request) {
   let body: Body;
