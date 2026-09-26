@@ -37,11 +37,23 @@ const BARE_PREFIXES = [
   "/suspended",
 ];
 
-export function SiteChrome({ children }: { children: React.ReactNode }) {
+export function SiteChrome({
+  children,
+  forceBare = false,
+}: {
+  children: React.ReactNode;
+  // Set by the server when the request is on the mentorship subdomain, whose
+  // pages are served at the root via a host rewrite. usePathname() reflects the
+  // browser URL ("/", "/register", …), not the /mentorship rewrite target, so
+  // the path denylist below can't catch them — the host decides instead.
+  forceBare?: boolean;
+}) {
   const pathname = usePathname();
-  const isBare = BARE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`),
-  );
+  const isBare =
+    forceBare ||
+    BARE_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`),
+    );
 
   if (isBare) {
     return <main className="flex-1">{children}</main>;

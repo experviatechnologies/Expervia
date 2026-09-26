@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import "./globals.css";
 import { SiteChrome } from "@/components/shared/site-chrome";
@@ -40,11 +41,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The mentorship subdomain serves its pages at the root via a host rewrite, so
+  // it must not get the Expervia marketing navbar/footer. Decide from the actual
+  // request host (client-side host checks would flash the navbar on first paint).
+  const mentorshipHost = process.env.NEXT_PUBLIC_MENTORSHIP_HOST;
+  const requestHeaders = await headers();
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
+  const isMentorshipHost = Boolean(mentorshipHost) && host === mentorshipHost;
+
   return (
     <html
       lang="en"
@@ -52,7 +62,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="bg-surface text-on-surface flex min-h-full flex-col">
-        <SiteChrome>{children}</SiteChrome>
+        <SiteChrome forceBare={isMentorshipHost}>{children}</SiteChrome>
       </body>
     </html>
   );
