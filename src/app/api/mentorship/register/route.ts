@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import { getResendClient, escapeHtml } from "@/lib/email";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 import {
   isDisposableEmail,
@@ -6,6 +7,29 @@ import {
   checkRateLimit,
 } from "@/lib/eten/spam-guard";
 import { verifyTurnstile } from "@/lib/eten/turnstile";
+
+function confirmEmailHtml(fullName: string, confirmUrl: string): string {
+  const first = escapeHtml(fullName.split(/\s+/)[0] || "there");
+  return `
+    <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:520px;margin:0 auto;">
+      <h2 style="margin:0 0 12px;">Confirm your ETEN Mentorship account</h2>
+      <p style="margin:0 0 12px;line-height:1.6;">Hi ${first},</p>
+      <p style="margin:0 0 12px;line-height:1.6;">
+        Thanks for joining ETEN Mentorship. Confirm your email to activate your
+        account and set up your goal.
+      </p>
+      <p style="margin:24px 0;">
+        <a href="${confirmUrl}" style="background:#7c6cf0;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
+          Confirm my account
+        </a>
+      </p>
+      <p style="margin:0 0 12px;line-height:1.6;color:#666;font-size:13px;">
+        This link is single-use and expires soon. If you didn't create this
+        account, you can ignore this email.
+      </p>
+    </div>
+  `;
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -94,23 +118,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
+  const fromEmail = process.env.CONTACT_FROM_EMAIL;
+  if (!fromEmail) {
     return Response.json({ error: "Server not configured." }, { status: 500 });
   }
 
   const origin = new URL(request.url).origin;
   const next =
     intent === "mentor" ? "/mentorship/mentor" : "/mentorship/dashboard";
+  const admin = getSupabaseAdmin();
 
-  // Anon client, no session — we only want to create the account and trigger
-  // the confirmation email. The prospect confirms, then signs in.
-  const supabase = createClient(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { error } = await supabase.auth.signUp({
+  // Create the account + a signup confirmation link WITHOUT Supabase sending
+  // the email (this project delivers auth emails via Resend, not Supabase's
+  // built-in SMTP). The trigger reads the metadata onto the members row.
+  const { data: link, error } = await admin.auth.admin.generateLink({
+    type: "signup",
     email: email.toLowerCase(),
     password,
     options: {
@@ -120,12 +142,12 @@ export async function POST(request: Request) {
         mentorship_intent: intent,
         mentorship_capability_area: capabilityArea,
       },
-      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
+      redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
     },
   });
 
-  if (error) {
-    const msg = error.message.toLowerCase();
+  if (error || !link?.properties?.hashed_token) {
+    const msg = (error?.message ?? "").toLowerCase();
     if (msg.includes("registered") || msg.includes("already")) {
       return Response.json(
         { error: "That email is already registered. Try signing in instead." },
@@ -134,6 +156,26 @@ export async function POST(request: Request) {
     }
     return Response.json(
       { error: "Couldn't create your account. Please try again." },
+      { status: 500 },
+    );
+  }
+
+  const confirmUrl = `${origin}/auth/confirm?token_hash=${encodeURIComponent(
+    link.properties.hashed_token,
+  )}&type=signup&next=${encodeURIComponent(next)}`;
+
+  const { error: mailError } = await getResendClient().emails.send({
+    from: fromEmail,
+    to: email.toLowerCase(),
+    subject: "Confirm your ETEN Mentorship account",
+    html: confirmEmailHtml(fullName, confirmUrl),
+  });
+  if (mailError) {
+    return Response.json(
+      {
+        error:
+          "Account created, but the email failed to send. Contact support.",
+      },
       { status: 500 },
     );
   }
