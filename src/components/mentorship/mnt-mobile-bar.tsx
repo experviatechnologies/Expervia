@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import type { MntNavItem } from "./mnt-dash-shell";
+import { MntSignOutButton } from "./mnt-signout-button";
 
 /**
  * Mobile top bar + slide-in drawer for the mentorship dashboards. The desktop
@@ -113,16 +114,22 @@ export function MntMobileBar({
           ))}
         </nav>
 
+        <div className="mt-3 border-t border-white/[0.06] pt-2">
+          <MntSignOutButton withLabel />
+        </div>
+
         <div className="flex-1" />
 
         {footer}
 
         <div className="mt-3.5 flex items-center gap-2.5 px-1.5 py-2">
-          <span className="bg-mnt-brand/14 text-mnt-brand grid size-[30px] place-items-center rounded-full text-[12px] font-bold">
+          <span className="bg-mnt-brand/14 text-mnt-brand grid size-[30px] shrink-0 place-items-center rounded-full text-[12px] font-bold">
             {user.initials}
           </span>
-          <span className="leading-tight">
-            <span className="block text-[13px] font-semibold">{user.name}</span>
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block truncate text-[13px] font-semibold">
+              {user.name}
+            </span>
             <span className="text-mnt-faint block text-[11px]">
               {user.role}
             </span>

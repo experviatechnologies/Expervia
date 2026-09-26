@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MntMobileBar } from "./mnt-mobile-bar";
+import { MntSignOutButton } from "./mnt-signout-button";
 
 export type MntNavItem = { label: string; href?: string; active?: boolean };
 
@@ -66,15 +67,18 @@ export function MntDashShell({
         {footer}
 
         <div className="mt-3.5 flex items-center gap-2.5 px-1.5 py-2">
-          <span className="bg-mnt-brand/14 text-mnt-brand grid size-[30px] place-items-center rounded-full text-[12px] font-bold">
+          <span className="bg-mnt-brand/14 text-mnt-brand grid size-[30px] shrink-0 place-items-center rounded-full text-[12px] font-bold">
             {user.initials}
           </span>
-          <span className="leading-tight">
-            <span className="block text-[13px] font-semibold">{user.name}</span>
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block truncate text-[13px] font-semibold">
+              {user.name}
+            </span>
             <span className="text-mnt-faint block text-[11px]">
               {user.role}
             </span>
           </span>
+          <MntSignOutButton />
         </div>
       </aside>
 

@@ -81,24 +81,36 @@ export default async function AdminMentorshipPage() {
   ].filter((x): x is string => Boolean(x));
   const circleIds = circles.map((c) => c.id);
 
-  const [{ data: profileRows }, { data: areaRows }, { data: cmRows }] =
-    await Promise.all([
-      memberIds.length
-        ? admin
-            .from("profiles")
-            .select("member_id, full_name")
-            .in("member_id", memberIds)
-        : Promise.resolve({ data: [] }),
-      areaIds.length
-        ? admin.from("capability_areas").select("id, label").in("id", areaIds)
-        : Promise.resolve({ data: [] }),
-      circleIds.length
-        ? admin
-            .from("circle_memberships")
-            .select("circle_id")
-            .in("circle_id", circleIds)
-        : Promise.resolve({ data: [] }),
-    ]);
+  const [
+    { data: profileRows },
+    { data: areaRows },
+    { data: cmRows },
+    { count: mentorCount },
+    { count: graduationCount },
+  ] = await Promise.all([
+    memberIds.length
+      ? admin
+          .from("profiles")
+          .select("member_id, full_name")
+          .in("member_id", memberIds)
+      : Promise.resolve({ data: [] }),
+    areaIds.length
+      ? admin.from("capability_areas").select("id, label").in("id", areaIds)
+      : Promise.resolve({ data: [] }),
+    circleIds.length
+      ? admin
+          .from("circle_memberships")
+          .select("circle_id")
+          .in("circle_id", circleIds)
+      : Promise.resolve({ data: [] }),
+    admin
+      .from("mentor_profiles")
+      .select("member_id", { count: "exact", head: true }),
+    admin
+      .from("recognition_events")
+      .select("id", { count: "exact", head: true })
+      .eq("badge_key", "circle_graduate"),
+  ]);
 
   const nameById = new Map(
     (profileRows ?? []).map((p) => [p.member_id, p.full_name ?? "A member"]),
@@ -107,6 +119,45 @@ export default async function AdminMentorshipPage() {
   const menteeCount = new Map<string, number>();
   for (const r of cmRows ?? [])
     menteeCount.set(r.circle_id, (menteeCount.get(r.circle_id) ?? 0) + 1);
+
+  const activeCircles = circles.filter((c) => c.status === "active").length;
+  const completedCircles = circles.filter(
+    (c) => c.status === "completed",
+  ).length;
+
+  // Per capability area: prospects, validated and Circles.
+  type AreaStat = {
+    label: string;
+    prospects: number;
+    validated: number;
+    circles: number;
+  };
+  const areaStats = new Map<string, AreaStat>();
+  const ensureArea = (areaId: string): AreaStat => {
+    let s = areaStats.get(areaId);
+    if (!s) {
+      s = {
+        label: areaById.get(areaId) ?? "Unknown area",
+        prospects: 0,
+        validated: 0,
+        circles: 0,
+      };
+      areaStats.set(areaId, s);
+    }
+    return s;
+  };
+  for (const m of members) {
+    if (!m.mentorship_capability_area_id) continue;
+    const s = ensureArea(m.mentorship_capability_area_id);
+    if (m.validated_at) s.validated += 1;
+    else s.prospects += 1;
+  }
+  for (const c of circles) {
+    if (c.capability_area_id) ensureArea(c.capability_area_id).circles += 1;
+  }
+  const areaBreakdown = [...areaStats.values()].sort((a, b) =>
+    a.label.localeCompare(b.label),
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-4 py-6 md:px-6">
@@ -137,6 +188,66 @@ export default async function AdminMentorshipPage() {
         />
         <Kpi label="Conversion" value={`${conversion}%`} />
       </div>
+
+      {/* Programme metrics */}
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Kpi label="Verified mentors" value={mentorCount ?? 0} />
+        <Kpi label="Active Circles" value={activeCircles} />
+        <Kpi label="Completed Circles" value={completedCircles} />
+        <Kpi
+          label="Graduations"
+          value={graduationCount ?? 0}
+          tone="text-eten-verified"
+        />
+      </div>
+
+      {/* Capability-area breakdown */}
+      <section className="mb-8">
+        <h2 className="text-eten-faint mb-3 font-mono text-xs tracking-wider uppercase">
+          By capability area
+        </h2>
+        {areaBreakdown.length === 0 ? (
+          <div className="bg-eten-panel border-eten-line text-eten-faint rounded-2xl border p-8 text-center text-sm">
+            No mentorship activity by area yet.
+          </div>
+        ) : (
+          <div className="bg-eten-panel border-eten-line overflow-hidden rounded-2xl border">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-eten-line-soft border-b text-left">
+                    <Th>Capability area</Th>
+                    <Th>Prospects</Th>
+                    <Th>Validated</Th>
+                    <Th>Circles</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {areaBreakdown.map((a) => (
+                    <tr
+                      key={a.label}
+                      className="border-eten-line-soft hover:bg-eten-hover border-b last:border-0"
+                    >
+                      <td className="text-eten-ink px-4 py-3 font-medium">
+                        {a.label}
+                      </td>
+                      <td className="text-eten-ink-muted px-4 py-3 tabular-nums">
+                        {a.prospects}
+                      </td>
+                      <td className="text-eten-ink-muted px-4 py-3 tabular-nums">
+                        {a.validated}
+                      </td>
+                      <td className="text-eten-ink-muted px-4 py-3 tabular-nums">
+                        {a.circles}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Prospects */}
       <section className="mb-8">
