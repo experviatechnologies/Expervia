@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MntMobileBar } from "./mnt-mobile-bar";
 
 export type MntNavItem = { label: string; href?: string; active?: boolean };
 
@@ -40,6 +41,7 @@ export function MntDashShell({
             <Link
               key={item.label}
               href={item.href ?? "#"}
+              aria-current={item.active ? "page" : undefined}
               className={
                 "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13.5px] font-semibold transition-colors " +
                 (item.active
@@ -48,6 +50,7 @@ export function MntDashShell({
               }
             >
               <span
+                aria-hidden="true"
                 className={
                   "size-4 shrink-0 rounded-[5px] " +
                   (item.active ? "bg-mnt-brand" : "bg-mnt-faint/70")
@@ -75,7 +78,10 @@ export function MntDashShell({
         </div>
       </aside>
 
-      <main className="bg-mnt-bg min-h-screen">{children}</main>
+      <main className="bg-mnt-bg min-h-screen">
+        <MntMobileBar nav={nav} footer={footer} user={user} />
+        {children}
+      </main>
     </div>
   );
 }

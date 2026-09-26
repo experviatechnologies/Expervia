@@ -142,7 +142,7 @@ export default function MentorshipLandingPage() {
             >
               ETEN Mentorship Circles
             </span>
-            <h1 className="text-mnt-ink font-display mt-5 text-5xl leading-[1.06] font-extrabold tracking-tight text-balance">
+            <h1 className="text-mnt-ink font-display mt-5 text-4xl leading-[1.08] font-extrabold tracking-tight text-balance sm:text-5xl sm:leading-[1.06]">
               Your career shouldn&apos;t be built{" "}
               <span className="text-mnt-brand">alone.</span>
             </h1>
@@ -402,31 +402,37 @@ export default function MentorshipLandingPage() {
             </p>
           </div>
           <div className="bg-mnt-panel border-mnt-line rounded-2xl border px-6 py-[30px]">
-            <div className="mb-6 grid h-32 grid-cols-6 items-end gap-3.5">
-              {LADDER.map((l) => (
-                <div
-                  key={l.v}
-                  style={{ height: l.h }}
-                  className={`rounded-t-lg ${l.green ? "from-mnt-green/70 to-mnt-green/12 bg-gradient-to-b" : "from-mnt-brand/65 to-mnt-brand/12 bg-gradient-to-b"}`}
-                />
-              ))}
-            </div>
-            <div className="grid grid-cols-6 gap-3.5">
-              {LADDER.map((l) => (
-                <div key={l.v}>
-                  <div
-                    className={`font-display text-[17px] font-extrabold ${l.green ? "text-mnt-green" : ""}`}
-                  >
-                    {l.v}
-                  </div>
-                  <div className="text-mnt-ink mt-0.5 text-[12.5px] font-semibold">
-                    {l.t}
-                  </div>
-                  <p className="text-mnt-faint mt-1.5 text-[11.5px] leading-snug">
-                    {l.d}
-                  </p>
+            {/* Scrolls horizontally on phones so the six steps keep their
+                bar-to-label alignment instead of cramping. */}
+            <div className="-mx-2 overflow-x-auto px-2">
+              <div className="min-w-[560px]">
+                <div className="mb-6 grid h-32 grid-cols-6 items-end gap-3.5">
+                  {LADDER.map((l) => (
+                    <div
+                      key={l.v}
+                      style={{ height: l.h }}
+                      className={`rounded-t-lg ${l.green ? "from-mnt-green/70 to-mnt-green/12 bg-gradient-to-b" : "from-mnt-brand/65 to-mnt-brand/12 bg-gradient-to-b"}`}
+                    />
+                  ))}
                 </div>
-              ))}
+                <div className="grid grid-cols-6 gap-3.5">
+                  {LADDER.map((l) => (
+                    <div key={l.v}>
+                      <div
+                        className={`font-display text-[17px] font-extrabold ${l.green ? "text-mnt-green" : ""}`}
+                      >
+                        {l.v}
+                      </div>
+                      <div className="text-mnt-ink mt-0.5 text-[12.5px] font-semibold">
+                        {l.t}
+                      </div>
+                      <p className="text-mnt-faint mt-1.5 text-[11.5px] leading-snug">
+                        {l.d}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

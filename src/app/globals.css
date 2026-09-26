@@ -399,3 +399,19 @@
 .mnt-faq[open] .mnt-faq-plus {
   transform: rotate(45deg);
 }
+
+/* Respect reduced-motion: stop the domains marquee scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  .mnt-marquee-track {
+    animation: none;
+  }
+}
+
+/* Visible keyboard focus across the mentorship product (its own dark theme).
+   Scoped to the mnt layout wrapper so it never touches the marketing site or
+   member app. Pointer clicks are unaffected (focus-visible only). */
+.bg-mnt-bg :is(a, button, summary, [role="button"]):focus-visible {
+  outline: 2px solid var(--color-mnt-brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}

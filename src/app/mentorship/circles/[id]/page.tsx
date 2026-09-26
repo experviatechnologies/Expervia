@@ -418,7 +418,14 @@ function Progress({
           {value}/{total}
         </span>
       </div>
-      <div className="bg-mnt-panel-2 mt-2 h-[7px] overflow-hidden rounded-full">
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        className="bg-mnt-panel-2 mt-2 h-[7px] overflow-hidden rounded-full"
+      >
         <div
           className={`h-full rounded-full ${bar}`}
           style={{ width: `${pct}%` }}
