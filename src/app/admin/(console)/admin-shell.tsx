@@ -17,6 +17,7 @@ import {
   UserPlus,
   ScrollText,
   GraduationCap,
+  Sparkles,
   LogOut,
   Menu,
   X,
@@ -59,6 +60,7 @@ const GROUPS: NavGroup[] = [
         href: "/admin/events",
         Icon: CalendarCheck,
       },
+      { label: "Mentorship", href: "/admin/mentorship", Icon: Sparkles },
     ],
   },
   {
