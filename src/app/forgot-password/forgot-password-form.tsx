@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, MailCheck } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 import { Button } from "@/components/ui/button";
 
 const inputClass =
@@ -12,36 +12,43 @@ const labelClass = "text-label-sm text-on-surface-variant";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+    const clean = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) {
       setError("Please enter a valid email address.");
       return;
     }
     setLoading(true);
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      {
-        redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
-      },
-    );
-
-    // Don't reveal whether the email exists — always show the same confirmation
-    // (unless the request itself failed, e.g. rate limit).
-    if (resetError) {
-      setError(resetError.message);
+    // The reset email is sent server-side via Resend (this project doesn't use
+    // Supabase's built-in SMTP). The route always reports success, so the
+    // response never reveals whether an account exists.
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: clean, [HONEYPOT_FIELD]: honeypot }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Something went wrong. Please try again.");
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
       return;
     }
 
-    setSentTo(email.trim().toLowerCase());
+    setSentTo(clean);
     setLoading(false);
   }
 
@@ -80,6 +87,20 @@ export function ForgotPasswordForm() {
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
           placeholder="you@example.com"
+        />
+      </div>
+
+      {/* Honeypot: hidden from people, tempting to bots. */}
+      <div aria-hidden="true" className="absolute -left-[9999px]">
+        <label htmlFor={HONEYPOT_FIELD}>Company URL</label>
+        <input
+          id={HONEYPOT_FIELD}
+          name={HONEYPOT_FIELD}
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
         />
       </div>
 
