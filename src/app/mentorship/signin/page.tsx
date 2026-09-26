@@ -72,12 +72,20 @@ export default function MentorshipSignInPage() {
           />
 
           <div className="mt-3.5">
-            <label
-              htmlFor="password"
-              className="text-mnt-ink-muted text-[12.5px] font-medium"
-            >
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="password"
+                className="text-mnt-ink-muted text-[12.5px] font-medium"
+              >
+                Password
+              </label>
+              <Link
+                href="/mentorship/forgot-password"
+                className="text-mnt-brand text-[12.5px]"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
