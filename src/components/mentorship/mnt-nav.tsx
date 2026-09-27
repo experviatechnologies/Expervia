@@ -9,7 +9,7 @@ import { Menu, X, ArrowRight, GraduationCap } from "lucide-react";
  * proposed design: the nav links (Curriculum, Mentorship, Events, Enterprise,
  * Community) plus the two programme CTAs. No person/account icon. Nav links
  * point to existing pages or in-page sections for now. Uses the mnt-* brand
- * palette with the Expervia marketing type scale (text-body-md).
+ * palette with the Expervia marketing type scale.
  */
 const NAV = [
   { label: "Curriculum", href: "#how" },
@@ -19,44 +19,45 @@ const NAV = [
   { label: "Community", href: "/" },
 ];
 
+// Compact pill CTAs (match Expervia's pill-sm: 14px, tight padding) so the bar
+// does not crowd. Icons live on the hero CTAs, not here.
 const btnBrand =
-  "inline-flex items-center gap-2 rounded-full bg-mnt-brand px-4 py-2.5 text-body-md font-bold text-mnt-on-brand transition hover:brightness-110";
+  "inline-flex items-center justify-center rounded-full bg-mnt-brand px-4 py-2 text-sm font-bold whitespace-nowrap text-mnt-on-brand transition hover:brightness-110";
 const btnOutline =
-  "inline-flex items-center gap-2 rounded-full border border-mnt-line-strong px-4 py-2.5 text-body-md font-bold text-mnt-ink transition hover:border-mnt-brand";
+  "inline-flex items-center justify-center rounded-full border border-mnt-line-strong px-4 py-2 text-sm font-bold whitespace-nowrap text-mnt-ink transition hover:border-mnt-brand";
 
 export function MntNav() {
   const [open, setOpen] = useState(false);
 
   return (
     <header className="border-mnt-line bg-mnt-bg/85 sticky top-0 z-40 border-b backdrop-blur">
-      <div className="mx-auto flex h-20 max-w-[1140px] items-center justify-between px-6">
-        <Link href="/mentorship" className="flex items-center gap-2.5">
-          <span className="from-mnt-brand to-mnt-brand-2 text-mnt-on-brand font-display grid size-9 place-items-center rounded-[10px] bg-gradient-to-br text-base font-extrabold">
+      <div className="mx-auto flex h-20 max-w-[1140px] items-center justify-between gap-4 px-6">
+        <Link href="/mentorship" className="flex shrink-0 items-center gap-2.5">
+          <span className="from-mnt-brand to-mnt-brand-2 text-mnt-on-brand font-display grid size-8 place-items-center rounded-[9px] bg-gradient-to-br text-[15px] font-extrabold">
             E
           </span>
-          <span className="text-mnt-ink font-display text-headline-md font-bold">
+          <span className="text-mnt-ink font-display text-lg font-extrabold whitespace-nowrap">
             ETEN Mentorship
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 lg:flex">
+        <nav className="hidden items-center gap-7 lg:flex">
           {NAV.map((l) => (
             <Link
               key={l.label}
               href={l.href}
-              className="text-body-md text-mnt-muted hover:text-mnt-ink transition-colors"
+              className="text-body-md text-mnt-muted hover:text-mnt-ink whitespace-nowrap transition-colors"
             >
               {l.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-2.5">
           <Link
             href="/mentorship/register"
             className={btnOutline + " hidden md:inline-flex"}
           >
-            <GraduationCap className="size-4" aria-hidden="true" />
             Become a Mentor
           </Link>
           <Link
@@ -64,7 +65,6 @@ export function MntNav() {
             className={btnBrand + " hidden md:inline-flex"}
           >
             Apply as Mentee
-            <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
 
           <button
@@ -73,7 +73,7 @@ export function MntNav() {
             aria-label="Toggle menu"
             aria-expanded={open}
             aria-controls="mnt-nav-menu"
-            className="text-mnt-ink grid size-10 place-items-center rounded-lg lg:hidden"
+            className="text-mnt-ink -mr-1 grid size-10 place-items-center rounded-lg lg:hidden"
           >
             {open ? <X className="size-6" /> : <Menu className="size-6" />}
           </button>
@@ -101,18 +101,18 @@ export function MntNav() {
               <Link
                 href="/mentorship/register"
                 onClick={() => setOpen(false)}
-                className={btnOutline + " justify-center"}
+                className={btnOutline + " py-2.5"}
               >
-                <GraduationCap className="size-4" aria-hidden="true" />
+                <GraduationCap className="mr-2 size-4" aria-hidden="true" />
                 Become a Mentor
               </Link>
               <Link
                 href="/mentorship/register"
                 onClick={() => setOpen(false)}
-                className={btnBrand + " justify-center"}
+                className={btnBrand + " py-2.5"}
               >
                 Apply as Mentee
-                <ArrowRight className="size-4" aria-hidden="true" />
+                <ArrowRight className="ml-2 size-4" aria-hidden="true" />
               </Link>
             </div>
           </div>
