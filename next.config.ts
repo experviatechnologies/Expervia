@@ -16,8 +16,11 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         { source: "/", has, destination: "/mentorship" },
         {
-          // Everything except assets, api and the already-prefixed path.
-          source: "/:path((?!mentorship$|mentorship/|_next/|api/).*)",
+          // Everything except assets, api, the shared /auth callbacks (email
+          // confirmation, password recovery), and the already-prefixed path.
+          // /auth must stay unrewritten so confirmation links work on the
+          // subdomain instead of 404ing at /mentorship/auth/confirm.
+          source: "/:path((?!mentorship$|mentorship/|_next/|api/|auth/).*)",
           has,
           destination: "/mentorship/:path",
         },
