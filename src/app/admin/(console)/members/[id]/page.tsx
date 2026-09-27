@@ -28,6 +28,7 @@ import {
   summarizeRecognition,
   type RecognitionRow,
 } from "@/lib/eten/recognition-types";
+import { membershipStage } from "@/lib/eten/membership";
 
 export const metadata: Metadata = {
   title: "Member",
@@ -63,7 +64,9 @@ export default async function AdminMemberDetailPage({
 
   const { data: member } = await admin
     .from("members")
-    .select("id, status, role, origin, claimed_at, created_at, v_level")
+    .select(
+      "id, status, role, origin, claimed_at, created_at, v_level, membership_id, validated_at",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!member) notFound();
@@ -130,6 +133,14 @@ export default async function AdminMemberDetailPage({
   const vrows = (verificationRows ?? []) as VRow[];
   const identityV = vrows.find((v) => v.kind === "identity") ?? null;
   const addressV = vrows.find((v) => v.kind === "address") ?? null;
+
+  // Membership stage is derived from existing state; the membership ID is stable.
+  const identityVerified = identityV?.status === "verified";
+  const stage = membershipStage(
+    member.status,
+    Boolean(member.validated_at),
+    identityVerified,
+  );
 
   type EvidenceRow = {
     id: string;
@@ -218,6 +229,14 @@ export default async function AdminMemberDetailPage({
                   </span>
                 )}
                 {email && <span>{email}</span>}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="border-eten-line text-eten-ink-muted rounded-md border px-2 py-0.5 font-mono text-[11px] tracking-wide">
+                  {member.membership_id ?? "—"}
+                </span>
+                <span className="bg-eten-accent-soft text-eten-accent rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                  {stage}
+                </span>
               </div>
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
   computeCompleteness,
   type Completeness,
 } from "@/lib/eten/profile-completeness";
+import { membershipStage } from "@/lib/eten/membership";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -29,11 +30,34 @@ export default async function DashboardPage() {
 
   const firstName = member.fullName?.trim().split(/\s+/)[0] ?? "there";
 
+  const supabase = await createSupabaseServerClient();
+
+  // Membership ID (stable) + derived stage. RLS scopes both reads to the member.
+  const [{ data: me }, { data: verifiedIdentity }] = await Promise.all([
+    supabase
+      .from("members")
+      .select("membership_id, validated_at, status")
+      .eq("id", member.id)
+      .maybeSingle(),
+    supabase
+      .from("member_verifications")
+      .select("id")
+      .eq("member_id", member.id)
+      .eq("kind", "identity")
+      .eq("status", "verified")
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const stage = membershipStage(
+    me?.status ?? member.status,
+    Boolean(me?.validated_at),
+    Boolean(verifiedIdentity),
+  );
+
   // Profile-completeness nudge (only meaningful once they can build a profile,
   // i.e. after email confirmation). RLS scopes every read to the member.
   let completeness: Completeness | null = null;
   if (member.emailConfirmed) {
-    const supabase = await createSupabaseServerClient();
     const [{ data: profile }, { count: skillCount }, { count: certCount }] =
       await Promise.all([
         supabase
@@ -78,6 +102,14 @@ export default async function DashboardPage() {
         <h1 className="font-display text-headline-md text-eten-ink mt-1 font-bold">
           Welcome, {firstName}
         </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="border-eten-line text-eten-ink-muted rounded-md border px-2 py-0.5 font-mono text-xs tracking-wide">
+            {me?.membership_id ?? "—"}
+          </span>
+          <span className="bg-eten-accent-soft text-eten-accent rounded-full px-2 py-0.5 text-xs font-semibold">
+            {stage}
+          </span>
+        </div>
       </header>
 
       {!member.emailConfirmed && (
