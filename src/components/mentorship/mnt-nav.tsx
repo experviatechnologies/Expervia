@@ -16,12 +16,18 @@ import { siteConfig } from "@/config/site";
  * absolute URLs: on the mentorship subdomain a relative "/events" or "/" would
  * be caught by the host rewrite and never reach the Expervia site.
  */
+// Match the main site's Community nav target (its mega-menu links here), made
+// absolute so it works from the subdomain too.
+const communityPath =
+  siteConfig.navLinks.find((l) => l.title === "Community")?.href ??
+  "/community/huawei";
+
 const NAV = [
   { label: "Curriculum", href: "#how" },
   { label: "Mentorship", href: "/mentorship" },
   { label: "Events", href: `${siteConfig.url}/events` },
   { label: "Enterprise", href: "#enterprise" },
-  { label: "Community", href: siteConfig.url },
+  { label: "Community", href: `${siteConfig.url}${communityPath}` },
 ];
 
 // Compact pill CTAs (match Expervia's pill-sm: 14px, tight padding) so the bar
