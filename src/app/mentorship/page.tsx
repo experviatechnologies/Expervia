@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, GraduationCap, Check } from "lucide-react";
 import { MntNav } from "@/components/mentorship/mnt-nav";
+import { siteConfig } from "@/config/site";
 
 const PERSPECTIVE_FEATURES = [
   { t: "100% Direct Practitioner Mentorship", d: "Active enterprise leaders." },
@@ -616,7 +617,7 @@ export default function MentorshipLandingPage() {
               leaders.
             </p>
             <Link
-              href="/contact"
+              href={`${siteConfig.url}/contact`}
               className="bg-mnt-brand text-mnt-on-brand text-body-md mt-6 inline-flex items-center gap-2 rounded-full px-[22px] py-3 font-bold transition hover:brightness-110"
             >
               Talk to Expervia
@@ -771,26 +772,32 @@ export default function MentorshipLandingPage() {
             <FooterCol
               head="Network"
               links={[
-                ["ETEN Community", "/"],
-                ["Events & Summits", "/events"],
+                ["ETEN Community", siteConfig.url],
+                ["Events & Summits", `${siteConfig.url}/events`],
                 ["Mentor Application", "/mentorship/register"],
               ]}
             />
             <FooterCol
               head="Governance"
               links={[
-                ["Privacy Policy", "/"],
-                ["Terms of Service", "/"],
+                ["Privacy Policy", siteConfig.url],
+                ["Terms of Service", siteConfig.url],
               ]}
             />
           </div>
           <div className="border-mnt-line text-mnt-faint mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-5 text-[12px]">
             <span>© 2026 Expervia Technologies. All rights reserved.</span>
             <span className="flex gap-[18px]">
-              <Link href="/" className="text-mnt-faint hover:text-mnt-ink">
+              <Link
+                href={siteConfig.url}
+                className="text-mnt-faint hover:text-mnt-ink"
+              >
                 Privacy
               </Link>
-              <Link href="/" className="text-mnt-faint hover:text-mnt-ink">
+              <Link
+                href={siteConfig.url}
+                className="text-mnt-faint hover:text-mnt-ink"
+              >
                 Terms
               </Link>
             </span>

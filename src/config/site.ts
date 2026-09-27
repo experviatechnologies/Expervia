@@ -7,7 +7,7 @@ export const siteConfig = {
   name: "Expervia",
   description:
     "Expervia Technologies powers Africa's intelligent enterprise through AI, Cloud, and Digital Transformation — a Microsoft AI Cloud Partner, Microsoft Cloud Solutions Partner, and Huawei Enterprise Partner.",
-  url: "https://expervia.com",
+  url: "https://experviatechnologies.com",
   // Primary navigation links, consumed by the Navbar.
   navLinks: [
     { title: "Solutions", href: "/#solutions" },

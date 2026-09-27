@@ -3,20 +3,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X, ArrowRight, GraduationCap } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 /**
  * Public top navigation for the ETEN Mentorship landing, re-skinned to the
  * proposed design: the nav links (Curriculum, Mentorship, Events, Enterprise,
- * Community) plus the two programme CTAs. No person/account icon. Nav links
- * point to existing pages or in-page sections for now. Uses the mnt-* brand
- * palette with the Expervia marketing type scale.
+ * Community) plus the two programme CTAs. No person/account icon. Uses the
+ * mnt-* brand palette with the Expervia marketing type scale.
+ *
+ * Curriculum/Enterprise are in-page anchors and Mentorship is internal. Events
+ * and Community leave the product for the main marketing site, so they are
+ * absolute URLs: on the mentorship subdomain a relative "/events" or "/" would
+ * be caught by the host rewrite and never reach the Expervia site.
  */
 const NAV = [
   { label: "Curriculum", href: "#how" },
   { label: "Mentorship", href: "/mentorship" },
-  { label: "Events", href: "/events" },
+  { label: "Events", href: `${siteConfig.url}/events` },
   { label: "Enterprise", href: "#enterprise" },
-  { label: "Community", href: "/" },
+  { label: "Community", href: siteConfig.url },
 ];
 
 // Compact pill CTAs (match Expervia's pill-sm: 14px, tight padding) so the bar
