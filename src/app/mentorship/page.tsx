@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { ArrowRight, GraduationCap } from "lucide-react";
 import { MntNav } from "@/components/mentorship/mnt-nav";
 
 const DOMAINS = [
@@ -135,104 +137,51 @@ export default function MentorshipLandingPage() {
           aria-hidden
           className="pointer-events-none absolute -top-24 right-0 h-[560px] w-[900px] opacity-70 [background:radial-gradient(600px_400px_at_80%_0,rgba(167,140,250,0.18),transparent_60%)]"
         />
-        <div className="mx-auto grid max-w-[1140px] items-center gap-14 px-6 pt-20 pb-4 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="mx-auto grid max-w-[1140px] items-center gap-12 px-6 pt-16 pb-8 lg:grid-cols-[1.05fr_0.95fr] lg:pt-20">
           <div>
-            <span
-              className={`border-mnt-brand/30 bg-mnt-brand/10 text-mnt-brand inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11.5px] tracking-[0.14em] uppercase`}
-            >
-              ETEN Mentorship Circles
+            <span className="border-mnt-brand/30 bg-mnt-brand/10 text-mnt-brand text-label-sm inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono tracking-widest uppercase">
+              ETEN Mentorship Programme
             </span>
-            <h1 className="text-mnt-ink font-display mt-5 text-4xl leading-[1.08] font-extrabold tracking-tight text-balance sm:text-5xl sm:leading-[1.06]">
-              Your career shouldn&apos;t be built{" "}
-              <span className="text-mnt-brand">alone.</span>
+            <h1 className="text-mnt-ink font-display md:text-display-lg mt-5 text-4xl leading-[1.1] font-extrabold tracking-tight text-balance sm:text-5xl">
+              Learn From Experience. Build Your Capability.{" "}
+              <span className="text-mnt-brand">Shape Your Future.</span>
             </h1>
-            <p className="text-mnt-ink-muted mt-5 max-w-[31rem] text-[17px] leading-relaxed">
-              Technology takes more than certifications. It takes guidance, real
-              projects and proof. Join a small Circle led by a verified
-              specialist, set a capability goal, and build evidence that moves
-              you up the ladder.
+            <p className="text-body-lg text-mnt-ink-muted mt-5 max-w-[34rem]">
+              Connect with experienced technology professionals who can help you
+              develop the skills, confidence and practical experience needed to
+              thrive in Africa&apos;s evolving technology ecosystem.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/mentorship/register"
-                className="bg-mnt-brand text-mnt-on-brand rounded-[11px] px-[22px] py-3.5 text-[15px] font-bold transition hover:-translate-y-0.5 hover:brightness-110"
+                className="bg-mnt-brand text-mnt-on-brand text-body-md inline-flex items-center gap-2 rounded-full px-[22px] py-3.5 font-bold transition hover:-translate-y-0.5 hover:brightness-110"
               >
-                Be a Mentee
+                Become a Mentee
+                <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
               <Link
                 href="/mentorship/register"
-                className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand rounded-[11px] border px-[22px] py-3.5 text-[15px] font-bold transition hover:-translate-y-0.5"
+                className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand text-body-md inline-flex items-center gap-2 rounded-full border px-[22px] py-3.5 font-bold transition hover:-translate-y-0.5"
               >
-                Be a Mentor
+                <GraduationCap className="size-4" aria-hidden="true" />
+                Become a Mentor
               </Link>
             </div>
-            <div className="text-mnt-faint mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
-              <span className="inline-flex items-center gap-2">
-                <span className="bg-mnt-amber size-2 rounded-full" />
-                Free to start
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <span className="bg-mnt-green size-2 rounded-full" />
-                Validated through ETEN membership
-              </span>
-            </div>
+            <p className="text-mnt-faint text-label-sm mt-6 font-mono tracking-wide uppercase">
+              Part of the Expervia Technology Experts Network (ETEN)
+            </p>
           </div>
 
-          {/* preview card */}
-          <div className="mnt-float bg-mnt-panel border-mnt-line rounded-2xl border p-6 shadow-[0_24px_60px_rgba(0,0,0,0.42)]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="bg-mnt-green/15 text-mnt-green flex size-9 items-center justify-center rounded-[11px] font-bold">
-                  CN
-                </div>
-                <div>
-                  <div className="text-[14px] font-bold">Chidi Nwosu</div>
-                  <div className="text-mnt-green font-mono text-[10.5px]">
-                    Verified Mentor · V4
-                  </div>
-                </div>
-              </div>
-              <span className="text-mnt-green bg-mnt-green/12 rounded-full px-2.5 py-1 font-mono text-[10.5px]">
-                Active
-              </span>
-            </div>
-            <div className="text-mnt-faint mt-5 mb-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase">
-              Cloud Security Circle · 5 mentees
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <div className="bg-mnt-panel-2 border-mnt-line flex items-center gap-2.5 rounded-xl border p-3">
-                <div className="bg-mnt-brand/16 text-mnt-brand flex size-[30px] items-center justify-center rounded-lg text-[13px] font-bold">
-                  AO
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13.5px] font-semibold">Amara Okoye</div>
-                  <div className="text-mnt-faint text-[11.5px]">
-                    Goal · V2 to V3 · Azure landing-zone design
-                  </div>
-                </div>
-                <span className="text-mnt-green font-mono text-[10px]">
-                  2/3
-                </span>
-              </div>
-              <div className="bg-mnt-panel-2 border-mnt-line flex items-center gap-2.5 rounded-xl border p-3">
-                <div className="bg-mnt-blue/16 text-mnt-blue flex size-[30px] items-center justify-center rounded-lg text-[13px] font-bold">
-                  TB
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13.5px] font-semibold">Tunde Bello</div>
-                  <div className="text-mnt-faint text-[11.5px]">
-                    Goal · V1 to V2 · Threat detection
-                  </div>
-                </div>
-                <span className="text-mnt-amber font-mono text-[10px]">
-                  in review
-                </span>
-              </div>
-            </div>
-            <div className="border-mnt-line text-mnt-faint mt-4 flex justify-between border-t pt-4 text-[12px]">
-              <span>Session 3 of 6 · Thu 7:00pm WAT</span>
-              <span className="text-mnt-brand">View Circle</span>
-            </div>
+          <div className="relative">
+            <Image
+              src="/mentorship/hero.jpg"
+              alt="A senior technology professional mentoring a junior colleague at a workstation"
+              width={1408}
+              height={768}
+              priority
+              sizes="(max-width: 1024px) 100vw, 540px"
+              className="border-mnt-line h-auto w-full rounded-2xl border object-cover shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
+            />
           </div>
         </div>
       </section>
