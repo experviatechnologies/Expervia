@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users } from "lucide-react";
+import { Users, FileWarning } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -87,15 +88,24 @@ export default async function MembersPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-4 py-6 md:px-6">
-      <header className="mb-6">
-        <h1 className="text-eten-ink text-2xl font-extrabold tracking-[-0.02em]">
-          Members
-        </h1>
-        <p className="text-eten-ink-muted mt-1 text-sm">
-          {members.length} member{members.length === 1 ? "" : "s"} ·{" "}
-          {activeCount} active. Search and filter the community, open any
-          profile, or change an account&apos;s status.
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-eten-ink text-2xl font-extrabold tracking-[-0.02em]">
+            Members
+          </h1>
+          <p className="text-eten-ink-muted mt-1 text-sm">
+            {members.length} member{members.length === 1 ? "" : "s"} ·{" "}
+            {activeCount} active. Search and filter the community, open any
+            profile, or change an account&apos;s status.
+          </p>
+        </div>
+        <Link
+          href="/admin/members/gaps"
+          className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
+        >
+          <FileWarning className="size-4" />
+          Document gaps
+        </Link>
       </header>
 
       {members.length === 0 ? (
