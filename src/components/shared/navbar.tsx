@@ -13,6 +13,10 @@ import {
   BarChart3,
   LayoutGrid,
   Users,
+  Cloud,
+  Code2,
+  Workflow,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -74,6 +78,42 @@ const communityMenu: SolutionLink[] = [
     href: "/community/microsoft",
     description: "Azure, Security, Data & AI experts",
     icon: LayoutGrid,
+  },
+  {
+    title: "AWS Professionals",
+    href: "/community/aws",
+    description: "Cloud architecture & engineering on AWS",
+    icon: CloudCheck,
+  },
+  {
+    title: "Google Cloud Professionals",
+    href: "/community/gcp",
+    description: "Architecture, data & DevOps on Google Cloud",
+    icon: Cloud,
+  },
+  {
+    title: "Software Engineering",
+    href: "/community/software-engineering",
+    description: "Development, system design & craft",
+    icon: Code2,
+  },
+  {
+    title: "DevOps",
+    href: "/community/devops",
+    description: "CI/CD, automation & reliability",
+    icon: Workflow,
+  },
+  {
+    title: "ISC2 Cybersecurity",
+    href: "/community/isc2-cybersecurity",
+    description: "CISSP, CCSP & security specialists",
+    icon: ShieldCheck,
+  },
+  {
+    title: "ISACA Cybersecurity",
+    href: "/community/isaca-cybersecurity",
+    description: "Audit, risk & governance (CISA, CISM)",
+    icon: Shield,
   },
 ];
 
