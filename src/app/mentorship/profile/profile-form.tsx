@@ -93,9 +93,16 @@ export function MentorProfileForm({
 
       <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-5">
         <div className="text-mnt-ink text-[14px] font-bold">Skills</div>
-        <p className="text-mnt-ink-muted mt-1 text-[13px]">
-          Pick the skills you can mentor in. Selected: {selected.size}
-        </p>
+        {skillGroups.length === 0 ? (
+          <p className="text-mnt-ink-muted mt-1 text-[13px] leading-relaxed">
+            The skills library is still being set up. You&apos;ll be able to
+            pick the skills you mentor in here once it&apos;s ready.
+          </p>
+        ) : (
+          <p className="text-mnt-ink-muted mt-1 text-[13px]">
+            Pick the skills you can mentor in. Selected: {selected.size}
+          </p>
+        )}
         <div className="mt-4 flex flex-col gap-5">
           {skillGroups.map((g) => (
             <div key={g.podName}>
