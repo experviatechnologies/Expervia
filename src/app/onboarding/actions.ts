@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 /**
  * Complete a member's first-run setup: record their primary specialist pod,
@@ -45,8 +46,11 @@ export async function completeOnboarding(input: {
 
   // Validate every chosen pod against the real specialist pods (not Main). This
   // covers both the primary and any secondary pods, so a crafted id can't slip
-  // through — RLS still enforces join-self on the membership rows below.
-  const { data: specialistPods } = await supabase
+  // through — RLS still enforces join-self on the membership rows below. Read
+  // with service_role: the member isn't validated yet (choosing a pod is what
+  // validates them), and RLS on pods requires validation.
+  const admin = getSupabaseAdmin();
+  const { data: specialistPods } = await admin
     .from("pods")
     .select("id")
     .eq("is_main", false);

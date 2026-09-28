@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { MailWarning } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import {
   OnboardingForm,
   type PodOption,
@@ -62,7 +63,7 @@ export default async function OnboardingPage() {
           </div>
         </div>
       ) : (
-        <OnboardingContent supabase={supabase} />
+        <OnboardingContent />
       )}
     </div>
   );
@@ -72,19 +73,20 @@ export default async function OnboardingPage() {
  * Loads the specialist pods and the active skills taxonomy (grouped by pod) and
  * hands them to the client form. Split out so the email-unconfirmed branch above
  * doesn't run these queries.
+ *
+ * These are lookup lists read with service_role: a member is not yet validated
+ * during onboarding (choosing a primary pod is what validates them), and RLS on
+ * pods/skills requires validation, so their own session would see nothing.
  */
-async function OnboardingContent({
-  supabase,
-}: {
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
-}) {
+async function OnboardingContent() {
+  const admin = getSupabaseAdmin();
   const [{ data: podRows }, { data: skillRows }] = await Promise.all([
-    supabase
+    admin
       .from("pods")
       .select("id, slug, name, description")
       .eq("is_main", false)
       .order("name"),
-    supabase
+    admin
       .from("skills")
       .select("id, name, pod_id")
       .eq("is_active", true)
