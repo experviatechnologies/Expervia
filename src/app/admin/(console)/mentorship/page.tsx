@@ -87,6 +87,8 @@ export default async function AdminMentorshipPage() {
     { data: cmRows },
     { count: mentorCount },
     { count: graduationCount },
+    { data: requestRows },
+    { count: sessionCount },
   ] = await Promise.all([
     memberIds.length
       ? admin
@@ -110,6 +112,13 @@ export default async function AdminMentorshipPage() {
       .from("recognition_events")
       .select("id", { count: "exact", head: true })
       .eq("badge_key", "circle_graduate"),
+    admin.from("mentorship_requests").select("status"),
+    circleIds.length
+      ? admin
+          .from("circle_sessions")
+          .select("id", { count: "exact", head: true })
+          .in("circle_id", circleIds)
+      : Promise.resolve({ count: 0 }),
   ]);
 
   const nameById = new Map(
@@ -124,6 +133,14 @@ export default async function AdminMentorshipPage() {
   const completedCircles = circles.filter(
     (c) => c.status === "completed",
   ).length;
+
+  // Pilot activity: 1:1 requests, matches, sessions and Circle enrolments.
+  const requests = (requestRows ?? []) as { status: string }[];
+  const requestsSent = requests.length;
+  const matches = requests.filter((r) => r.status === "accepted").length;
+  const pendingRequests = requests.filter((r) => r.status === "pending").length;
+  const sessionsHeld = sessionCount ?? 0;
+  const enrolments = (cmRows ?? []).length;
 
   // Per capability area: prospects, validated and Circles.
   type AreaStat = {
@@ -209,6 +226,23 @@ export default async function AdminMentorshipPage() {
           tone="text-eten-verified"
         />
       </div>
+
+      {/* Pilot activity */}
+      <section className="mb-8">
+        <h2 className="text-eten-faint mb-3 font-mono text-xs tracking-wider uppercase">
+          Pilot activity
+        </h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Kpi label="1:1 requests" value={requestsSent} />
+          <Kpi label="Matches" value={matches} tone="text-eten-verified" />
+          <Kpi label="Pending requests" value={pendingRequests} />
+          <Kpi label="Sessions held" value={sessionsHeld} />
+        </div>
+        <p className="text-eten-faint mt-2 text-xs">
+          {enrolments} mentee enrolment{enrolments === 1 ? "" : "s"} across
+          Circles. Issue and feedback capture is not yet instrumented.
+        </p>
+      </section>
 
       {/* Capability-area breakdown */}
       <section className="mb-8">
