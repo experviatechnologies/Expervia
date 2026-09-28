@@ -161,20 +161,29 @@ export default async function AdminMentorshipPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-4 py-6 md:px-6">
-      <header className="mb-6">
-        <h1 className="text-eten-ink text-2xl font-extrabold tracking-[-0.02em]">
-          Mentorship
-        </h1>
-        <p className="text-eten-ink-muted mt-1 text-sm">
-          The standalone mentorship funnel. Mentor verifications are reviewed in{" "}
-          <Link
-            href="/admin/mentors"
-            className="text-eten-accent hover:underline"
-          >
-            Mentors
-          </Link>
-          .
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-eten-ink text-2xl font-extrabold tracking-[-0.02em]">
+            Mentorship
+          </h1>
+          <p className="text-eten-ink-muted mt-1 text-sm">
+            The standalone mentorship funnel. Mentor verifications are reviewed
+            in{" "}
+            <Link
+              href="/admin/mentors"
+              className="text-eten-accent hover:underline"
+            >
+              Mentors
+            </Link>
+            .
+          </p>
+        </div>
+        <Link
+          href="/admin/mentorship/pilot"
+          className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
+        >
+          Pilot setup
+        </Link>
       </header>
 
       {/* KPIs */}
