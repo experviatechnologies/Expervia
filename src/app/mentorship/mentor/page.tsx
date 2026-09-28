@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { MntDashShell } from "@/components/mentorship/mnt-dash-shell";
 import { ApplyMentorControl } from "./apply-control";
+import { RequestDecisionControl } from "./request-decision-control";
 
 export const metadata = { title: "Mentor dashboard" };
 
@@ -138,6 +139,38 @@ export default async function MentorDashboardPage() {
   }
   const activeCircles = circles.filter((c) => c.status === "active").length;
 
+  // Incoming 1:1 mentorship requests (verified mentors only). RLS returns rows
+  // addressed to this mentor.
+  type IncomingRequest = {
+    id: string;
+    mentee_id: string;
+    message: string | null;
+    capability_area_id: string | null;
+    created_at: string;
+  };
+  let incoming: IncomingRequest[] = [];
+  const menteeName = new Map<string, string>();
+  if (verified) {
+    const { data: reqRows } = await supabase
+      .from("mentorship_requests")
+      .select("id, mentee_id, message, capability_area_id, created_at")
+      .eq("mentor_id", user.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+    incoming = (reqRows ?? []) as IncomingRequest[];
+    if (incoming.length) {
+      const { data: mp2 } = await supabase
+        .from("profiles")
+        .select("member_id, full_name")
+        .in(
+          "member_id",
+          incoming.map((r) => r.mentee_id),
+        );
+      for (const p of mp2 ?? [])
+        menteeName.set(p.member_id, p.full_name ?? "A member");
+    }
+  }
+
   const footer = verified ? (
     <div className="border-mnt-green/30 rounded-xl border p-3.5 [background:rgba(52,211,153,0.06)]">
       <div className="flex items-center gap-2">
@@ -255,6 +288,47 @@ export default async function MentorDashboardPage() {
             tone={graduates > 0 ? "text-mnt-green" : undefined}
           />
         </div>
+
+        {/* incoming 1:1 requests */}
+        {verified && (
+          <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
+            <div className={`${lbl} mb-3.5`}>
+              Incoming requests · {incoming.length}
+            </div>
+            {incoming.length === 0 ? (
+              <p className="text-mnt-ink-muted text-[13px] leading-relaxed">
+                No pending mentorship requests. Mentees can request you from the
+                mentor directory.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {incoming.map((r) => (
+                  <div
+                    key={r.id}
+                    className="bg-mnt-panel-2 border-mnt-line rounded-xl border p-3.5"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-[14px] font-bold">
+                          {menteeName.get(r.mentee_id) ?? "A member"}
+                        </div>
+                        {r.message && (
+                          <p className="text-mnt-ink-muted mt-1 text-[13px] whitespace-pre-line">
+                            {r.message}
+                          </p>
+                        )}
+                        <div className="text-mnt-faint mt-1 text-[11.5px]">
+                          {fmtDate(r.created_at)}
+                        </div>
+                      </div>
+                      <RequestDecisionControl requestId={r.id} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* circles I lead */}
         <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">

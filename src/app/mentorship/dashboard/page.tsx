@@ -109,6 +109,27 @@ export default async function MenteeDashboardPage() {
   );
   const evidence = evidenceRows ?? [];
 
+  // Outgoing 1:1 mentor requests (RLS returns the caller's own).
+  const { data: reqRows } = await supabase
+    .from("mentorship_requests")
+    .select("id, mentor_id, status, created_at")
+    .eq("mentee_id", user.id)
+    .neq("status", "withdrawn")
+    .order("created_at", { ascending: false });
+  const requests = reqRows ?? [];
+  const requestMentorName = new Map<string, string>();
+  if (requests.length) {
+    const { data: mps } = await supabase
+      .from("profiles")
+      .select("member_id, full_name")
+      .in(
+        "member_id",
+        requests.map((r) => r.mentor_id),
+      );
+    for (const p of mps ?? [])
+      requestMentorName.set(p.member_id, p.full_name ?? "A mentor");
+  }
+
   const footer = isValidated ? (
     <div className="border-mnt-green/30 rounded-xl border p-3.5 [background:rgba(52,211,153,0.06)]">
       <div className="flex items-center gap-2">
@@ -150,6 +171,7 @@ export default async function MenteeDashboardPage() {
           label: "My Circle",
           href: circle ? `/mentorship/circles/${circle.id}` : undefined,
         },
+        { label: "Find a mentor", href: "/mentorship/mentors" },
         { label: "Notifications", href: "/mentorship/notifications" },
         { label: "Profile" },
       ]}
@@ -243,6 +265,51 @@ export default async function MenteeDashboardPage() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* 1:1 mentorship requests */}
+        <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className={lbl}>1:1 mentorship</div>
+            <Link
+              href="/mentorship/mentors"
+              className="text-mnt-brand text-[13px] font-semibold"
+            >
+              Find a mentor →
+            </Link>
+          </div>
+          {requests.length === 0 ? (
+            <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+              {isValidated
+                ? "Browse verified mentors and request 1:1 guidance in your capability area."
+                : "Validate your account to request a mentor."}
+            </p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-2">
+              {requests.map((r) => (
+                <li
+                  key={r.id}
+                  className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                >
+                  <span className="text-[13px] font-medium">
+                    {requestMentorName.get(r.mentor_id) ?? "A mentor"}
+                  </span>
+                  <span
+                    className={
+                      "font-mono text-[11px] tracking-wide capitalize " +
+                      (r.status === "accepted"
+                        ? "text-mnt-green"
+                        : r.status === "declined"
+                          ? "text-mnt-faint"
+                          : "text-mnt-amber")
+                    }
+                  >
+                    {r.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Recognition + capability passport */}
