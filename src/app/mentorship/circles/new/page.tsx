@@ -14,6 +14,16 @@ export default function NewCirclePage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // Open the native calendar on click (not just on the small icon), so users
+  // don't have to type the date or discover the keyboard shortcut.
+  function openPicker(e: React.MouseEvent<HTMLInputElement>) {
+    try {
+      e.currentTarget.showPicker?.();
+    } catch {
+      /* showPicker throws in some browsers/contexts; the field still works. */
+    }
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -79,7 +89,8 @@ export default function NewCirclePage() {
               id="startDate"
               name="startDate"
               type="date"
-              className={inputClass}
+              onClick={openPicker}
+              className={inputClass + " cursor-pointer"}
             />
           </div>
           <div>
@@ -90,7 +101,8 @@ export default function NewCirclePage() {
               id="endDate"
               name="endDate"
               type="date"
-              className={inputClass}
+              onClick={openPicker}
+              className={inputClass + " cursor-pointer"}
             />
           </div>
         </div>

@@ -415,3 +415,12 @@
   outline-offset: 2px;
   border-radius: 8px;
 }
+
+/* Date inputs on the dark theme: the native calendar-picker icon is dark by
+   default and disappears against the panel. Brighten it and make it a pointer
+   so it reads as clickable. */
+.bg-mnt-bg input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+  opacity: 0.9;
+}
