@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { updateMentorProfile } from "./actions";
 
 export type SkillGroup = {
+  podId: string;
   podName: string;
   skills: { id: string; name: string }[];
 };
@@ -28,16 +29,36 @@ export function MentorProfileForm({
   const [selected, setSelected] = useState<Set<string>>(
     new Set(initialSelected),
   );
+  const [areaId, setAreaId] = useState("");
+  const [skillId, setSkillId] = useState("");
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function toggle(id: string) {
+  // Flat lookup: skill id -> { name, area } for the selected chips.
+  const skillMeta = new Map<string, { name: string; area: string }>();
+  for (const g of skillGroups) {
+    for (const s of g.skills)
+      skillMeta.set(s.id, { name: s.name, area: g.podName });
+  }
+
+  const currentArea = skillGroups.find((g) => g.podId === areaId);
+  const availableSkills = (currentArea?.skills ?? []).filter(
+    (s) => !selected.has(s.id),
+  );
+
+  function addSkill() {
+    if (!skillId) return;
+    setSaved(false);
+    setSelected((prev) => new Set(prev).add(skillId));
+    setSkillId("");
+  }
+
+  function remove(id: string) {
     setSaved(false);
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      next.delete(id);
       return next;
     });
   }
@@ -99,41 +120,102 @@ export function MentorProfileForm({
             pick the skills you mentor in here once it&apos;s ready.
           </p>
         ) : (
-          <p className="text-mnt-ink-muted mt-1 text-[13px]">
-            Pick the skills you can mentor in. Selected: {selected.size}
-          </p>
-        )}
-        <div className="mt-4 flex flex-col gap-5">
-          {skillGroups.map((g) => (
-            <div key={g.podName}>
-              <div className="text-mnt-faint mb-2 font-mono text-[10.5px] tracking-[0.13em] uppercase">
-                {g.podName}
+          <>
+            <p className="text-mnt-ink-muted mt-1 text-[13px]">
+              Choose an area, pick a skill, and add it.
+            </p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label
+                  htmlFor="skill-area"
+                  className="text-mnt-ink-muted text-[12.5px] font-medium"
+                >
+                  Area
+                </label>
+                <select
+                  id="skill-area"
+                  value={areaId}
+                  onChange={(e) => {
+                    setAreaId(e.target.value);
+                    setSkillId("");
+                  }}
+                  className={inputClass}
+                >
+                  <option value="">Select an area</option>
+                  {skillGroups.map((g) => (
+                    <option key={g.podId} value={g.podId}>
+                      {g.podName}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {g.skills.map((s) => {
-                  const on = selected.has(s.id);
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => toggle(s.id)}
-                      aria-pressed={on}
-                      className={
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition-colors " +
-                        (on
-                          ? "border-mnt-brand bg-mnt-brand/12 text-mnt-ink"
-                          : "border-mnt-line text-mnt-ink-muted hover:text-mnt-ink")
-                      }
-                    >
-                      {on && <Check className="size-3.5" aria-hidden="true" />}
+              <div className="flex-1">
+                <label
+                  htmlFor="skill-name"
+                  className="text-mnt-ink-muted text-[12.5px] font-medium"
+                >
+                  Skill
+                </label>
+                <select
+                  id="skill-name"
+                  value={skillId}
+                  onChange={(e) => setSkillId(e.target.value)}
+                  disabled={!areaId}
+                  className={inputClass + " disabled:opacity-60"}
+                >
+                  <option value="">
+                    {!areaId
+                      ? "Choose an area first"
+                      : availableSkills.length
+                        ? "Select a skill"
+                        : "All added"}
+                  </option>
+                  {availableSkills.map((s) => (
+                    <option key={s.id} value={s.id}>
                       {s.name}
-                    </button>
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={addSkill}
+                disabled={!skillId}
+                className="bg-mnt-brand text-mnt-on-brand mt-1.5 shrink-0 rounded-[10px] px-5 py-3 text-[14px] font-bold transition hover:brightness-110 disabled:opacity-50"
+              >
+                Add
+              </button>
+            </div>
+
+            {selected.size > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {[...selected].map((id) => {
+                  const meta = skillMeta.get(id);
+                  return (
+                    <span
+                      key={id}
+                      className="border-mnt-brand bg-mnt-brand/12 text-mnt-ink inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px]"
+                    >
+                      {meta?.name ?? "Skill"}
+                      <button
+                        type="button"
+                        onClick={() => remove(id)}
+                        aria-label={`Remove ${meta?.name ?? "skill"}`}
+                        className="text-mnt-ink-muted hover:text-mnt-ink"
+                      >
+                        <X className="size-3.5" aria-hidden="true" />
+                      </button>
+                    </span>
                   );
                 })}
               </div>
-            </div>
-          ))}
-        </div>
+            ) : (
+              <p className="text-mnt-faint mt-3 text-[12.5px]">
+                No skills added yet.
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

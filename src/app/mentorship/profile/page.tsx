@@ -52,7 +52,11 @@ export default async function MentorshipProfilePage() {
     skillsByPod.set(s.pod_id, list);
   }
   const skillGroups: SkillGroup[] = pods
-    .map((p) => ({ podName: p.name, skills: skillsByPod.get(p.id) ?? [] }))
+    .map((p) => ({
+      podId: p.id,
+      podName: p.name,
+      skills: skillsByPod.get(p.id) ?? [],
+    }))
     .filter((g) => g.skills.length > 0);
 
   const initialSelected = (mySkills ?? []).map((r) => r.skill_id);
