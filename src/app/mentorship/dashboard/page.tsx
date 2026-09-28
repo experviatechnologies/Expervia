@@ -173,7 +173,7 @@ export default async function MenteeDashboardPage() {
         },
         { label: "Find a mentor", href: "/mentorship/mentors" },
         { label: "Notifications", href: "/mentorship/notifications" },
-        { label: "Profile" },
+        { label: "Profile", href: "/mentorship/profile" },
       ]}
       footer={footer}
     >
