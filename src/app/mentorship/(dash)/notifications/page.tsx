@@ -77,15 +77,7 @@ export default async function MentorshipNotificationsPage() {
 
   return (
     <div className="mx-auto max-w-[720px] px-6 py-10">
-      <Link
-        href="/mentorship/dashboard"
-        className="text-mnt-faint hover:text-mnt-ink text-[13px]"
-      >
-        ← Back
-      </Link>
-      <h1 className="font-display mt-3 text-2xl font-extrabold">
-        Notifications
-      </h1>
+      <h1 className="font-display text-2xl font-extrabold">Notifications</h1>
 
       {notifications.length === 0 ? (
         <div className="border-mnt-line text-mnt-faint mt-6 rounded-2xl border border-dashed p-10 text-center text-[13px]">

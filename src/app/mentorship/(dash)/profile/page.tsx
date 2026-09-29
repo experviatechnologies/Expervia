@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -13,17 +12,11 @@ export default async function MentorshipProfilePage() {
   const admin = getSupabaseAdmin();
 
   const [
-    { data: memberRow },
     { data: profile },
     { data: mySkills },
     { data: podRows },
     { data: skillRows },
   ] = await Promise.all([
-    admin
-      .from("members")
-      .select("mentorship_intent")
-      .eq("id", member.id)
-      .maybeSingle(),
     admin
       .from("profiles")
       .select("full_name, headline, bio")
@@ -38,11 +31,6 @@ export default async function MentorshipProfilePage() {
       .order("sort", { ascending: true, nullsFirst: false })
       .order("name"),
   ]);
-
-  const backHref =
-    memberRow?.mentorship_intent === "mentor"
-      ? "/mentorship/mentor"
-      : "/mentorship/dashboard";
 
   const pods = podRows ?? [];
   const skillsByPod = new Map<string, { id: string; name: string }[]>();
@@ -63,14 +51,7 @@ export default async function MentorshipProfilePage() {
 
   return (
     <div className="mx-auto max-w-[820px] px-6 py-8">
-      <Link
-        href={backHref}
-        className="text-mnt-faint hover:text-mnt-ink text-[13px]"
-      >
-        ← Back to dashboard
-      </Link>
-
-      <header className="mt-3">
+      <header>
         <h1 className="font-display text-2xl font-extrabold">
           {profile?.full_name ?? "Your profile"}
         </h1>

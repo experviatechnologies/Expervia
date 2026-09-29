@@ -96,14 +96,7 @@ export default async function MentorsPage({
 
   return (
     <div className="mx-auto max-w-[1140px] px-6 py-8">
-      <Link
-        href="/mentorship/dashboard"
-        className="text-mnt-faint hover:text-mnt-ink text-[13px]"
-      >
-        ← Back to dashboard
-      </Link>
-
-      <header className="mt-3">
+      <header>
         <h1 className="font-display text-2xl font-extrabold">Find a mentor</h1>
         <p className="text-mnt-ink-muted mt-1 text-[14px]">
           Browse verified mentors and request 1:1 guidance in your capability

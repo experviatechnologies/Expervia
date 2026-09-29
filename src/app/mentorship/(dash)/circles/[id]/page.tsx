@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { vLevelBadge } from "@/lib/eten/v-levels";
@@ -131,13 +130,6 @@ export default async function MentorshipCircleDetailPage({
 
   return (
     <div className="mx-auto max-w-[1140px] px-6 py-8">
-      <Link
-        href={isMentor ? "/mentorship/mentor" : "/mentorship/dashboard"}
-        className="text-mnt-faint hover:text-mnt-ink text-[13px]"
-      >
-        ← Back
-      </Link>
-
       {/* HEADER */}
       <div className="bg-mnt-panel border-mnt-line mt-3 rounded-2xl border p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">

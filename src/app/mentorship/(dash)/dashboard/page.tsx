@@ -1,0 +1,317 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { vLevelBadge } from "@/lib/eten/v-levels";
+import {
+  summarizeRecognition,
+  type RecognitionRow,
+} from "@/lib/eten/recognition-types";
+
+export const metadata = { title: "Dashboard" };
+
+const lbl =
+  "text-mnt-faint font-mono text-[10.5px] tracking-[0.13em] uppercase";
+
+export default async function MenteeDashboardPage() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/mentorship/signin");
+
+  const [{ data: member }, { data: profile }] = await Promise.all([
+    supabase
+      .from("members")
+      .select("validated_at, mentorship_intent, mentorship_capability_area_id")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("member_id", user.id)
+      .maybeSingle(),
+  ]);
+
+  // Mentors get their own workspace.
+  if (member?.mentorship_intent === "mentor") redirect("/mentorship/mentor");
+
+  const isValidated = Boolean(member?.validated_at);
+  const name = profile?.full_name ?? "there";
+
+  // Capability area label (public read).
+  let areaLabel: string | null = null;
+  if (member?.mentorship_capability_area_id) {
+    const { data: area } = await supabase
+      .from("capability_areas")
+      .select("label")
+      .eq("id", member.mentorship_capability_area_id)
+      .maybeSingle();
+    areaLabel = area?.label ?? null;
+  }
+
+  // Active circle membership (RLS-scoped to the caller).
+  const { data: cm } = await supabase
+    .from("circle_memberships")
+    .select("circle_id, target_v_level, target_capability")
+    .eq("member_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  let circle: {
+    id: string;
+    title: string | null;
+    status: string;
+    mentorName: string;
+  } | null = null;
+  if (cm) {
+    const { data: c } = await supabase
+      .from("mentorship_circles")
+      .select("id, title, status, mentor_id")
+      .eq("id", cm.circle_id)
+      .maybeSingle();
+    if (c) {
+      const { data: mp } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("member_id", c.mentor_id)
+        .maybeSingle();
+      circle = {
+        id: c.id,
+        title: c.title,
+        status: c.status,
+        mentorName: mp?.full_name ?? "A mentor",
+      };
+    }
+  }
+
+  // Recognition (Expert Score + badges) and recent passport evidence.
+  const [{ data: recRows }, { data: evidenceRows }] = await Promise.all([
+    supabase
+      .from("recognition_events")
+      .select("kind, badge_key, points")
+      .eq("member_id", user.id),
+    supabase
+      .from("evidence_records")
+      .select("title, capability_area, v_level")
+      .eq("member_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+  const { score, badges } = summarizeRecognition(
+    (recRows ?? []) as RecognitionRow[],
+  );
+  const evidence = evidenceRows ?? [];
+
+  // Outgoing 1:1 mentor requests (RLS returns the caller's own).
+  const { data: reqRows } = await supabase
+    .from("mentorship_requests")
+    .select("id, mentor_id, status, created_at")
+    .eq("mentee_id", user.id)
+    .neq("status", "withdrawn")
+    .order("created_at", { ascending: false });
+  const requests = reqRows ?? [];
+  const requestMentorName = new Map<string, string>();
+  if (requests.length) {
+    const { data: mps } = await supabase
+      .from("profiles")
+      .select("member_id, full_name")
+      .in(
+        "member_id",
+        requests.map((r) => r.mentor_id),
+      );
+    for (const p of mps ?? [])
+      requestMentorName.set(p.member_id, p.full_name ?? "A mentor");
+  }
+
+  return (
+    <div className="px-6 py-8 md:px-9">
+      <div className={lbl}>Mentorship</div>
+      <h1 className="font-display mt-1.5 text-[26px] font-extrabold">
+        Welcome back, {name.split(" ")[0]}
+      </h1>
+
+      {!isValidated && (
+        <div className="border-mnt-amber/30 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">
+          <div className="flex items-center gap-3">
+            <span className="bg-mnt-amber/18 text-mnt-amber grid size-[26px] place-items-center rounded-lg font-bold">
+              !
+            </span>
+            <div>
+              <div className="text-[14px] font-bold">
+                You are a Prospect, one step from going live
+              </div>
+              <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                Validate through ETEN membership to be placed in a live Circle
+                and count toward recognition.
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/mentorship/validate"
+            className="bg-mnt-amber rounded-[10px] px-4 py-2.5 text-[13px] font-bold whitespace-nowrap text-[#241a05]"
+          >
+            Validate account
+          </Link>
+        </div>
+      )}
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {/* Goal */}
+        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+          <div className={lbl}>My goal</div>
+          {cm && cm.target_v_level != null ? (
+            <>
+              <div className="font-display mt-3 text-xl font-extrabold">
+                {vLevelBadge(cm.target_v_level)}
+              </div>
+              {cm.target_capability && (
+                <div className="text-mnt-ink-muted mt-2 text-[13px]">
+                  {cm.target_capability}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+              {areaLabel ? (
+                <>
+                  Your area is <span className="text-mnt-ink">{areaLabel}</span>
+                  . You will set a target level when you join a Circle.
+                </>
+              ) : (
+                "You will set a goal when you join a Circle."
+              )}
+            </p>
+          )}
+        </div>
+
+        {/* Circle */}
+        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+          <div className={lbl}>My Circle</div>
+          {circle ? (
+            <Link
+              href={`/mentorship/circles/${circle.id}`}
+              className="mt-3 block"
+            >
+              <h3 className="font-display text-[17px] font-bold">
+                {circle.title ?? "Your Circle"}
+              </h3>
+              <div className="text-mnt-ink-muted mt-1 text-[13px]">
+                Mentor: {circle.mentorName}
+              </div>
+              <span className="text-mnt-brand mt-2 inline-block text-[13px] font-semibold">
+                Open Circle
+              </span>
+            </Link>
+          ) : (
+            <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+              You are not in a Circle yet.{" "}
+              {isValidated
+                ? "You will be matched to one in your capability area."
+                : "Validate your account to be placed in a live Circle."}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 1:1 mentorship requests */}
+      <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className={lbl}>1:1 mentorship</div>
+          <Link
+            href="/mentorship/mentors"
+            className="text-mnt-brand text-[13px] font-semibold"
+          >
+            Find a mentor →
+          </Link>
+        </div>
+        {requests.length === 0 ? (
+          <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+            {isValidated
+              ? "Browse verified mentors and request 1:1 guidance in your capability area."
+              : "Validate your account to request a mentor."}
+          </p>
+        ) : (
+          <ul className="mt-3 flex flex-col gap-2">
+            {requests.map((r) => (
+              <li
+                key={r.id}
+                className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+              >
+                <span className="text-[13px] font-medium">
+                  {requestMentorName.get(r.mentor_id) ?? "A mentor"}
+                </span>
+                <span
+                  className={
+                    "font-mono text-[11px] tracking-wide capitalize " +
+                    (r.status === "accepted"
+                      ? "text-mnt-green"
+                      : r.status === "declined"
+                        ? "text-mnt-faint"
+                        : "text-mnt-amber")
+                  }
+                >
+                  {r.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Recognition + capability passport */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+          <div className={lbl}>Recognition</div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="font-display text-mnt-brand text-[28px] font-extrabold tabular-nums">
+              {score}
+            </span>
+            <span className="text-mnt-ink-muted text-[13px]">Expert Score</span>
+          </div>
+          {badges.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {badges.map((b) => (
+                <span
+                  key={b.key}
+                  title={b.description}
+                  className="bg-mnt-green/12 text-mnt-green rounded-full px-2.5 py-1 text-[11.5px] font-medium"
+                >
+                  {b.label}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-mnt-faint mt-3 text-[12.5px]">
+              Badges appear as you complete Circles and earn approvals.
+            </p>
+          )}
+        </div>
+
+        <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
+          <div className={lbl}>Capability passport</div>
+          {evidence.length === 0 ? (
+            <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+              Evidence your mentor approves is recorded here as verified
+              capability.
+            </p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-2">
+              {evidence.map((e, i) => (
+                <li
+                  key={i}
+                  className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                >
+                  <span className="text-[13px] font-medium">{e.title}</span>
+                  <span className="text-mnt-faint text-[11px] whitespace-nowrap">
+                    {e.v_level != null ? `V${e.v_level}` : ""}
+                    {e.capability_area ? ` · ${e.capability_area}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

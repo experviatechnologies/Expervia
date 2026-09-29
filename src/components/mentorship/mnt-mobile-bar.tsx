@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import type { MntNavItem } from "./mnt-dash-shell";
 import { MntSignOutButton } from "./mnt-signout-button";
+import { MntNavLinks } from "./mnt-nav-links";
 
 /**
  * Mobile top bar + slide-in drawer for the mentorship dashboards. The desktop
@@ -22,7 +23,6 @@ export function MntMobileBar({
   user: { initials: string; name: string; role: string };
 }) {
   const [open, setOpen] = useState(false);
-  const active = nav.find((i) => i.active);
 
   return (
     <div className="md:hidden">
@@ -33,7 +33,7 @@ export function MntMobileBar({
             E
           </span>
           <span className="font-display text-[14px] font-extrabold">
-            {active?.label ?? "ETEN Mentorship"}
+            ETEN Mentorship
           </span>
         </Link>
         <button
@@ -89,29 +89,7 @@ export function MntMobileBar({
         </div>
 
         <nav className="flex flex-col gap-0.5">
-          {nav.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href ?? "#"}
-              aria-current={item.active ? "page" : undefined}
-              onClick={() => setOpen(false)}
-              className={
-                "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] font-semibold transition-colors " +
-                (item.active
-                  ? "bg-mnt-brand/10 text-[#d8ccff]"
-                  : "text-mnt-ink-muted hover:text-mnt-ink hover:bg-white/[0.03]")
-              }
-            >
-              <span
-                aria-hidden="true"
-                className={
-                  "size-4 shrink-0 rounded-[5px] " +
-                  (item.active ? "bg-mnt-brand" : "bg-mnt-faint/70")
-                }
-              />
-              {item.label}
-            </Link>
-          ))}
+          <MntNavLinks items={nav} onNavigate={() => setOpen(false)} />
         </nav>
 
         <div className="mt-3 border-t border-white/[0.06] pt-2">

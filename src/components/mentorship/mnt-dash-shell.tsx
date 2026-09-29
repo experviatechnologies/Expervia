@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { MntMobileBar } from "./mnt-mobile-bar";
 import { MntSignOutButton } from "./mnt-signout-button";
+import { MntNavLinks } from "./mnt-nav-links";
 
-export type MntNavItem = { label: string; href?: string; active?: boolean };
+export type MntNavItem = { label: string; href?: string };
 
 /**
- * Sidebar + main shell for the mentorship dashboards (mentee and mentor share
- * it). The rail is a deeper ground than the content, with the product logo, a
- * nav list, a role-specific footer slot (the Prospect "validate" card or the
- * Verified-Mentor badge) and the account block. Dumb and presentational:
- * callers pass the nav, the footer node and the user.
+ * Persistent sidebar + main shell for the mentorship dashboards. Rendered once
+ * by the (dash) route-group layout so the sidebar stays fixed as the main area
+ * swaps between pages. The rail is a deeper ground than the content, with the
+ * product logo, the nav list, a role-specific footer slot (the Prospect
+ * "validate" card or the Verified-Mentor badge) and the account block. Active
+ * nav state is derived from the URL by MntNavLinks.
  */
 export function MntDashShell({
   nav,
@@ -38,28 +40,7 @@ export function MntDashShell({
         </Link>
 
         <nav className="flex flex-col gap-0.5">
-          {nav.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href ?? "#"}
-              aria-current={item.active ? "page" : undefined}
-              className={
-                "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13.5px] font-semibold transition-colors " +
-                (item.active
-                  ? "bg-mnt-brand/10 text-[#d8ccff]"
-                  : "text-mnt-ink-muted hover:text-mnt-ink hover:bg-white/[0.03]")
-              }
-            >
-              <span
-                aria-hidden="true"
-                className={
-                  "size-4 shrink-0 rounded-[5px] " +
-                  (item.active ? "bg-mnt-brand" : "bg-mnt-faint/70")
-                }
-              />
-              {item.label}
-            </Link>
-          ))}
+          <MntNavLinks items={nav} />
         </nav>
 
         <div className="flex-1" />
