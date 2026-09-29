@@ -16,6 +16,11 @@ const partners = [
 
 const regions = ["Africa", "Europe", "Global"];
 
+// Link to the mentorship subdomain when it's configured, else the path.
+const MENTORSHIP_HREF = process.env.NEXT_PUBLIC_MENTORSHIP_HOST
+  ? `https://${process.env.NEXT_PUBLIC_MENTORSHIP_HOST}`
+  : "/mentorship";
+
 export function Footer() {
   return (
     <footer className="bg-surface-container-lowest border-outline-variant border-t">
@@ -69,6 +74,14 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  href={MENTORSHIP_HREF}
+                  className="text-on-surface-variant hover:text-primary text-sm transition-colors"
+                >
+                  Mentorship
+                </Link>
+              </li>
             </ul>
           </div>
 
