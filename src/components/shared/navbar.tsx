@@ -17,6 +17,7 @@ import {
   Code2,
   Workflow,
   Shield,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,18 @@ const solutionsMenu: SolutionLink[] = [
 ];
 
 // Membership tracks surfaced in the "Community" mega-menu.
+// Link to the mentorship subdomain when configured, else the path.
+const MENTORSHIP_HREF = process.env.NEXT_PUBLIC_MENTORSHIP_HOST
+  ? `https://${process.env.NEXT_PUBLIC_MENTORSHIP_HOST}`
+  : "/mentorship";
+
 const communityMenu: SolutionLink[] = [
+  {
+    title: "Mentorship",
+    href: MENTORSHIP_HREF,
+    description: "Grow with verified mentors & Circles",
+    icon: GraduationCap,
+  },
   {
     title: "Huawei Professionals",
     href: "/community/huawei",
