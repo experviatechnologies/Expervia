@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
       upsert: false,
     });
   if (uploadError) {
+    // Log the real reason (e.g. "Bucket not found") so failures are diagnosable;
+    // the client keeps a generic message.
+    console.error("event image upload failed", uploadError);
     return NextResponse.json(
       { error: "The image upload failed. Please try again." },
       { status: 500 },
