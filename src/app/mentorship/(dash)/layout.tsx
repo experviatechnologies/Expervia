@@ -83,7 +83,7 @@ export default async function MentorshipDashLayout({
 
     nav = [
       { label: "Dashboard", href: "/mentorship/mentor" },
-      { label: "My Circles" },
+      { label: "My Circles", href: "/mentorship/circles" },
       { label: "Notifications", href: "/mentorship/notifications" },
       { label: "Profile", href: "/mentorship/profile" },
     ];
@@ -116,19 +116,9 @@ export default async function MentorshipDashLayout({
       </div>
     );
   } else {
-    const { data: cm } = await supabase
-      .from("circle_memberships")
-      .select("circle_id")
-      .eq("member_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
-
     nav = [
       { label: "Dashboard", href: "/mentorship/dashboard" },
-      {
-        label: "My Circle",
-        href: cm ? `/mentorship/circles/${cm.circle_id}` : undefined,
-      },
+      { label: "My Circle", href: "/mentorship/circles" },
       { label: "Find a mentor", href: "/mentorship/mentors" },
       { label: "Notifications", href: "/mentorship/notifications" },
       { label: "Profile", href: "/mentorship/profile" },
