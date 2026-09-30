@@ -459,6 +459,76 @@ export async function addSession(input: {
   return { ok: true };
 }
 
+/**
+ * Mentor/ops schedule a live class: a session with a start time + duration. The
+ * meeting room is derived from the ids at join time (LiveKit). session_date is
+ * set from starts_at so the join-date-relative completion logic keeps working;
+ * attendance rows are seeded for the current mentees.
+ */
+export async function scheduleClass(input: {
+  circleId: string;
+  title?: string;
+  startsAt: string; // ISO timestamp
+  durationMinutes?: number;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  if (!(await mentorOrOps(admin, input.circleId, me.id))) {
+    return { error: "Only this Circle's mentor can schedule classes." };
+  }
+
+  const { data: circle } = await admin
+    .from("mentorship_circles")
+    .select("status")
+    .eq("id", input.circleId)
+    .maybeSingle();
+  if (!circle) return { error: "That Circle no longer exists." };
+  if (circle.status === "completed") {
+    return { error: "This Circle is completed." };
+  }
+
+  const startMs = Date.parse(input.startsAt ?? "");
+  if (Number.isNaN(startMs)) return { error: "Please pick a date and time." };
+  const duration = Math.min(Math.max(input.durationMinutes ?? 60, 15), 240);
+  const startsAtIso = new Date(startMs).toISOString();
+  const sessionDate = startsAtIso.slice(0, 10);
+
+  const { data: session, error } = await admin
+    .from("circle_sessions")
+    .insert({
+      circle_id: input.circleId,
+      title: input.title?.trim() || null,
+      starts_at: startsAtIso,
+      duration_minutes: duration,
+      session_date: sessionDate,
+    })
+    .select("id")
+    .single();
+  if (error || !session) {
+    return { error: "Couldn't schedule the class. Please try again." };
+  }
+
+  const { data: mentees } = await admin
+    .from("circle_memberships")
+    .select("member_id")
+    .eq("circle_id", input.circleId)
+    .eq("status", "active");
+  if (mentees?.length) {
+    await admin.from("session_attendance").insert(
+      mentees.map((m) => ({
+        session_id: session.id,
+        member_id: m.member_id,
+        attended: false,
+      })),
+    );
+  }
+
+  revalidatePath(`/mentorship/circles/${input.circleId}`);
+  return { ok: true };
+}
+
 /** Mentor/ops mark a mentee present/absent for a session. */
 export async function setAttendance(input: {
   sessionId: string;

@@ -8,6 +8,7 @@ import {
   setCircleGoal,
   activateCircle,
   addSession,
+  scheduleClass,
   setAttendance,
   postAssignment,
   submitEvidence,
@@ -197,6 +198,75 @@ export function AddSessionControl({ circleId }: { circleId: string }) {
       <input name="sessionDate" type="date" className={field + " w-[150px]"} />
       <button type="submit" className={btn} disabled={pending}>
         {pending ? "Adding…" : "Add"}
+      </button>
+      {error && <p className="text-destructive w-full text-[12px]">{error}</p>}
+    </form>
+  );
+}
+
+/** Mentor: schedule a live class (title + date/time + duration). */
+export function ScheduleClassControl({ circleId }: { circleId: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const local = String(fd.get("startsAt") ?? "");
+    if (!local) {
+      setError("Pick a date and time.");
+      return;
+    }
+    const startsAt = new Date(local).toISOString();
+    startTransition(async () => {
+      setError(null);
+      const res = await scheduleClass({
+        circleId,
+        title: String(fd.get("title") ?? ""),
+        startsAt,
+        durationMinutes: Number(fd.get("duration") ?? 60),
+      });
+      if ("error" in res) setError(res.error);
+      else {
+        form.reset();
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
+      <input
+        name="title"
+        placeholder="Class title (optional)"
+        className={field + " max-w-[200px] flex-1"}
+      />
+      <input
+        name="startsAt"
+        type="datetime-local"
+        required
+        className={field + " w-[220px] cursor-pointer [color-scheme:dark]"}
+        onClick={(e) => {
+          try {
+            (e.currentTarget as HTMLInputElement).showPicker?.();
+          } catch {}
+        }}
+      />
+      <select
+        name="duration"
+        defaultValue="60"
+        className={field + " w-[130px]"}
+      >
+        <option value="30">30 min</option>
+        <option value="45">45 min</option>
+        <option value="60">1 hour</option>
+        <option value="90">1.5 hours</option>
+        <option value="120">2 hours</option>
+      </select>
+      <button type="submit" className={btn} disabled={pending}>
+        {pending ? "Scheduling…" : "Schedule class"}
       </button>
       {error && <p className="text-destructive w-full text-[12px]">{error}</p>}
     </form>

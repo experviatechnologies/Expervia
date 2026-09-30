@@ -6,12 +6,14 @@ import {
   EnrolMenteeControl,
   SetGoalControl,
   AddSessionControl,
+  ScheduleClassControl,
   AttendanceToggle,
   PostAssignmentControl,
   SubmitEvidenceControl,
   ReviewSubmissionControl,
   CompleteCircleControl,
 } from "./circle-controls";
+import { ClassLive } from "./class-live";
 
 export const metadata = { title: "Circle" };
 
@@ -85,7 +87,7 @@ export default async function MentorshipCircleDetailPage({
 
   const { data: sessionRows } = await supabase
     .from("circle_sessions")
-    .select("id, session_date, title")
+    .select("id, session_date, title, starts_at, duration_minutes")
     .eq("circle_id", id)
     .order("created_at", { ascending: true });
   const sessions = sessionRows ?? [];
@@ -242,10 +244,19 @@ export default async function MentorshipCircleDetailPage({
         <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-[18px]">
           <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
             <div className={lbl}>Sessions · {sessions.length}</div>
-            {isMentor && circle.status === "active" && (
-              <AddSessionControl circleId={circle.id} />
-            )}
           </div>
+          {isMentor && circle.status === "active" && (
+            <div className="border-mnt-line mb-3.5 flex flex-col gap-2.5 border-b pb-3.5">
+              <div>
+                <div className={lbl + " mb-1.5"}>Schedule a live class</div>
+                <ScheduleClassControl circleId={circle.id} />
+              </div>
+              <div>
+                <div className={lbl + " mb-1.5"}>Or log a past session</div>
+                <AddSessionControl circleId={circle.id} />
+              </div>
+            </div>
+          )}
           {sessions.length === 0 ? (
             <p className="text-mnt-faint text-[13px]">
               No sessions logged yet.
@@ -261,9 +272,16 @@ export default async function MentorshipCircleDetailPage({
                     <h4 className="font-display text-[14px] font-bold">
                       {s.title ?? `Session ${i + 1}`}
                     </h4>
-                    <span className="text-mnt-faint text-[11.5px]">
-                      {fmtDate(s.session_date)}
-                    </span>
+                    {s.starts_at ? (
+                      <ClassLive
+                        startsAt={s.starts_at}
+                        durationMinutes={s.duration_minutes ?? 60}
+                      />
+                    ) : (
+                      <span className="text-mnt-faint text-[11.5px]">
+                        {fmtDate(s.session_date)}
+                      </span>
+                    )}
                   </div>
                   {!isMentor && (
                     <p className="text-mnt-faint mt-1.5 text-[11.5px]">
