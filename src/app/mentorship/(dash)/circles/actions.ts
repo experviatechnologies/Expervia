@@ -48,6 +48,82 @@ async function mentorOrOps(
   return data?.mentor_id === memberId;
 }
 
+/** True if the mentee has an accepted 1:1 request to this mentor. */
+async function hasAcceptedRequest(
+  admin: Admin,
+  mentorId: string,
+  menteeId: string,
+): Promise<boolean> {
+  const { data } = await admin
+    .from("mentorship_requests")
+    .select("id")
+    .eq("mentor_id", mentorId)
+    .eq("mentee_id", menteeId)
+    .eq("status", "accepted")
+    .limit(1)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+/**
+ * Shared enrolment: validate the member is active + validated, enforce the cap,
+ * insert the membership and notify. The CALLER is responsible for authorization
+ * (mentor/ops of the Circle).
+ */
+async function enrolMemberInCircle(
+  admin: Admin,
+  circleId: string,
+  memberId: string,
+  actorId: string,
+): Promise<ActionResult> {
+  const { data: member } = await admin
+    .from("members")
+    .select("id, status, validated_at")
+    .eq("id", memberId)
+    .maybeSingle();
+  if (!member || member.status !== "active") {
+    return { error: "That account isn't active." };
+  }
+  if (!member.validated_at) {
+    return {
+      error:
+        "That member is still a Prospect. They must complete ETEN validation before joining a live Circle.",
+    };
+  }
+  if (member.id === actorId) {
+    return { error: "You can't enrol yourself as a mentee." };
+  }
+
+  const { count } = await admin
+    .from("circle_memberships")
+    .select("*", { count: "exact", head: true })
+    .eq("circle_id", circleId);
+  if ((count ?? 0) >= 10) {
+    return { error: "A Circle can have at most 10 mentees." };
+  }
+
+  const { error } = await admin.from("circle_memberships").insert({
+    circle_id: circleId,
+    member_id: memberId,
+    status: "active",
+  });
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "That member is already in this Circle." };
+    }
+    return { error: "Couldn't add the mentee. Please try again." };
+  }
+
+  await notify({
+    recipientId: memberId,
+    actorId,
+    type: "mentorship",
+    targetType: "circle",
+    targetId: circleId,
+  });
+  return { ok: true };
+}
+
 /**
  * A verified mentor creates a Circle in their capability area (pod-free). Starts
  * as a draft; the mentor then enrols mentees and activates it.
@@ -128,54 +204,104 @@ export async function enrolMentee(input: {
     return { error: "No account with that email. Ask them to register first." };
   }
 
-  const { data: member } = await admin
-    .from("members")
-    .select("id, status, validated_at")
-    .eq("id", authUser.id)
-    .maybeSingle();
-  if (!member || member.status !== "active") {
-    return { error: "That account isn't active." };
-  }
-  if (!member.validated_at) {
-    return {
-      error:
-        "That member is still a Prospect. They must complete ETEN validation before joining a live Circle.",
-    };
-  }
-  if (member.id === me.id) {
-    return { error: "You can't enrol yourself as a mentee." };
-  }
-
-  const { count } = await admin
-    .from("circle_memberships")
-    .select("*", { count: "exact", head: true })
-    .eq("circle_id", input.circleId);
-  if ((count ?? 0) >= 10) {
-    return { error: "A Circle can have at most 10 mentees." };
-  }
-
-  const { error } = await admin.from("circle_memberships").insert({
-    circle_id: input.circleId,
-    member_id: member.id,
-    status: "active",
-  });
-  if (error) {
-    if (error.code === "23505") {
-      return { error: "That member is already in this Circle." };
-    }
-    return { error: "Couldn't add the mentee. Please try again." };
-  }
-
-  await notify({
-    recipientId: member.id,
-    actorId: me.id,
-    type: "mentorship",
-    targetType: "circle",
-    targetId: input.circleId,
-  });
+  const res = await enrolMemberInCircle(
+    admin,
+    input.circleId,
+    authUser.id,
+    me.id,
+  );
+  if ("error" in res) return res;
 
   revalidatePath(`/mentorship/circles/${input.circleId}`);
   return { ok: true };
+}
+
+/**
+ * Add a mentee whose 1:1 request the mentor accepted into one of the mentor's
+ * existing Circles (draft or active). Late joiners are allowed; a mentee is
+ * counted for completion only from their join date onward.
+ */
+export async function addAcceptedMenteeToCircle(input: {
+  menteeId: string;
+  circleId: string;
+}): Promise<ActionResult> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  if (!(await mentorOrOps(admin, input.circleId, me.id))) {
+    return { error: "Only this Circle's mentor can add mentees." };
+  }
+  if (!(await hasAcceptedRequest(admin, me.id, input.menteeId))) {
+    return { error: "You can only add mentees whose request you accepted." };
+  }
+
+  const res = await enrolMemberInCircle(
+    admin,
+    input.circleId,
+    input.menteeId,
+    me.id,
+  );
+  if ("error" in res) return res;
+
+  revalidatePath(`/mentorship/circles/${input.circleId}`);
+  revalidatePath("/mentorship/mentor");
+  return { ok: true };
+}
+
+/**
+ * Start a new draft Circle with an accepted 1:1 mentee already enrolled. The
+ * mentor is taken to the Circle to add sessions/assignments and activate it.
+ */
+export async function startCircleWithMentee(input: {
+  menteeId: string;
+  title?: string;
+}): Promise<{ ok: true; circleId: string } | { error: string }> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+  if (me.status !== "active") return { error: "Your account isn't active." };
+
+  const admin = getSupabaseAdmin();
+  const areaId = await verifiedMentorArea(admin, me.id);
+  if (!areaId) {
+    return {
+      error: "Only verified mentors with a capability area can create Circles.",
+    };
+  }
+  if (!(await hasAcceptedRequest(admin, me.id, input.menteeId))) {
+    return {
+      error:
+        "You can only start a Circle with a mentee whose request you accepted.",
+    };
+  }
+
+  const { data: circle, error } = await admin
+    .from("mentorship_circles")
+    .insert({
+      mentor_id: me.id,
+      capability_area_id: areaId,
+      pod_id: null,
+      title: input.title?.trim() || null,
+      cadence: "weekly",
+      status: "draft",
+      created_by: me.id,
+    })
+    .select("id")
+    .single();
+  if (error || !circle) {
+    return { error: "Couldn't create the Circle. Please try again." };
+  }
+
+  const res = await enrolMemberInCircle(
+    admin,
+    circle.id,
+    input.menteeId,
+    me.id,
+  );
+  if ("error" in res) return res;
+
+  revalidatePath("/mentorship/mentor");
+  return { ok: true, circleId: circle.id };
 }
 
 /** A mentee sets their goal (target V-level + capability) for a Circle. */
@@ -596,12 +722,12 @@ export async function completeCircle(input: {
     await Promise.all([
       admin
         .from("circle_memberships")
-        .select("member_id")
+        .select("member_id, enrolled_at")
         .eq("circle_id", input.circleId)
         .eq("status", "active"),
       admin
         .from("circle_sessions")
-        .select("id")
+        .select("id, session_date")
         .eq("circle_id", input.circleId),
       admin
         .from("circle_assignments")
@@ -611,7 +737,9 @@ export async function completeCircle(input: {
 
   const sessionIds = (sessions ?? []).map((s) => s.id);
   const assignmentIds = (assignments ?? []).map((a) => a.id);
-  const totalSessions = sessionIds.length;
+  const sessionDates = (sessions ?? []).map(
+    (s) => s.session_date as string | null,
+  );
 
   const [{ data: attendance }, { data: subs }] = await Promise.all([
     sessionIds.length
@@ -639,11 +767,17 @@ export async function completeCircle(input: {
       approvedBy.set(s.member_id, (approvedBy.get(s.member_id) ?? 0) + 1);
   }
 
-  for (const { member_id } of mentees ?? []) {
+  for (const { member_id, enrolled_at } of mentees ?? []) {
     const approved = approvedBy.get(member_id) ?? 0;
+    // Attendance is measured only over sessions on/after this mentee joined, so
+    // late joiners aren't penalised for sessions held before they were enrolled.
+    const enrolledDate = (enrolled_at ?? "").slice(0, 10);
+    const eligibleSessions = sessionDates.filter(
+      (d) => !d || d >= enrolledDate,
+    ).length;
     const attendanceOk =
-      totalSessions === 0 ||
-      (attendedBy.get(member_id) ?? 0) / totalSessions >=
+      eligibleSessions === 0 ||
+      (attendedBy.get(member_id) ?? 0) / eligibleSessions >=
         COMPLETION_MIN_ATTENDANCE;
     if (approved < 1 || !attendanceOk) continue;
 

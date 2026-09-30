@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { ApplyMentorControl } from "./apply-control";
 import { RequestDecisionControl } from "./request-decision-control";
+import { AddToCircleControl } from "./add-to-circle-control";
 
 export const metadata = { title: "Mentor dashboard" };
 
@@ -154,6 +155,47 @@ export default async function MentorDashboardPage() {
     }
   }
 
+  // Accepted 1:1 mentees not yet placed in one of this mentor's Circles.
+  type AcceptedRow = { id: string; mentee_id: string };
+  let toPlace: AcceptedRow[] = [];
+  const placeName = new Map<string, string>();
+  if (verified) {
+    const { data: acceptedRows } = await supabase
+      .from("mentorship_requests")
+      .select("id, mentee_id")
+      .eq("mentor_id", user.id)
+      .eq("status", "accepted");
+    const accepted = (acceptedRows ?? []) as AcceptedRow[];
+    if (accepted.length) {
+      let enrolled = new Set<string>();
+      if (circles.length) {
+        const { data: cms } = await supabase
+          .from("circle_memberships")
+          .select("member_id")
+          .in(
+            "circle_id",
+            circles.map((c) => c.id),
+          );
+        enrolled = new Set((cms ?? []).map((r) => r.member_id));
+      }
+      toPlace = accepted.filter((a) => !enrolled.has(a.mentee_id));
+      if (toPlace.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("member_id, full_name")
+          .in(
+            "member_id",
+            toPlace.map((a) => a.mentee_id),
+          );
+        for (const p of profs ?? [])
+          placeName.set(p.member_id, p.full_name ?? "A member");
+      }
+    }
+  }
+  const openCircles = circles
+    .filter((c) => c.status !== "completed")
+    .map((c) => ({ id: c.id, title: c.title }));
+
   return (
     <div className="px-6 py-8 md:px-9">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -273,6 +315,35 @@ export default async function MentorDashboardPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* accepted 1:1 mentees to place in a Circle */}
+      {verified && toPlace.length > 0 && (
+        <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
+          <div className={`${lbl} mb-1.5`}>
+            Accepted · place in a Circle · {toPlace.length}
+          </div>
+          <p className="text-mnt-ink-muted mb-3.5 text-[12.5px] leading-relaxed">
+            Add each mentee you accepted to a new or existing Circle. Mentees
+            can join a Circle that is already running.
+          </p>
+          <div className="flex flex-col gap-3">
+            {toPlace.map((a) => (
+              <div
+                key={a.id}
+                className="bg-mnt-panel-2 border-mnt-line flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5"
+              >
+                <div className="text-[14px] font-bold">
+                  {placeName.get(a.mentee_id) ?? "A member"}
+                </div>
+                <AddToCircleControl
+                  menteeId={a.mentee_id}
+                  circles={openCircles}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
