@@ -276,6 +276,7 @@ export default async function MentorshipCircleDetailPage({
                       <ClassLive
                         startsAt={s.starts_at}
                         durationMinutes={s.duration_minutes ?? 60}
+                        joinHref={`/mentorship/circles/${circle.id}/class/${s.id}`}
                       />
                     ) : (
                       <span className="text-mnt-faint text-[11.5px]">
