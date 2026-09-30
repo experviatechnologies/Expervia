@@ -18,6 +18,7 @@ import {
   ScrollText,
   GraduationCap,
   Sparkles,
+  Mail,
   LogOut,
   Menu,
   X,
@@ -83,6 +84,7 @@ const GROUPS: NavGroup[] = [
   {
     heading: "System",
     items: [
+      { label: "Send Email", href: "/admin/email", Icon: Mail },
       { label: "Skills Taxonomy", href: "/admin/taxonomy", Icon: Tags },
       { label: "Migration", href: "/admin/migration", Icon: UserPlus },
       { label: "Audit Log", href: "/admin/audit", Icon: ScrollText },
