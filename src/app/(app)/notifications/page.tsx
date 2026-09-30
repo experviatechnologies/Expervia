@@ -12,6 +12,7 @@ import {
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { timeAgo } from "@/lib/time";
+import { mentorshipNotifText } from "@/lib/eten/mentorship-notifications";
 
 export const metadata: Metadata = {
   title: "Notifications",
@@ -30,6 +31,7 @@ function describe(
   type: NotificationType,
   actor: string,
   targetId: string | null,
+  targetType: string | null,
 ): { text: string; href: string; Icon: LucideIcon } {
   switch (type) {
     case "comment":
@@ -58,7 +60,7 @@ function describe(
       };
     case "mentorship":
       return {
-        text: `${actor} — mentorship update`,
+        text: mentorshipNotifText(targetType, actor),
         href: targetId ? `/circles/${targetId}` : "/circles",
         Icon: GraduationCap,
       };
@@ -130,6 +132,7 @@ export default async function NotificationsPage() {
               n.type as NotificationType,
               actor,
               n.target_id,
+              n.target_type,
             );
             return (
               <li key={n.id}>

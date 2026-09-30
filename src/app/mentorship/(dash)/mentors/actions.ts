@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
+import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -76,9 +77,15 @@ export async function requestMentorship(input: {
     recipientId: input.mentorId,
     actorId: me.id,
     type: "mentorship",
-    targetType: "mentorship_request",
-    targetId: created.id,
+    targetType: "request_received",
+    targetId: null,
   });
+  await sendMentorshipEmail(
+    input.mentorId,
+    "New mentorship request",
+    "You have a new mentorship request",
+    "A mentee has requested you as a mentor on ETEN Mentorship. Open your dashboard to accept or decline.",
+  );
 
   revalidatePath("/mentorship/mentors");
   revalidatePath("/mentorship/dashboard");
@@ -128,9 +135,18 @@ export async function decideMentorshipRequest(input: {
     recipientId: req.mentee_id,
     actorId: me.id,
     type: "mentorship",
-    targetType: "mentorship_request",
-    targetId: req.id,
+    targetType:
+      input.decision === "accepted" ? "request_accepted" : "request_declined",
+    targetId: null,
   });
+  if (input.decision === "accepted") {
+    await sendMentorshipEmail(
+      req.mentee_id,
+      "Your mentorship request was accepted",
+      "Good news, your request was accepted",
+      "A mentor accepted your mentorship request on ETEN Mentorship. Open your dashboard to see what's next.",
+    );
+  }
 
   revalidatePath("/mentorship/mentor");
   revalidatePath("/mentorship/dashboard");

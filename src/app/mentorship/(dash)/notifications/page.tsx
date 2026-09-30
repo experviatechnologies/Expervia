@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  mentorshipNotifText,
+  isCircleEvent,
+} from "@/lib/eten/mentorship-notifications";
 
 export const metadata = { title: "Notifications" };
 
@@ -23,19 +27,13 @@ type Notif = {
 };
 
 function render(n: Notif, actor: string): { text: string; href: string } {
-  const circle =
-    n.target_type === "circle" && n.target_id
+  const href =
+    isCircleEvent(n.target_type) && n.target_id
       ? `/mentorship/circles/${n.target_id}`
-      : "/mentorship/dashboard";
-  switch (n.type) {
-    case "mentorship":
-      return { text: `${actor} sent a mentorship update`, href: circle };
-    default:
-      return {
-        text: `${actor} sent you an update`,
-        href: "/mentorship/dashboard",
-      };
-  }
+      : n.target_type === "request_received"
+        ? "/mentorship/mentor"
+        : "/mentorship/dashboard";
+  return { text: mentorshipNotifText(n.target_type, actor), href };
 }
 
 export default async function MentorshipNotificationsPage() {

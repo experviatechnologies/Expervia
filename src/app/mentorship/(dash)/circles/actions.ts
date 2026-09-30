@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
+import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
 import { addEvidenceRecord } from "@/lib/eten/evidence";
 import { writeAudit } from "@/lib/eten/audit";
 import { recordRecognition } from "@/lib/eten/recognition";
@@ -118,9 +119,15 @@ async function enrolMemberInCircle(
     recipientId: memberId,
     actorId,
     type: "mentorship",
-    targetType: "circle",
+    targetType: "circle_enrolled",
     targetId: circleId,
   });
+  await sendMentorshipEmail(
+    memberId,
+    "You've been added to a Circle",
+    "You're in a Mentorship Circle",
+    "A mentor added you to a Mentorship Circle on ETEN. Open your dashboard to see the sessions and assignments.",
+  );
   return { ok: true };
 }
 
@@ -384,7 +391,7 @@ export async function activateCircle(input: {
       recipientId: m.member_id,
       actorId: me.id,
       type: "mentorship",
-      targetType: "circle",
+      targetType: "circle_activated",
       targetId: input.circleId,
     });
   }
@@ -536,7 +543,7 @@ export async function postAssignment(input: {
       recipientId: m.member_id,
       actorId: me.id,
       type: "mentorship",
-      targetType: "circle",
+      targetType: "circle_assignment",
       targetId: input.circleId,
     });
   }
@@ -683,7 +690,7 @@ export async function reviewSubmission(input: {
     recipientId: submission.member_id,
     actorId: me.id,
     type: "mentorship",
-    targetType: "circle",
+    targetType: "circle_reviewed",
     targetId: assignment.circle_id,
   });
 
@@ -808,7 +815,7 @@ export async function completeCircle(input: {
       recipientId: member_id,
       actorId: me.id,
       type: "mentorship",
-      targetType: "circle",
+      targetType: "circle_completed",
       targetId: input.circleId,
     });
   }
