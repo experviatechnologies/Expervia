@@ -523,6 +523,34 @@ export async function scheduleClass(input: {
         attended: false,
       })),
     );
+
+    // Notify + email the mentees that a live class is on the calendar.
+    const classTitle = input.title?.trim() || "a live class";
+    const whenText =
+      new Date(startMs).toLocaleString("en-GB", {
+        weekday: "long",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "UTC",
+      }) + " UTC";
+    for (const m of mentees) {
+      await notify({
+        recipientId: m.member_id,
+        actorId: me.id,
+        type: "mentorship",
+        targetType: "circle_class",
+        targetId: input.circleId,
+      });
+      await sendMentorshipEmail(
+        m.member_id,
+        "A live class has been scheduled",
+        "A live class has been scheduled",
+        `Your mentor scheduled ${classTitle} for ${whenText}. The room opens 10 minutes before it starts; open your dashboard to join.`,
+      );
+    }
   }
 
   revalidatePath(`/mentorship/circles/${input.circleId}`);

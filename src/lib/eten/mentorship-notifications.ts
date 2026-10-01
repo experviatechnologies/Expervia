@@ -19,6 +19,8 @@ export function mentorshipNotifText(
       return `${actor} added you to a Circle`;
     case "circle_activated":
       return `${actor} started your Circle`;
+    case "circle_class":
+      return `${actor} scheduled a live class`;
     case "circle_assignment":
       return `${actor} posted a new assignment`;
     case "circle_reviewed":
