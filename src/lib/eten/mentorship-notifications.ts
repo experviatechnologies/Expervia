@@ -15,6 +15,8 @@ export function mentorshipNotifText(
       return `${actor} accepted your mentorship request`;
     case "request_declined":
       return `${actor} declined your mentorship request`;
+    case "booking_requested":
+      return `${actor} requested a session time`;
     case "circle_enrolled":
       return `${actor} added you to a Circle`;
     case "circle_activated":

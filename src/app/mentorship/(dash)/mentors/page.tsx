@@ -170,12 +170,18 @@ export default async function MentorsPage({
                     {areaById.get(m.capability_area_id) ?? ""}
                   </div>
                 )}
-                <div className="mt-4">
+                <div className="mt-4 flex flex-col gap-2.5">
                   <RequestControl
                     mentorId={m.member_id}
                     initialStatus={reqByMentor.get(m.member_id) ?? null}
                     canRequest={isValidated}
                   />
+                  <Link
+                    href={`/mentorship/mentors/${m.member_id}`}
+                    className="border-mnt-line text-mnt-ink hover:border-mnt-brand/60 rounded-[10px] border px-4 py-2 text-center text-[13px] font-semibold transition"
+                  >
+                    View &amp; book a session
+                  </Link>
                 </div>
               </div>
             );
