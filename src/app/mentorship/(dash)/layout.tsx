@@ -84,6 +84,7 @@ export default async function MentorshipDashLayout({
     nav = [
       { label: "Dashboard", href: "/mentorship/mentor" },
       { label: "My Circles", href: "/mentorship/circles" },
+      { label: "Availability", href: "/mentorship/availability" },
       { label: "Notifications", href: "/mentorship/notifications" },
       { label: "Profile", href: "/mentorship/profile" },
     ];
