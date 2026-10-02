@@ -1,18 +1,10 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { getMentorshipDefaults } from "@/lib/eten/availability";
 import { AvailabilityEditor, type Prefs } from "./availability-editor";
 
 export const metadata = { title: "Availability" };
-
-const DEFAULT_PREFS: Prefs = {
-  timezone: "UTC",
-  defaultSessionMinutes: 40,
-  minNoticeMinutes: 120,
-  bufferMinutes: 10,
-  maxSessionsPerWeek: null,
-  availabilityStatus: "accepting",
-};
 
 export default async function MentorshipAvailabilityPage() {
   const member = await getCurrentMember();
@@ -62,16 +54,28 @@ export default async function MentorshipAvailabilityPage() {
         .order("exception_date"),
     ]);
 
-  const prefs: Prefs = prefsRow
-    ? {
-        timezone: prefsRow.timezone,
-        defaultSessionMinutes: prefsRow.default_session_minutes,
-        minNoticeMinutes: prefsRow.min_notice_minutes,
-        bufferMinutes: prefsRow.buffer_minutes,
-        maxSessionsPerWeek: prefsRow.max_sessions_per_week,
-        availabilityStatus: prefsRow.availability_status,
-      }
-    : DEFAULT_PREFS;
+  let prefs: Prefs;
+  if (prefsRow) {
+    prefs = {
+      timezone: prefsRow.timezone,
+      defaultSessionMinutes: prefsRow.default_session_minutes,
+      minNoticeMinutes: prefsRow.min_notice_minutes,
+      bufferMinutes: prefsRow.buffer_minutes,
+      maxSessionsPerWeek: prefsRow.max_sessions_per_week,
+      availabilityStatus: prefsRow.availability_status,
+    };
+  } else {
+    // First time here: seed the editor from the platform defaults (FR-20).
+    const defaults = await getMentorshipDefaults();
+    prefs = {
+      timezone: "UTC",
+      defaultSessionMinutes: defaults.defaultSessionMinutes,
+      minNoticeMinutes: defaults.minNoticeMinutes,
+      bufferMinutes: defaults.bufferMinutes,
+      maxSessionsPerWeek: null,
+      availabilityStatus: "accepting",
+    };
+  }
 
   return (
     <div className="mx-auto max-w-[820px] px-6 py-8">

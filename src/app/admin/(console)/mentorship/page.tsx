@@ -195,12 +195,20 @@ export default async function AdminMentorshipPage() {
             .
           </p>
         </div>
-        <Link
-          href="/admin/mentorship/pilot"
-          className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
-        >
-          Pilot setup
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Link
+            href="/admin/mentorship/availability"
+            className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
+          >
+            Availability
+          </Link>
+          <Link
+            href="/admin/mentorship/pilot"
+            className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
+          >
+            Pilot setup
+          </Link>
+        </div>
       </header>
 
       {/* KPIs */}

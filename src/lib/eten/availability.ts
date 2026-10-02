@@ -278,6 +278,34 @@ export function generateSlots(input: GenInput): BookableSlot[] {
   return slots;
 }
 
+export type MentorshipDefaults = {
+  defaultSessionMinutes: number;
+  minNoticeMinutes: number;
+  bufferMinutes: number;
+};
+
+const FALLBACK_DEFAULTS: MentorshipDefaults = {
+  defaultSessionMinutes: 40,
+  minNoticeMinutes: 120,
+  bufferMinutes: 10,
+};
+
+/** Platform-wide scheduling defaults (ops-configurable, FR-20). */
+export async function getMentorshipDefaults(): Promise<MentorshipDefaults> {
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("mentorship_settings")
+    .select("default_session_minutes, min_notice_minutes, buffer_minutes")
+    .eq("id", true)
+    .maybeSingle();
+  if (!data) return FALLBACK_DEFAULTS;
+  return {
+    defaultSessionMinutes: data.default_session_minutes,
+    minNoticeMinutes: data.min_notice_minutes,
+    bufferMinutes: data.buffer_minutes,
+  };
+}
+
 const DEFAULT_PREFS: Prefs = {
   timezone: "UTC",
   default_session_minutes: 40,
