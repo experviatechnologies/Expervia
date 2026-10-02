@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { ApplyMentorControl } from "./apply-control";
 import { RequestDecisionControl } from "./request-decision-control";
+import { BookingDecisionControl } from "./booking-decision-control";
 import { AddToCircleControl } from "./add-to-circle-control";
 
 export const metadata = { title: "Mentor dashboard" };
@@ -196,6 +197,55 @@ export default async function MentorDashboardPage() {
     .filter((c) => c.status !== "completed")
     .map((c) => ({ id: c.id, title: c.title }));
 
+  // Pending session-booking requests (from the availability calendar). Times are
+  // shown in the mentor's own timezone, so formatting is deterministic server-side.
+  type BookingRow = {
+    id: string;
+    mentee_id: string;
+    starts_at: string;
+    duration_minutes: number;
+  };
+  let bookingReqs: BookingRow[] = [];
+  const bookingMenteeName = new Map<string, string>();
+  let mentorTz = "UTC";
+  if (verified) {
+    const [{ data: prefsRow }, { data: bRows }] = await Promise.all([
+      supabase
+        .from("mentor_scheduling_prefs")
+        .select("timezone")
+        .eq("member_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("session_bookings")
+        .select("id, mentee_id, starts_at, duration_minutes")
+        .eq("mentor_id", user.id)
+        .eq("status", "pending")
+        .order("starts_at"),
+    ]);
+    mentorTz = prefsRow?.timezone ?? "UTC";
+    bookingReqs = (bRows ?? []) as BookingRow[];
+    if (bookingReqs.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("member_id, full_name")
+        .in(
+          "member_id",
+          bookingReqs.map((b) => b.mentee_id),
+        );
+      for (const p of profs ?? [])
+        bookingMenteeName.set(p.member_id, p.full_name ?? "A member");
+    }
+  }
+  const fmtWhen = (iso: string) =>
+    new Date(iso).toLocaleString("en-GB", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: mentorTz,
+    });
+
   return (
     <div className="px-6 py-8 md:px-9">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -311,6 +361,43 @@ export default async function MentorDashboardPage() {
                     </div>
                     <RequestDecisionControl requestId={r.id} />
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* session booking requests (from availability) */}
+      {verified && (
+        <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
+          <div className={`${lbl} mb-3.5`}>
+            Session requests · {bookingReqs.length}
+          </div>
+          {bookingReqs.length === 0 ? (
+            <p className="text-mnt-ink-muted text-[13px] leading-relaxed">
+              No pending session requests. Mentees book these from your
+              availability. Set your times under Availability.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {bookingReqs.map((b) => (
+                <div
+                  key={b.id}
+                  className="bg-mnt-panel-2 border-mnt-line flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5"
+                >
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-bold">
+                      {bookingMenteeName.get(b.mentee_id) ?? "A member"}
+                    </div>
+                    <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                      {fmtWhen(b.starts_at)} · {b.duration_minutes} min
+                    </div>
+                    <div className="text-mnt-faint mt-0.5 text-[11px]">
+                      Your timezone ({mentorTz})
+                    </div>
+                  </div>
+                  <BookingDecisionControl bookingId={b.id} />
                 </div>
               ))}
             </div>

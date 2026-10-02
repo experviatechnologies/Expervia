@@ -30,7 +30,8 @@ function render(n: Notif, actor: string): { text: string; href: string } {
   const href =
     isCircleEvent(n.target_type) && n.target_id
       ? `/mentorship/circles/${n.target_id}`
-      : n.target_type === "request_received"
+      : n.target_type === "request_received" ||
+          n.target_type === "booking_requested"
         ? "/mentorship/mentor"
         : "/mentorship/dashboard";
   return { text: mentorshipNotifText(n.target_type, actor), href };

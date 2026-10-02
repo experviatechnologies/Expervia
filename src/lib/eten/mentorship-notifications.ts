@@ -17,6 +17,10 @@ export function mentorshipNotifText(
       return `${actor} declined your mentorship request`;
     case "booking_requested":
       return `${actor} requested a session time`;
+    case "booking_accepted":
+      return `${actor} confirmed your session`;
+    case "booking_declined":
+      return `${actor} declined your session time`;
     case "circle_enrolled":
       return `${actor} added you to a Circle`;
     case "circle_activated":
@@ -36,5 +40,9 @@ export function mentorshipNotifText(
 
 /** True for events that point at a specific Circle (target_id is a circle id). */
 export function isCircleEvent(targetType: string | null): boolean {
-  return targetType === "circle" || Boolean(targetType?.startsWith("circle_"));
+  return (
+    targetType === "circle" ||
+    targetType === "booking_accepted" ||
+    Boolean(targetType?.startsWith("circle_"))
+  );
 }
