@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: session } = await admin
     .from("circle_sessions")
-    .select("id, circle_id")
+    .select("id, circle_id, starts_at, duration_minutes")
     .eq("id", sessionId)
     .maybeSingle();
   if (!session) {
@@ -75,11 +75,22 @@ export async function GET(request: NextRequest) {
     .eq("member_id", me.id)
     .maybeSingle();
 
+  // Token lives until the session ends (plus a short grace), so a token can't be
+  // reused to re-join after the hard cut. Floor of 15 min for sessions with no
+  // scheduled end.
+  let ttlSeconds = 2 * 60 * 60;
+  if (session.starts_at) {
+    const endMs =
+      Date.parse(session.starts_at) + (session.duration_minutes ?? 40) * 60_000;
+    const remaining = Math.ceil((endMs - Date.now()) / 1000) + 600;
+    ttlSeconds = Math.max(remaining, 900);
+  }
+
   const room = `eten-${session.circle_id}-${session.id}`;
   const at = new AccessToken(key, secret, {
     identity: me.id,
     name: profile?.full_name ?? "ETEN member",
-    ttl: "2h",
+    ttl: ttlSeconds,
   });
   at.addGrant({
     roomJoin: true,

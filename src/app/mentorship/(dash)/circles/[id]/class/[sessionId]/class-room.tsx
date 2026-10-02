@@ -102,26 +102,58 @@ export function ClassRoom({
     router.refresh();
   }, [router]);
 
+  // Hard cut: when the session end passes while connected, drop out of the room.
+  // The server also force-closes the room (cron), so this is the fast local path.
+  useEffect(() => {
+    if (!(conn && now !== null && now >= endMs)) return;
+    const t = setTimeout(() => leave(), 0);
+    return () => clearTimeout(t);
+  }, [conn, now, endMs, leave]);
+
   // Connected: render the conference full-bleed within the content area.
   if (conn) {
+    const remaining = Math.max(0, endMs - (now ?? startMs));
+    const mm = Math.floor(remaining / 60_000);
+    const ss = Math.floor((remaining % 60_000) / 1_000);
+    const warn = remaining > 0 && remaining <= 5 * 60_000;
     return (
-      <div
-        className="border-mnt-line overflow-hidden rounded-2xl border"
-        style={{ height: "min(78vh, 720px)" }}
-        data-lk-theme="default"
-      >
-        <LiveKitRoom
-          serverUrl={conn.url}
-          token={conn.token}
-          connect
-          audio
-          video
-          onDisconnected={leave}
-          style={{ height: "100%" }}
+      <div className="flex flex-col gap-2">
+        <div
+          className={
+            "flex items-center justify-between rounded-xl border px-3.5 py-2 text-[12.5px] " +
+            (warn
+              ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+              : "border-mnt-line bg-mnt-panel-2 text-mnt-ink-muted")
+          }
         >
-          <VideoConference />
-          <RoomAudioRenderer />
-        </LiveKitRoom>
+          <span>
+            Time left:{" "}
+            <span className="font-mono font-bold">
+              {mm}:{String(ss).padStart(2, "0")}
+            </span>
+          </span>
+          {warn && (
+            <span className="font-semibold">5 minutes or less left</span>
+          )}
+        </div>
+        <div
+          className="border-mnt-line overflow-hidden rounded-2xl border"
+          style={{ height: "min(74vh, 700px)" }}
+          data-lk-theme="default"
+        >
+          <LiveKitRoom
+            serverUrl={conn.url}
+            token={conn.token}
+            connect
+            audio
+            video
+            onDisconnected={leave}
+            style={{ height: "100%" }}
+          >
+            <VideoConference />
+            <RoomAudioRenderer />
+          </LiveKitRoom>
+        </div>
       </div>
     );
   }
