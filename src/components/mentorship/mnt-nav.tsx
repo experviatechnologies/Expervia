@@ -66,13 +66,13 @@ export function MntNav() {
 
         <div className="flex shrink-0 items-center gap-2.5">
           <Link
-            href="/mentorship/register"
+            href="/mentorship/register?role=mentor"
             className={btnOutline + " hidden md:inline-flex"}
           >
             Become a Mentor
           </Link>
           <Link
-            href="/mentorship/register"
+            href="/mentorship/register?role=mentee"
             className={btnBrand + " hidden md:inline-flex"}
           >
             Apply as Mentee
@@ -110,7 +110,7 @@ export function MntNav() {
             ))}
             <div className="mt-2 flex flex-col gap-2.5">
               <Link
-                href="/mentorship/register"
+                href="/mentorship/register?role=mentor"
                 onClick={() => setOpen(false)}
                 className={btnOutline + " py-2.5"}
               >
@@ -118,7 +118,7 @@ export function MntNav() {
                 Become a Mentor
               </Link>
               <Link
-                href="/mentorship/register"
+                href="/mentorship/register?role=mentee"
                 onClick={() => setOpen(false)}
                 className={btnBrand + " py-2.5"}
               >

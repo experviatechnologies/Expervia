@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 import { PasswordInput } from "@/components/shared/password-input";
 import {
@@ -37,8 +38,13 @@ function Logo() {
   );
 }
 
-export default function MentorshipRegisterPage() {
-  const [role, setRole] = useState<"mentee" | "mentor">("mentee");
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  // Preselect the role from the CTA the user came through (?role=mentor), so a
+  // "Become a Mentor" click doesn't quietly default to a mentee account.
+  const [role, setRole] = useState<"mentee" | "mentor">(
+    searchParams.get("role") === "mentor" ? "mentor" : "mentee",
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -300,6 +306,15 @@ export default function MentorshipRegisterPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function MentorshipRegisterPage() {
+  // useSearchParams needs a Suspense boundary during prerender.
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }
 

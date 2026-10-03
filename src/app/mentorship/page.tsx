@@ -287,14 +287,14 @@ export default function MentorshipLandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/mentorship/register"
+                href="/mentorship/register?role=mentee"
                 className="bg-mnt-brand text-mnt-on-brand text-body-md inline-flex items-center gap-2 rounded-full px-[22px] py-3.5 font-bold transition hover:-translate-y-0.5 hover:brightness-110"
               >
                 Become a Mentee
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/mentorship/register"
+                href="/mentorship/register?role=mentor"
                 className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand text-body-md inline-flex items-center gap-2 rounded-full border px-[22px] py-3.5 font-bold transition hover:-translate-y-0.5"
               >
                 <GraduationCap className="size-4" aria-hidden="true" />
@@ -434,7 +434,7 @@ export default function MentorshipLandingPage() {
               </p>
               <BenefitList items={MENTEE_BENEFITS} />
               <Link
-                href="/mentorship/register"
+                href="/mentorship/register?role=mentee"
                 className="bg-mnt-brand text-mnt-on-brand text-body-md mt-6 inline-flex rounded-full px-[18px] py-3 font-bold transition hover:brightness-110"
               >
                 Apply as a Mentee
@@ -456,7 +456,7 @@ export default function MentorshipLandingPage() {
               </p>
               <BenefitList items={MENTOR_BENEFITS} />
               <Link
-                href="/mentorship/register"
+                href="/mentorship/register?role=mentor"
                 className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand text-body-md mt-6 inline-flex rounded-full border px-[18px] py-3 font-bold transition"
               >
                 Apply as a Mentor
@@ -720,13 +720,13 @@ export default function MentorshipLandingPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
-              href="/mentorship/register"
+              href="/mentorship/register?role=mentee"
               className="bg-mnt-brand text-mnt-on-brand text-body-md rounded-full px-[26px] py-[15px] font-bold transition hover:-translate-y-0.5 hover:brightness-110"
             >
               Become a Mentee
             </Link>
             <Link
-              href="/mentorship/register"
+              href="/mentorship/register?role=mentor"
               className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand text-body-md rounded-full border px-[26px] py-[15px] font-bold transition"
             >
               Become a Mentor
@@ -774,7 +774,7 @@ export default function MentorshipLandingPage() {
               links={[
                 ["ETEN Community", siteConfig.url],
                 ["Events & Summits", `${siteConfig.url}/events`],
-                ["Mentor Application", "/mentorship/register"],
+                ["Mentor Application", "/mentorship/register?role=mentor"],
               ]}
             />
             <FooterCol
