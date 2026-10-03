@@ -3,7 +3,7 @@ import { MntMobileBar } from "./mnt-mobile-bar";
 import { MntSignOutButton } from "./mnt-signout-button";
 import { MntNavLinks } from "./mnt-nav-links";
 
-export type MntNavItem = { label: string; href?: string };
+export type MntNavItem = { label: string; href?: string; badge?: number };
 
 /**
  * Persistent sidebar + main shell for the mentorship dashboards. Rendered once

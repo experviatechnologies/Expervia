@@ -38,7 +38,15 @@ export function MntNavLinks({
                 (active ? "bg-mnt-brand" : "bg-mnt-faint/70")
               }
             />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.badge ? (
+              <span
+                aria-label={`${item.badge} unread`}
+                className="bg-mnt-brand text-mnt-on-brand grid min-w-[20px] shrink-0 place-items-center rounded-full px-1.5 py-0.5 text-[11px] leading-none font-bold"
+              >
+                {item.badge > 99 ? "99+" : item.badge}
+              </span>
+            ) : null}
           </>
         );
         if (!item.href) {

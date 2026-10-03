@@ -158,8 +158,23 @@ export default async function MentorshipDashLayout({
     );
   }
 
+  // Unread-notification badge on the Notifications nav link, so users see new
+  // activity without opening the page.
+  const { count: unread } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("recipient_id", user.id)
+    .eq("is_read", false);
+  const navWithBadges = unread
+    ? nav.map((item) =>
+        item.href === "/mentorship/notifications"
+          ? { ...item, badge: unread }
+          : item,
+      )
+    : nav;
+
   return (
-    <MntDashShell user={user_} nav={nav} footer={footer}>
+    <MntDashShell user={user_} nav={navWithBadges} footer={footer}>
       {children}
     </MntDashShell>
   );
