@@ -6,6 +6,7 @@ import {
   summarizeRecognition,
   type RecognitionRow,
 } from "@/lib/eten/recognition-types";
+import { ApplyMentorControl } from "../mentor/apply-control";
 
 export const metadata = { title: "Dashboard" };
 
@@ -47,6 +48,24 @@ export default async function MenteeDashboardPage() {
       .eq("id", member.mentorship_capability_area_id)
       .maybeSingle();
     areaLabel = area?.label ?? null;
+  }
+
+  // Become-a-mentor state: a mentee can apply for mentor verification in place.
+  const { data: pendingNom } = await supabase
+    .from("mentor_nominations")
+    .select("id")
+    .eq("member_id", user.id)
+    .eq("status", "pending")
+    .maybeSingle();
+  const hasPendingMentorApp = Boolean(pendingNom);
+  let mentorAreas: { slug: string; label: string }[] = [];
+  if (isValidated && !hasPendingMentorApp) {
+    const { data: areaList } = await supabase
+      .from("capability_areas")
+      .select("slug, label")
+      .eq("active", true)
+      .order("sort_order");
+    mentorAreas = areaList ?? [];
   }
 
   // Active circle membership (RLS-scoped to the caller).
@@ -311,6 +330,34 @@ export default async function MenteeDashboardPage() {
             </ul>
           )}
         </div>
+      </div>
+
+      {/* Become a mentor */}
+      <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
+        <div className={lbl}>Become a mentor</div>
+        {hasPendingMentorApp ? (
+          <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+            Your mentor application is{" "}
+            <b className="text-mnt-amber">under review</b> by the ETEN Readiness
+            Panel. Once you are verified, you will move to the mentor workspace.
+          </p>
+        ) : !isValidated ? (
+          <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+            Want to mentor too? Validate your ETEN membership first, then you
+            can apply to become a mentor, no need for a second account.
+          </p>
+        ) : (
+          <>
+            <p className="text-mnt-ink-muted mt-3 text-[13px] leading-relaxed">
+              Experienced in your field? Apply to lead Circles and mentor
+              others. The ETEN Readiness Panel reviews every mentor before
+              verification.
+            </p>
+            {mentorAreas.length > 0 && (
+              <ApplyMentorControl areas={mentorAreas} />
+            )}
+          </>
+        )}
       </div>
     </div>
   );

@@ -74,6 +74,12 @@ export async function decideMentorNomination(input: {
     if (profileError) {
       return { error: "Approved, but couldn't create the mentor profile." };
     }
+    // Grant mentor access: move them onto the mentor track so a mentee who
+    // applied to become a mentor lands on the mentor dashboard once verified.
+    await admin
+      .from("members")
+      .update({ mentorship_intent: "mentor" })
+      .eq("id", nom.member_id);
     // Auto-award the Verified Mentor badge (recognition foundation, M0.3).
     await recordRecognition({
       memberId: nom.member_id,
