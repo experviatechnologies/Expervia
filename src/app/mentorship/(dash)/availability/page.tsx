@@ -3,6 +3,7 @@ import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getMentorshipDefaults } from "@/lib/eten/availability";
 import { AvailabilityEditor, type Prefs } from "./availability-editor";
+import { PricingCard, type Pricing } from "./pricing-card";
 
 export const metadata = { title: "Availability" };
 
@@ -32,27 +33,48 @@ export default async function MentorshipAvailabilityPage() {
     );
   }
 
-  const [{ data: prefsRow }, { data: blockRows }, { data: excRows }] =
-    await Promise.all([
-      admin
-        .from("mentor_scheduling_prefs")
-        .select(
-          "timezone, default_session_minutes, min_notice_minutes, buffer_minutes, max_sessions_per_week, availability_status",
-        )
-        .eq("member_id", member.id)
-        .maybeSingle(),
-      admin
-        .from("mentor_availability")
-        .select("id, weekday, start_time, end_time")
-        .eq("mentor_id", member.id)
-        .order("weekday")
-        .order("start_time"),
-      admin
-        .from("mentor_availability_exceptions")
-        .select("id, exception_date, kind, start_time, end_time")
-        .eq("mentor_id", member.id)
-        .order("exception_date"),
-    ]);
+  const [
+    { data: prefsRow },
+    { data: blockRows },
+    { data: excRows },
+    { data: pricingRow },
+  ] = await Promise.all([
+    admin
+      .from("mentor_scheduling_prefs")
+      .select(
+        "timezone, default_session_minutes, min_notice_minutes, buffer_minutes, max_sessions_per_week, availability_status",
+      )
+      .eq("member_id", member.id)
+      .maybeSingle(),
+    admin
+      .from("mentor_availability")
+      .select("id, weekday, start_time, end_time")
+      .eq("mentor_id", member.id)
+      .order("weekday")
+      .order("start_time"),
+    admin
+      .from("mentor_availability_exceptions")
+      .select("id, exception_date, kind, start_time, end_time")
+      .eq("mentor_id", member.id)
+      .order("exception_date"),
+    admin
+      .from("mentor_pricing")
+      .select(
+        "paid_sessions_enabled, currency, standard_amount, specialist_amount, expert_amount, extension_enabled, extension_amount",
+      )
+      .eq("member_id", member.id)
+      .maybeSingle(),
+  ]);
+
+  const pricing: Pricing = {
+    paidSessionsEnabled: pricingRow?.paid_sessions_enabled ?? false,
+    currency: pricingRow?.currency ?? "NGN",
+    standardAmount: pricingRow?.standard_amount ?? null,
+    specialistAmount: pricingRow?.specialist_amount ?? null,
+    expertAmount: pricingRow?.expert_amount ?? null,
+    extensionEnabled: pricingRow?.extension_enabled ?? false,
+    extensionAmount: pricingRow?.extension_amount ?? null,
+  };
 
   let prefs: Prefs;
   if (prefsRow) {
@@ -105,6 +127,10 @@ export default async function MentorshipAvailabilityPage() {
           endTime: e.end_time ? String(e.end_time).slice(0, 5) : null,
         }))}
       />
+
+      <div className="mt-6">
+        <PricingCard pricing={pricing} />
+      </div>
     </div>
   );
 }

@@ -109,6 +109,90 @@ export async function saveSchedulingPrefs(input: {
   return { ok: true };
 }
 
+/** Currencies the pricing profile accepts (kept in sync with migration 35). */
+const ALLOWED_CURRENCIES = ["NGN", "USD", "GHS", "KES", "ZAR"] as const;
+const MAX_MINOR = 1_000_000_000; // sanity cap, see migration 35
+
+/**
+ * Parse a major-unit amount (e.g. 20000 naira) into integer minor units
+ * (kobo/cents). Empty/null means "not offered" and returns null.
+ */
+function parseAmountMinor(
+  v: number | null | undefined,
+  name: string,
+): { minor: number | null } | { error: string } {
+  if (v == null || (v as unknown as string) === "") return { minor: null };
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return { error: `Enter a valid ${name}.` };
+  const minor = Math.round(n * 100);
+  if (minor > MAX_MINOR) return { error: `That ${name} is too large.` };
+  return { minor };
+}
+
+/**
+ * Create or update the mentor's paid-session pricing profile (Monetization
+ * M-1). Amounts arrive in major units and are stored in minor units. A paid
+ * profile requires a standard price; enabling extensions requires an extension
+ * price. Specialist/expert prices are optional.
+ */
+export async function saveMentorPricing(input: {
+  paidSessionsEnabled: boolean;
+  currency: string;
+  standardAmount: number | null;
+  specialistAmount: number | null;
+  expertAmount: number | null;
+  extensionEnabled: boolean;
+  extensionAmount: number | null;
+}): Promise<ActionResult> {
+  const ctx = await requireMentor();
+  if ("error" in ctx) return ctx;
+
+  const currency = (input.currency ?? "").trim().toUpperCase();
+  if (!(ALLOWED_CURRENCIES as readonly string[]).includes(currency)) {
+    return { error: "Please choose a supported currency." };
+  }
+
+  const standard = parseAmountMinor(input.standardAmount, "standard price");
+  if ("error" in standard) return standard;
+  const specialist = parseAmountMinor(
+    input.specialistAmount,
+    "specialist price",
+  );
+  if ("error" in specialist) return specialist;
+  const expert = parseAmountMinor(input.expertAmount, "expert price");
+  if ("error" in expert) return expert;
+  const extension = parseAmountMinor(input.extensionAmount, "extension price");
+  if ("error" in extension) return extension;
+
+  const paidEnabled = Boolean(input.paidSessionsEnabled);
+  const extensionEnabled = Boolean(input.extensionEnabled);
+
+  if (paidEnabled && (standard.minor == null || standard.minor <= 0)) {
+    return { error: "Set a standard session price to turn on paid sessions." };
+  }
+  if (extensionEnabled && (extension.minor == null || extension.minor <= 0)) {
+    return { error: "Set an extension price to allow paid extensions." };
+  }
+
+  const { error } = await ctx.admin.from("mentor_pricing").upsert(
+    {
+      member_id: ctx.meId,
+      paid_sessions_enabled: paidEnabled,
+      currency,
+      standard_amount: standard.minor,
+      specialist_amount: specialist.minor,
+      expert_amount: expert.minor,
+      extension_enabled: extensionEnabled,
+      extension_amount: extension.minor,
+    },
+    { onConflict: "member_id" },
+  );
+  if (error) return { error: "Couldn't save your pricing. Try again." };
+
+  revalidatePath("/mentorship/availability");
+  return { ok: true };
+}
+
 /** Add a recurring weekly availability block. */
 export async function addAvailabilityBlock(input: {
   weekday: number;
