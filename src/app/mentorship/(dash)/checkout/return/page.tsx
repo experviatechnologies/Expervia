@@ -28,17 +28,20 @@ export default async function CheckoutReturnPage({
 
   let state: State = "unknown";
   let circleId: string | null = null;
+  let roomHref: string | null = null;
+  let isExtension = false;
 
   if (reference) {
     const admin = getSupabaseAdmin();
     const { data: payment } = await admin
       .from("payments")
-      .select("id, payer_id, booking_id")
+      .select("id, payer_id, purpose, booking_id, extension_id")
       .eq("reference", reference)
       .maybeSingle();
 
     // Only the payer may trigger settlement for their own reference.
     if (payment && payment.payer_id === me.id) {
+      isExtension = payment.purpose === "extension";
       try {
         const outcome = await settleChargeByReference(admin, reference);
         state =
@@ -51,13 +54,29 @@ export default async function CheckoutReturnPage({
         state = "pending";
       }
 
-      if (payment.booking_id) {
+      if (payment.purpose === "session" && payment.booking_id) {
         const { data: after } = await admin
           .from("session_bookings")
           .select("circle_id")
           .eq("id", payment.booking_id)
           .maybeSingle();
         circleId = after?.circle_id ?? null;
+      } else if (payment.purpose === "extension" && payment.extension_id) {
+        const { data: ext } = await admin
+          .from("session_extensions")
+          .select("session_id")
+          .eq("id", payment.extension_id)
+          .maybeSingle();
+        if (ext?.session_id) {
+          const { data: sess } = await admin
+            .from("circle_sessions")
+            .select("id, circle_id")
+            .eq("id", ext.session_id)
+            .maybeSingle();
+          if (sess) {
+            roomHref = `/mentorship/circles/${sess.circle_id}/class/${sess.id}`;
+          }
+        }
       }
     }
   }
@@ -76,14 +95,19 @@ export default async function CheckoutReturnPage({
           <>
             <CheckCircle2 className="text-mnt-green mx-auto size-10" />
             <h1 className="font-display mt-3 text-xl font-extrabold">
-              Payment confirmed
+              {isExtension ? "Session extended" : "Payment confirmed"}
             </h1>
             <p className="text-mnt-ink-muted mt-2 text-[13.5px] leading-relaxed">
-              Your session is booked and confirmed. The live room opens 10
-              minutes before it starts, join it from your Circle.
+              {isExtension
+                ? "Your extra time has been added. Head back to the room to continue your session."
+                : "Your session is booked and confirmed. The live room opens 10 minutes before it starts, join it from your Circle."}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-              {circleId ? (
+              {isExtension && roomHref ? (
+                <Link href={roomHref} className={btn}>
+                  Back to your session
+                </Link>
+              ) : circleId ? (
                 <Link href={`/mentorship/circles/${circleId}`} className={btn}>
                   Open your Circle
                 </Link>

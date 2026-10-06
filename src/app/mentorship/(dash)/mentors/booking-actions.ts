@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -11,6 +10,7 @@ import { getMentorSlots } from "@/lib/eten/availability";
 import { confirmBookingToSession } from "@/lib/eten/booking-confirm";
 import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
 import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
+import { requestOrigin } from "@/lib/eten/request-origin";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -199,14 +199,6 @@ export async function decideSessionBooking(input: {
   revalidatePath(`/mentorship/mentors/${booking.mentor_id}`);
   revalidatePath(`/mentorship/circles/${res.circleId}`);
   return { ok: true };
-}
-
-/** Absolute origin of the current request, for building callback URLs. */
-async function requestOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
 }
 
 /**

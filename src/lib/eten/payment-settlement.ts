@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { paystackVerify } from "@/lib/eten/paystack";
 import { confirmBookingToSession } from "@/lib/eten/booking-confirm";
+import { activateExtension } from "@/lib/eten/extension";
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 
@@ -27,7 +28,7 @@ export async function settleChargeByReference(
 
   const { data: payment } = await admin
     .from("payments")
-    .select("id, amount, status, purpose, booking_id, mentor_id")
+    .select("id, amount, status, purpose, booking_id, extension_id, mentor_id")
     .eq("reference", reference)
     .maybeSingle();
   if (!payment) return "not_found";
@@ -64,6 +65,8 @@ export async function settleChargeByReference(
       note: "Confirmed on payment",
       notifyMentor: true,
     });
+  } else if (payment.purpose === "extension" && payment.extension_id) {
+    await activateExtension(admin, payment.extension_id);
   }
 
   return "settled";

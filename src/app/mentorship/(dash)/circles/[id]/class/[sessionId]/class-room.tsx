@@ -9,9 +9,24 @@ import {
   RoomAudioRenderer,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
+import { startExtensionPayment } from "./extension-actions";
 
 /** The room opens this many minutes before the scheduled start. */
 const EARLY_JOIN_MIN = 10;
+
+const MONEY_SYMBOLS: Record<string, string> = {
+  NGN: "₦",
+  USD: "$",
+  GHS: "₵",
+  KES: "KSh",
+  ZAR: "R",
+};
+function fmtMoney(minor: number, currency: string): string {
+  const sym = MONEY_SYMBOLS[currency] ?? `${currency} `;
+  return (
+    sym + (minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  );
+}
 
 type Phase = "upcoming" | "live" | "ended";
 
@@ -45,12 +60,18 @@ export function ClassRoom({
   startsAt,
   durationMinutes,
   circleHref,
+  isMentor = false,
+  hardCut = true,
+  extension = null,
 }: {
   sessionId: string;
   title: string;
   startsAt: string;
   durationMinutes: number;
   circleHref: string;
+  isMentor?: boolean;
+  hardCut?: boolean;
+  extension?: { amount: number; currency: string; minutes: number } | null;
 }) {
   const router = useRouter();
   const startMs = Date.parse(startsAt);
@@ -60,6 +81,9 @@ export function ClassRoom({
   const [conn, setConn] = useState<{ token: string; url: string } | null>(null);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [extBusy, setExtBusy] = useState(false);
+  const [endBusy, setEndBusy] = useState(false);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -102,13 +126,50 @@ export function ClassRoom({
     router.refresh();
   }, [router]);
 
+  // Pay to extend the session (+N minutes): hand off to Paystack checkout.
+  const extend = useCallback(async () => {
+    if (!extension) return;
+    setActionError(null);
+    setExtBusy(true);
+    try {
+      const res = await startExtensionPayment({ sessionId });
+      if ("error" in res) {
+        setActionError(res.error);
+        setExtBusy(false);
+      } else {
+        window.location.href = res.authorizationUrl;
+      }
+    } catch {
+      setActionError("Couldn't start the extension. Please try again.");
+      setExtBusy(false);
+    }
+  }, [extension, sessionId]);
+
+  // Mentor ends the meeting for everyone (no cron hard cut on 1:1 sessions).
+  const endForAll = useCallback(async () => {
+    setActionError(null);
+    setEndBusy(true);
+    try {
+      await fetch("/api/mentorship/end-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+    } catch {
+      // We leave regardless of the result.
+    }
+    setEndBusy(false);
+    leave();
+  }, [sessionId, leave]);
+
   // Hard cut: when the session end passes while connected, drop out of the room.
-  // The server also force-closes the room (cron), so this is the fast local path.
+  // Group classes enforce this client-side; 1:1 sessions are mentor-ended, so
+  // the cut is skipped there and the extra paid time stays usable.
   useEffect(() => {
-    if (!(conn && now !== null && now >= endMs)) return;
+    if (!(hardCut && conn && now !== null && now >= endMs)) return;
     const t = setTimeout(() => leave(), 0);
     return () => clearTimeout(t);
-  }, [conn, now, endMs, leave]);
+  }, [hardCut, conn, now, endMs, leave]);
 
   // Connected: render the conference full-bleed within the content area.
   if (conn) {
@@ -132,10 +193,37 @@ export function ClassRoom({
               {mm}:{String(ss).padStart(2, "0")}
             </span>
           </span>
-          {warn && (
-            <span className="font-semibold">5 minutes or less left</span>
-          )}
+          <div className="flex items-center gap-2">
+            {warn && (
+              <span className="font-semibold">5 minutes or less left</span>
+            )}
+            {extension && (
+              <button
+                type="button"
+                onClick={extend}
+                disabled={extBusy}
+                className="bg-mnt-brand text-mnt-on-brand rounded-lg px-2.5 py-1 text-[12px] font-bold transition hover:brightness-110 disabled:opacity-60"
+              >
+                {extBusy
+                  ? "Starting…"
+                  : `Extend +${extension.minutes} (${fmtMoney(extension.amount, extension.currency)})`}
+              </button>
+            )}
+            {isMentor && (
+              <button
+                type="button"
+                onClick={endForAll}
+                disabled={endBusy}
+                className="border-destructive/50 text-destructive hover:bg-destructive/10 rounded-lg border px-2.5 py-1 text-[12px] font-semibold transition disabled:opacity-60"
+              >
+                {endBusy ? "Ending…" : "End session"}
+              </button>
+            )}
+          </div>
         </div>
+        {actionError && (
+          <p className="text-destructive text-[12px]">{actionError}</p>
+        )}
         <div
           className="border-mnt-line overflow-hidden rounded-2xl border"
           style={{ height: "min(74vh, 700px)" }}
