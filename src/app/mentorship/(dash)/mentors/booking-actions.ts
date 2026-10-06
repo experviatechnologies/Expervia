@@ -1,14 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { randomUUID } from "crypto";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
 import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
 import { getMentorSlots } from "@/lib/eten/availability";
+import { confirmBookingToSession } from "@/lib/eten/booking-confirm";
+import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
+import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
 
 type ActionResult = { ok: true } | { error: string };
-type Admin = ReturnType<typeof getSupabaseAdmin>;
 
 /**
  * A validated mentee requests a specific availability slot with a mentor. The
@@ -121,60 +125,6 @@ export async function requestSessionBooking(input: {
 }
 
 /**
- * Does [start,end) for the mentor collide with an already-scheduled session or
- * another accepted booking, expanded by the mentor's buffer? This is the final
- * server-side conflict guard (PRD FR-8); the UI is never trusted.
- */
-async function hasConflict(
-  admin: Admin,
-  mentorId: string,
-  startMs: number,
-  endMs: number,
-  bufferMin: number,
-  ignoreBookingId: string,
-): Promise<boolean> {
-  const buffer = bufferMin * 60_000;
-  const winFrom = new Date(startMs - 6 * 60 * 60_000).toISOString();
-  const winTo = new Date(endMs + 6 * 60 * 60_000).toISOString();
-
-  const [{ data: sessions }, { data: bookings }] = await Promise.all([
-    admin
-      .from("circle_sessions")
-      .select(
-        "starts_at, duration_minutes, mentorship_circles!inner(mentor_id)",
-      )
-      .eq("mentorship_circles.mentor_id", mentorId)
-      .not("starts_at", "is", null)
-      .gte("starts_at", winFrom)
-      .lte("starts_at", winTo),
-    admin
-      .from("session_bookings")
-      .select("id, starts_at, duration_minutes")
-      .eq("mentor_id", mentorId)
-      .eq("status", "accepted")
-      .gte("starts_at", winFrom)
-      .lte("starts_at", winTo),
-  ]);
-
-  const overlaps = (s: number, durMin: number | null) => {
-    const bs = s - buffer;
-    const be = s + (durMin ?? 40) * 60_000 + buffer;
-    return startMs < be && endMs > bs;
-  };
-
-  for (const r of sessions ?? []) {
-    if (overlaps(Date.parse(String(r.starts_at)), r.duration_minutes))
-      return true;
-  }
-  for (const b of bookings ?? []) {
-    if (b.id === ignoreBookingId) continue;
-    if (overlaps(Date.parse(String(b.starts_at)), b.duration_minutes))
-      return true;
-  }
-  return false;
-}
-
-/**
  * The addressed mentor (or ops) accepts or declines a pending booking. On
  * accept, after a final conflict check, the booking becomes a session inside a
  * one_to_one Circle (created or reused) and both ids are linked back. The mentee
@@ -236,162 +186,191 @@ export async function decideSessionBooking(input: {
     return { ok: true };
   }
 
-  // --- Accept ---
-  const startMs = Date.parse(booking.starts_at);
-  const endMs = startMs + booking.duration_minutes * 60_000;
-
-  const { data: prefs } = await admin
-    .from("mentor_scheduling_prefs")
-    .select("buffer_minutes")
-    .eq("member_id", booking.mentor_id)
-    .maybeSingle();
-
-  if (
-    await hasConflict(
-      admin,
-      booking.mentor_id,
-      startMs,
-      endMs,
-      prefs?.buffer_minutes ?? 0,
-      booking.id,
-    )
-  ) {
-    return {
-      error: "That time now conflicts with another session. Ask for another.",
-    };
-  }
-
-  // A one_to_one Circle must have a capability-area home (pod_id is null).
-  const { data: mp } = await admin
-    .from("mentor_profiles")
-    .select("mentor_status, capability_area_id")
-    .eq("member_id", booking.mentor_id)
-    .maybeSingle();
-  if (!mp || mp.mentor_status === "candidate") {
-    return { error: "You aren't a verified mentor." };
-  }
-  if (!mp.capability_area_id) {
-    return {
-      error: "Set your capability area in your profile before accepting.",
-    };
-  }
-
-  // Reuse an existing active 1:1 Circle with this mentee, else create one.
-  let circleId: string | null = null;
-  const { data: oneToOnes } = await admin
-    .from("mentorship_circles")
-    .select("id")
-    .eq("mentor_id", booking.mentor_id)
-    .eq("format", "one_to_one")
-    .in("status", ["draft", "active"]);
-  const oneToOneIds = (oneToOnes ?? []).map((c) => c.id);
-  if (oneToOneIds.length) {
-    const { data: membership } = await admin
-      .from("circle_memberships")
-      .select("circle_id")
-      .eq("member_id", booking.mentee_id)
-      .eq("status", "active")
-      .in("circle_id", oneToOneIds)
-      .limit(1)
-      .maybeSingle();
-    circleId = membership?.circle_id ?? null;
-  }
-
-  if (!circleId) {
-    const { data: circle, error: circleErr } = await admin
-      .from("mentorship_circles")
-      .insert({
-        mentor_id: booking.mentor_id,
-        capability_area_id: mp.capability_area_id,
-        pod_id: null,
-        format: "one_to_one",
-        cadence: "weekly",
-        status: "active",
-        created_by: me.id,
-      })
-      .select("id")
-      .single();
-    if (circleErr || !circle) {
-      return { error: "Couldn't set up the session. Please try again." };
-    }
-    circleId = circle.id;
-
-    const { error: enrolErr } = await admin.from("circle_memberships").insert({
-      circle_id: circleId,
-      member_id: booking.mentee_id,
-      status: "active",
-    });
-    if (enrolErr && enrolErr.code !== "23505") {
-      return { error: "Couldn't enrol the mentee. Please try again." };
-    }
-  }
-
-  const startIso = new Date(startMs).toISOString();
-  const { data: session, error: sessErr } = await admin
-    .from("circle_sessions")
-    .insert({
-      circle_id: circleId,
-      title: "1:1 session",
-      starts_at: startIso,
-      duration_minutes: booking.duration_minutes,
-      session_type: booking.session_type,
-      session_date: startIso.slice(0, 10),
-    })
-    .select("id")
-    .single();
-  if (sessErr || !session) {
-    return { error: "Couldn't schedule the session. Please try again." };
-  }
-
-  await admin.from("session_attendance").insert({
-    session_id: session.id,
-    member_id: booking.mentee_id,
-    attended: false,
+  // --- Accept --- materialize the booking into a session (shared with the
+  // paid-payment flow). The free flow records the mentor as the decider.
+  const res = await confirmBookingToSession(admin, booking.id, {
+    createdBy: me.id,
+    note,
+    notifyMentor: false,
   });
-
-  const { error: updErr } = await admin
-    .from("session_bookings")
-    .update({
-      status: "accepted",
-      circle_id: circleId,
-      session_id: session.id,
-      decision_note: note,
-      decided_by: me.id,
-      decided_at: nowIso,
-    })
-    .eq("id", booking.id)
-    .eq("status", "pending");
-  if (updErr)
-    return { error: "Couldn't confirm the booking. Please try again." };
-
-  const whenUtc =
-    new Date(startMs).toLocaleString("en-GB", {
-      weekday: "long",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    }) + " UTC";
-
-  await notify({
-    recipientId: booking.mentee_id,
-    actorId: booking.mentor_id,
-    type: "mentorship",
-    targetType: "booking_accepted",
-    targetId: circleId,
-  });
-  await sendMentorshipEmail(
-    booking.mentee_id,
-    "Your session is confirmed",
-    "Your session is confirmed",
-    `Your mentor confirmed your session for ${whenUtc}. The live room opens 10 minutes before it starts; join it from your Circle.`,
-  );
+  if ("error" in res) return { error: res.error };
 
   revalidatePath("/mentorship/mentor");
   revalidatePath(`/mentorship/mentors/${booking.mentor_id}`);
-  revalidatePath(`/mentorship/circles/${circleId}`);
+  revalidatePath(`/mentorship/circles/${res.circleId}`);
   return { ok: true };
+}
+
+/** Absolute origin of the current request, for building callback URLs. */
+async function requestOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  return `${proto}://${host}`;
+}
+
+/**
+ * Begin a PAID session booking (Monetization M-3). Validates the mentee, the
+ * mentor's paid pricing and the slot, creates a pending booking + pending
+ * payment, then initializes a Paystack transaction and returns the hosted
+ * checkout URL for the client to redirect to. The booking is confirmed only
+ * once the payment is verified (webhook or return page); nothing is scheduled
+ * here, and no money is computed on the client.
+ */
+export async function startPaidBooking(input: {
+  mentorId: string;
+  startsAt: string;
+}): Promise<{ ok: true; authorizationUrl: string } | { error: string }> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+  if (me.status !== "active") return { error: "Your account isn't active." };
+  if (input.mentorId === me.id) {
+    return { error: "You can't book a session with yourself." };
+  }
+  if (!isPaystackConfigured()) {
+    return { error: "Payments aren't available right now." };
+  }
+
+  const startMs = Date.parse(input.startsAt ?? "");
+  if (Number.isNaN(startMs)) return { error: "Please pick a valid time." };
+
+  const admin = getSupabaseAdmin();
+
+  const { data: meRow } = await admin
+    .from("members")
+    .select("validated_at")
+    .eq("id", me.id)
+    .maybeSingle();
+  if (!meRow?.validated_at) {
+    return { error: "Validate your account before booking a session." };
+  }
+
+  const { data: mentor } = await admin
+    .from("mentor_profiles")
+    .select("mentor_status")
+    .eq("member_id", input.mentorId)
+    .maybeSingle();
+  if (!mentor || mentor.mentor_status === "candidate") {
+    return { error: "That mentor isn't available." };
+  }
+
+  // Pricing: the mentor must have paid sessions on with a standard price.
+  const { data: pricing } = await admin
+    .from("mentor_pricing")
+    .select("paid_sessions_enabled, currency, standard_amount")
+    .eq("member_id", input.mentorId)
+    .maybeSingle();
+  if (!pricing?.paid_sessions_enabled || !pricing.standard_amount) {
+    return { error: "This mentor isn't taking paid sessions." };
+  }
+  const amount = pricing.standard_amount;
+  const currency = pricing.currency;
+
+  // Re-generate slots and confirm the requested time is still on offer.
+  const { slots, durationMinutes } = await getMentorSlots(input.mentorId, {
+    days: 60,
+  });
+  const slot = slots.find((s) => Date.parse(s.start) === startMs);
+  if (!slot) {
+    return { error: "That time is no longer available. Please pick another." };
+  }
+
+  // Friendly pre-check; the partial unique index is the real guard.
+  const { data: existing } = await admin
+    .from("session_bookings")
+    .select("id")
+    .eq("mentee_id", me.id)
+    .eq("mentor_id", input.mentorId)
+    .eq("starts_at", new Date(startMs).toISOString())
+    .in("status", ["pending", "accepted"])
+    .maybeSingle();
+  if (existing) {
+    return { error: "You've already booked this time." };
+  }
+
+  // Create the pending booking (held; confirmed only after payment).
+  const { data: booking, error: bookErr } = await admin
+    .from("session_bookings")
+    .insert({
+      mentor_id: input.mentorId,
+      mentee_id: me.id,
+      starts_at: new Date(startMs).toISOString(),
+      duration_minutes: slot.durationMinutes || durationMinutes,
+      session_type: "standard",
+    })
+    .select("id")
+    .single();
+  if (bookErr || !booking) {
+    if (bookErr?.code === "23505") {
+      return { error: "You've already booked this time." };
+    }
+    return { error: "Couldn't start that booking. Please try again." };
+  }
+
+  // Commission split (server-authoritative; the frontend never computes money).
+  const { commissionPercent } = await getMonetizationSettings();
+  const { platformFee, mentorAmount } = computeSplit(amount, commissionPercent);
+
+  const reference = `ETEN-SESS-${Date.now()}-${randomUUID().slice(0, 8)}`;
+
+  const { data: payment, error: payErr } = await admin
+    .from("payments")
+    .insert({
+      payer_id: me.id,
+      mentor_id: input.mentorId,
+      purpose: "session",
+      booking_id: booking.id,
+      amount,
+      currency,
+      commission_percent: commissionPercent,
+      platform_fee: platformFee,
+      mentor_amount: mentorAmount,
+      reference,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+  if (payErr || !payment) {
+    await admin.from("session_bookings").delete().eq("id", booking.id);
+    return { error: "Couldn't start the payment. Please try again." };
+  }
+
+  // Payer email for Paystack's hosted checkout.
+  const { data: userRes } = await admin.auth.admin.getUserById(me.id);
+  const email = userRes?.user?.email;
+  if (!email) {
+    await admin
+      .from("payments")
+      .update({ status: "failed" })
+      .eq("id", payment.id);
+    await admin.from("session_bookings").delete().eq("id", booking.id);
+    return { error: "We couldn't find your email for checkout." };
+  }
+
+  const origin = await requestOrigin();
+  const init = await paystackInitialize({
+    email,
+    amountMinor: amount,
+    currency,
+    reference,
+    callbackUrl: `${origin}/mentorship/checkout/return`,
+    metadata: {
+      purpose: "session",
+      bookingId: booking.id,
+      mentorId: input.mentorId,
+      menteeId: me.id,
+    },
+  });
+  if ("error" in init) {
+    await admin
+      .from("payments")
+      .update({ status: "failed" })
+      .eq("id", payment.id);
+    await admin.from("session_bookings").delete().eq("id", booking.id);
+    return { error: init.error };
+  }
+
+  return { ok: true, authorizationUrl: init.authorizationUrl };
 }
 
 /** A mentee cancels their own pending booking request. */

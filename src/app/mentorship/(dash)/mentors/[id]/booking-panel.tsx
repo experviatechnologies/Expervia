@@ -7,6 +7,7 @@ import { Check, X } from "lucide-react";
 import type { BookableSlot, AvailabilityStatus } from "@/lib/eten/availability";
 import {
   requestSessionBooking,
+  startPaidBooking,
   cancelSessionBooking,
 } from "../booking-actions";
 
@@ -17,8 +18,25 @@ export type MyBooking = {
   status: string;
 };
 
+export type BookingPricing = { currency: string; standardAmount: number };
+
 const btn =
   "bg-mnt-brand text-mnt-on-brand inline-flex items-center gap-1.5 rounded-[10px] px-4 py-2.5 text-[13px] font-bold transition hover:brightness-110 disabled:opacity-60";
+
+const MONEY_SYMBOLS: Record<string, string> = {
+  NGN: "₦",
+  USD: "$",
+  GHS: "₵",
+  KES: "KSh",
+  ZAR: "R",
+};
+
+function fmtMoney(minor: number, currency: string): string {
+  const sym = MONEY_SYMBOLS[currency] ?? `${currency} `;
+  return (
+    sym + (minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  );
+}
 
 function fmtDay(ms: number): string {
   return new Date(ms).toLocaleDateString(undefined, {
@@ -51,6 +69,7 @@ export function BookingPanel({
   slots,
   canBook,
   myBookings,
+  pricing,
 }: {
   mentorId: string;
   status: AvailabilityStatus;
@@ -59,6 +78,7 @@ export function BookingPanel({
   slots: BookableSlot[];
   canBook: boolean;
   myBookings: MyBooking[];
+  pricing: BookingPricing | null;
 }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -89,6 +109,14 @@ export function BookingPanel({
     setError(null);
     setDone(false);
     start(async () => {
+      // Paid mentor: start checkout and hand off to Paystack's hosted page.
+      if (pricing) {
+        const res = await startPaidBooking({ mentorId, startsAt: selected });
+        if ("error" in res) setError(res.error);
+        else window.location.href = res.authorizationUrl;
+        return;
+      }
+      // Free mentor: the existing request-then-confirm flow.
       const res = await requestSessionBooking({ mentorId, startsAt: selected });
       if ("error" in res) setError(res.error);
       else {
@@ -173,6 +201,16 @@ export function BookingPanel({
           </p>
         ) : (
           <>
+            {pricing && (
+              <p className="text-mnt-ink mb-3 text-[13px]">
+                <span className="font-semibold">
+                  {fmtMoney(pricing.standardAmount, pricing.currency)}
+                </span>{" "}
+                <span className="text-mnt-faint">
+                  per session · {durationMinutes} min · paid at checkout
+                </span>
+              </p>
+            )}
             {status === "limited" && (
               <p className="text-mnt-faint mb-3 text-[12.5px]">
                 Limited availability. Grab a time while it lasts.
@@ -225,7 +263,9 @@ export function BookingPanel({
             {selected && mounted && (
               <div className="border-mnt-line mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
                 <span className="text-[13.5px]">
-                  <span className="text-mnt-ink-muted">Request </span>
+                  <span className="text-mnt-ink-muted">
+                    {pricing ? "Book " : "Request "}
+                  </span>
                   <span className="font-semibold">
                     {fmtFull(Date.parse(selected))}
                   </span>
@@ -240,7 +280,13 @@ export function BookingPanel({
                   disabled={pending}
                   onClick={book}
                 >
-                  {pending ? "Sending…" : "Request this time"}
+                  {pending
+                    ? pricing
+                      ? "Starting…"
+                      : "Sending…"
+                    : pricing
+                      ? `Book & pay ${fmtMoney(pricing.standardAmount, pricing.currency)}`
+                      : "Request this time"}
                 </button>
               </div>
             )}

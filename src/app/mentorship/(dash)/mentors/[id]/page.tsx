@@ -46,6 +46,7 @@ export default async function MentorBookingPage({
     { data: areaRow },
     { data: reqRows },
     { data: bookingRows },
+    { data: pricingRow },
     slotsResult,
   ] = await Promise.all([
     admin.from("members").select("validated_at").eq("id", me.id).maybeSingle(),
@@ -74,6 +75,11 @@ export default async function MentorBookingPage({
       .eq("mentor_id", id)
       .in("status", ["pending", "accepted"])
       .order("starts_at"),
+    admin
+      .from("mentor_pricing")
+      .select("paid_sessions_enabled, currency, standard_amount")
+      .eq("member_id", id)
+      .maybeSingle(),
     getMentorSlots(id, { days: 14 }),
   ]);
 
@@ -92,6 +98,16 @@ export default async function MentorBookingPage({
     durationMinutes: b.duration_minutes,
     status: b.status,
   }));
+
+  // Paid-session pricing, surfaced to the mentee only when the mentor has paid
+  // sessions on with a standard price. Null means the free request flow.
+  const pricing =
+    pricingRow?.paid_sessions_enabled && pricingRow.standard_amount
+      ? {
+          currency: pricingRow.currency as string,
+          standardAmount: pricingRow.standard_amount as number,
+        }
+      : null;
 
   return (
     <div className="mx-auto max-w-[820px] px-6 py-8">
@@ -146,8 +162,10 @@ export default async function MentorBookingPage({
       <div className="mt-6">
         <h2 className="font-display text-[17px] font-bold">Book a session</h2>
         <p className="text-mnt-ink-muted mt-1 text-[13.5px]">
-          Pick an open time below. Times are shown in your local timezone. The
-          mentor confirms before the session is booked.
+          Pick an open time below. Times are shown in your local timezone.{" "}
+          {pricing
+            ? "This mentor charges for sessions; you'll pay securely to confirm."
+            : "The mentor confirms before the session is booked."}
         </p>
         <BookingPanel
           mentorId={id}
@@ -157,6 +175,7 @@ export default async function MentorBookingPage({
           slots={slotsResult.slots}
           canBook={isValidated}
           myBookings={myBookings}
+          pricing={pricing}
         />
       </div>
     </div>

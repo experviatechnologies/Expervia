@@ -17,6 +17,8 @@ export function mentorshipNotifText(
       return `${actor} declined your mentorship request`;
     case "booking_requested":
       return `${actor} requested a session time`;
+    case "booking_paid":
+      return `${actor} booked and paid for a session`;
     case "booking_accepted":
       return `${actor} confirmed your session`;
     case "booking_declined":

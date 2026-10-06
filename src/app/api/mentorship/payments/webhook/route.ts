@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { verifyPaystackSignature, paystackVerify } from "@/lib/eten/paystack";
+import { verifyPaystackSignature } from "@/lib/eten/paystack";
+import { settleChargeByReference } from "@/lib/eten/payment-settlement";
 
 export const runtime = "nodejs";
 
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
   let outcome: "processed" | "ignored" | "error" = "ignored";
   try {
     if (eventType === "charge.success" && reference) {
-      await settleCharge(admin, reference);
+      await settleChargeByReference(admin, reference);
       outcome = "processed";
     }
     // refund / dispute / payout events are handled in later steps.
@@ -81,50 +82,4 @@ export async function POST(request: NextRequest) {
     .eq("provider_event_id", providerEventId);
 
   return NextResponse.json({ ok: true });
-}
-
-/**
- * Re-verify a charge with Paystack and settle the matching payment row.
- * Guards: the transaction must actually be 'success', must match a known
- * reference, must not already be settled, and the amount must match what we
- * charged (a mismatch is flagged 'disputed', never silently accepted).
- */
-async function settleCharge(
-  admin: ReturnType<typeof getSupabaseAdmin>,
-  reference: string,
-): Promise<void> {
-  const verified = await paystackVerify(reference);
-  if ("error" in verified) throw new Error(verified.error);
-  if (verified.status !== "success") return;
-
-  const { data: payment } = await admin
-    .from("payments")
-    .select("id, amount, currency, status")
-    .eq("reference", reference)
-    .maybeSingle();
-  if (!payment) return; // unknown reference, nothing of ours to settle
-  if (payment.status === "success") return; // already settled, idempotent
-
-  // Amount integrity: Paystack's verified amount must equal what we charged.
-  if (verified.amountMinor !== payment.amount) {
-    await admin
-      .from("payments")
-      .update({ status: "disputed" })
-      .eq("id", payment.id);
-    return;
-  }
-
-  await admin
-    .from("payments")
-    .update({
-      status: "success",
-      provider_transaction_id: verified.providerTransactionId,
-      payment_method: verified.channel,
-      payment_fee: verified.feesMinor,
-      paid_at: verified.paidAt ?? new Date().toISOString(),
-    })
-    .eq("id", payment.id);
-
-  // M-3: confirm the linked session booking here (purpose = 'session');
-  // M-4: activate the linked extension here (purpose = 'extension').
 }
