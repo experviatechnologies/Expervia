@@ -15,15 +15,32 @@ import crypto from "crypto";
 
 const BASE = "https://api.paystack.co";
 
+/**
+ * Resolve the active Paystack secret key. PAYSTACK_MODE selects live vs test and
+ * DEFAULTS TO TEST, so we never charge real cards unless live is chosen on
+ * purpose. PAYSTACK_SECRET_KEY, if set, overrides the mode selection.
+ *
+ * Expected env:
+ *   PAYSTACK_MODE=test|live        (optional; default test)
+ *   PAYSTACK_TEST_SECRET_KEY=sk_test_...
+ *   PAYSTACK_LIVE_SECRET_KEY=sk_live_...
+ */
+function resolveSecretKey(): string | undefined {
+  if (process.env.PAYSTACK_SECRET_KEY) return process.env.PAYSTACK_SECRET_KEY;
+  return process.env.PAYSTACK_MODE === "live"
+    ? process.env.PAYSTACK_LIVE_SECRET_KEY
+    : process.env.PAYSTACK_TEST_SECRET_KEY;
+}
+
 function secretKey(): string {
-  const k = process.env.PAYSTACK_SECRET_KEY;
-  if (!k) throw new Error("PAYSTACK_SECRET_KEY is not set");
+  const k = resolveSecretKey();
+  if (!k) throw new Error("Paystack secret key is not set");
   return k;
 }
 
-/** True once the Paystack secret key is configured. */
+/** True once a Paystack secret key is configured for the active mode. */
 export function isPaystackConfigured(): boolean {
-  return Boolean(process.env.PAYSTACK_SECRET_KEY);
+  return Boolean(resolveSecretKey());
 }
 
 export type InitInput = {
