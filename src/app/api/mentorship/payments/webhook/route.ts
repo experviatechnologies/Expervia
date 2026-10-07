@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { verifyPaystackSignature } from "@/lib/eten/paystack";
 import { settleChargeByReference } from "@/lib/eten/payment-settlement";
+import { recordRefundOutcome } from "@/lib/eten/refunds";
 
 export const runtime = "nodejs";
 
@@ -65,8 +66,25 @@ export async function POST(request: NextRequest) {
     if (eventType === "charge.success" && reference) {
       await settleChargeByReference(admin, reference);
       outcome = "processed";
+    } else if (
+      eventType === "refund.processed" ||
+      eventType === "refund.failed"
+    ) {
+      const txn = data.transaction as { reference?: string } | undefined;
+      const txnRef =
+        typeof data.transaction_reference === "string"
+          ? data.transaction_reference
+          : (txn?.reference ?? null);
+      if (txnRef) {
+        await recordRefundOutcome(
+          admin,
+          txnRef,
+          eventType === "refund.processed",
+        );
+        outcome = "processed";
+      }
     }
-    // refund / dispute / payout events are handled in later steps.
+    // dispute / payout events are handled in later steps.
   } catch {
     outcome = "error";
   }

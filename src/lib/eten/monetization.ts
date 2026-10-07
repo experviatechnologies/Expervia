@@ -9,11 +9,18 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 export type MonetizationSettings = {
   commissionPercent: number; // ETEN's cut, e.g. 20
   settlementHoldHours: number; // hold after a session before earnings release
+  // Time-based cancellation/refund policy.
+  refundFullHours: number; // >= this many hours before start -> 100%
+  refundPartialHours: number; // >= this (but < full) -> partial percent
+  refundPartialPercent: number; // the partial refund percentage
 };
 
 const DEFAULTS: MonetizationSettings = {
   commissionPercent: 20,
   settlementHoldHours: 24,
+  refundFullHours: 24,
+  refundPartialHours: 12,
+  refundPartialPercent: 50,
 };
 
 /** Read the single-row platform settings, falling back to PRD defaults. */
@@ -21,13 +28,18 @@ export async function getMonetizationSettings(): Promise<MonetizationSettings> {
   const admin = getSupabaseAdmin();
   const { data } = await admin
     .from("mentorship_settings")
-    .select("platform_commission_percent, settlement_hold_hours")
+    .select(
+      "platform_commission_percent, settlement_hold_hours, refund_full_hours, refund_partial_hours, refund_partial_percent",
+    )
     .eq("id", true)
     .maybeSingle();
   if (!data) return DEFAULTS;
   return {
     commissionPercent: Number(data.platform_commission_percent),
     settlementHoldHours: Number(data.settlement_hold_hours),
+    refundFullHours: Number(data.refund_full_hours),
+    refundPartialHours: Number(data.refund_partial_hours),
+    refundPartialPercent: Number(data.refund_partial_percent),
   };
 }
 

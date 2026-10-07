@@ -128,6 +128,39 @@ export async function paystackVerify(
 }
 
 /**
+ * Refund a transaction, fully or partially (amountMinor). Paystack processes
+ * refunds asynchronously and later emits a refund.processed / refund.failed
+ * webhook; this just starts it.
+ */
+export async function paystackRefund(
+  reference: string,
+  amountMinor?: number,
+): Promise<{ ok: true; providerReference: string | null } | { error: string }> {
+  try {
+    const body: Record<string, unknown> = { transaction: reference };
+    if (amountMinor != null) body.amount = amountMinor;
+    const res = await fetch(`${BASE}/refund`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.status) {
+      return { error: json?.message ?? "The refund could not be started." };
+    }
+    return {
+      ok: true,
+      providerReference: json.data?.id != null ? String(json.data.id) : null,
+    };
+  } catch {
+    return { error: "Could not reach the payment provider." };
+  }
+}
+
+/**
  * Verify a Paystack webhook signature. Paystack signs the raw body with
  * HMAC-SHA512 using the secret key and sends it in x-paystack-signature.
  */

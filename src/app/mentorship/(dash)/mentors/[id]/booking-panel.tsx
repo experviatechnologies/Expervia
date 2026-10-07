@@ -9,6 +9,7 @@ import {
   requestSessionBooking,
   startPaidBooking,
   cancelSessionBooking,
+  cancelAcceptedBooking,
 } from "../booking-actions";
 
 export type MyBooking = {
@@ -82,13 +83,17 @@ export function BookingPanel({
 }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 0);
+    const t = setTimeout(() => {
+      setMounted(true);
+      setNow(Date.now());
+    }, 0);
     return () => clearTimeout(t);
   }, []);
 
@@ -136,6 +141,22 @@ export function BookingPanel({
     });
   }
 
+  function cancelConfirmed(bookingId: string) {
+    if (
+      !window.confirm(
+        "Cancel this session? Any refund follows the cancellation policy based on how soon the session is.",
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    start(async () => {
+      const res = await cancelAcceptedBooking({ bookingId });
+      if ("error" in res) setError(res.error);
+      else router.refresh();
+    });
+  }
+
   return (
     <div className="mt-4 flex flex-col gap-5">
       {myBookings.length > 0 && (
@@ -173,6 +194,18 @@ export function BookingPanel({
                     <X className="size-3.5" /> Cancel
                   </button>
                 )}
+                {b.status === "accepted" &&
+                  now !== null &&
+                  Date.parse(b.startsAt) > now && (
+                    <button
+                      type="button"
+                      className="text-mnt-faint hover:text-destructive inline-flex items-center gap-1 text-[12px] transition"
+                      disabled={pending}
+                      onClick={() => cancelConfirmed(b.id)}
+                    >
+                      <X className="size-3.5" /> Cancel
+                    </button>
+                  )}
               </div>
             ))}
           </div>

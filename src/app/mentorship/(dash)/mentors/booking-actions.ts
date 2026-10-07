@@ -11,6 +11,7 @@ import { confirmBookingToSession } from "@/lib/eten/booking-confirm";
 import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
 import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
 import { requestOrigin } from "@/lib/eten/request-origin";
+import { computeRefundAmount, processRefund } from "@/lib/eten/refunds";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -363,6 +364,106 @@ export async function startPaidBooking(input: {
   }
 
   return { ok: true, authorizationUrl: init.authorizationUrl };
+}
+
+/**
+ * A mentee cancels a CONFIRMED (accepted) session they booked. For a paid
+ * session, the refund is computed from the cancellation policy (how long before
+ * the start) and processed; the booking is cancelled and its future session
+ * removed. Free confirmed sessions just cancel. The mentor is notified.
+ */
+export async function cancelAcceptedBooking(input: {
+  bookingId: string;
+}): Promise<{ ok: true; refundedMinor: number } | { error: string }> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "You need to sign in." };
+
+  const admin = getSupabaseAdmin();
+  const { data: booking } = await admin
+    .from("session_bookings")
+    .select("id, mentor_id, mentee_id, starts_at, status, session_id")
+    .eq("id", input.bookingId)
+    .maybeSingle();
+  if (!booking) return { error: "Booking not found." };
+  if (booking.mentee_id !== me.id) {
+    return { error: "This isn't your booking." };
+  }
+  if (booking.status !== "accepted") {
+    return { error: "This booking can't be cancelled." };
+  }
+  const startMs = Date.parse(booking.starts_at);
+  if (startMs <= Date.now()) {
+    return { error: "This session has already started." };
+  }
+
+  // Refund the paid session, if any, per the cancellation policy.
+  let refundedMinor = 0;
+  const { data: payment } = await admin
+    .from("payments")
+    .select("id, amount")
+    .eq("booking_id", booking.id)
+    .eq("purpose", "session")
+    .eq("status", "success")
+    .maybeSingle();
+  if (payment) {
+    const s = await getMonetizationSettings();
+    const amount = computeRefundAmount(
+      {
+        fullHours: s.refundFullHours,
+        partialHours: s.refundPartialHours,
+        partialPercent: s.refundPartialPercent,
+      },
+      startMs,
+      Date.now(),
+      payment.amount,
+    );
+    if (amount > 0) {
+      const res = await processRefund(admin, {
+        paymentId: payment.id,
+        amountMinor: amount,
+        reason: "Mentee cancelled",
+        initiatedBy: me.id,
+      });
+      if ("error" in res) return { error: res.error };
+      refundedMinor = res.amountMinor;
+    }
+  }
+
+  await admin
+    .from("session_bookings")
+    .update({ status: "cancelled", decided_at: new Date().toISOString() })
+    .eq("id", booking.id);
+  // Remove the scheduled session so it drops off the mentor's calendar.
+  if (booking.session_id) {
+    await admin.from("circle_sessions").delete().eq("id", booking.session_id);
+  }
+
+  const whenUtc =
+    new Date(startMs).toLocaleString("en-GB", {
+      weekday: "long",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "UTC",
+    }) + " UTC";
+  await notify({
+    recipientId: booking.mentor_id,
+    actorId: me.id,
+    type: "mentorship",
+    targetType: "booking_cancelled",
+    targetId: booking.id,
+  });
+  await sendMentorshipEmail(
+    booking.mentor_id,
+    "A session was cancelled",
+    "Session cancelled",
+    `A mentee cancelled their session scheduled for ${whenUtc}.`,
+  );
+
+  revalidatePath("/mentorship/mentor");
+  revalidatePath(`/mentorship/mentors/${booking.mentor_id}`);
+  return { ok: true, refundedMinor };
 }
 
 /** A mentee cancels their own pending booking request. */

@@ -21,6 +21,10 @@ export function mentorshipNotifText(
       return `${actor} booked and paid for a session`;
     case "extension_paid":
       return `${actor} paid to extend the session`;
+    case "booking_cancelled":
+      return `${actor} cancelled a session`;
+    case "refund_processed":
+      return `Your refund has been initiated`;
     case "booking_accepted":
       return `${actor} confirmed your session`;
     case "booking_declined":
