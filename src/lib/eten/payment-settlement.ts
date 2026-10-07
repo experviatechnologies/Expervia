@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { paystackVerify } from "@/lib/eten/paystack";
 import { confirmBookingToSession } from "@/lib/eten/booking-confirm";
 import { activateExtension } from "@/lib/eten/extension";
+import { recordMentorEarning } from "@/lib/eten/earnings";
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 
@@ -68,6 +69,10 @@ export async function settleChargeByReference(
   } else if (payment.purpose === "extension" && payment.extension_id) {
     await activateExtension(admin, payment.extension_id);
   }
+
+  // Record the mentor's earning in the ledger (after the session exists, so the
+  // settlement hold is based on the session's end). Idempotent.
+  await recordMentorEarning(admin, payment.id);
 
   return "settled";
 }
