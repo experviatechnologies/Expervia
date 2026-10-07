@@ -209,6 +209,12 @@ export default async function AdminMentorshipPage() {
             Payouts
           </Link>
           <Link
+            href="/admin/mentorship/revenue"
+            className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
+          >
+            Revenue
+          </Link>
+          <Link
             href="/admin/mentorship/pilot"
             className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
           >
