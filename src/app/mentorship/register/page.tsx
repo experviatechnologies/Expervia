@@ -140,8 +140,14 @@ function RegisterForm() {
       {/* RIGHT form */}
       <main className="flex flex-col justify-center px-6 py-14 sm:px-14">
         <div className="mx-auto w-full max-w-[520px]">
-          <div className="mb-8 lg:hidden">
+          <div className="mb-8 flex items-center justify-between gap-3 lg:hidden">
             <Logo />
+            <Link
+              href="/mentorship/signin"
+              className="text-mnt-brand text-[13px] font-semibold whitespace-nowrap"
+            >
+              Sign in
+            </Link>
           </div>
 
           {sentTo ? (

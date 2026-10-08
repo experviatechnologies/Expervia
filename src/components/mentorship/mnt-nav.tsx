@@ -66,6 +66,12 @@ export function MntNav() {
 
         <div className="flex shrink-0 items-center gap-2.5">
           <Link
+            href="/mentorship/signin"
+            className="text-body-md text-mnt-muted hover:text-mnt-ink hidden items-center px-2 font-semibold whitespace-nowrap transition-colors md:inline-flex"
+          >
+            Sign in
+          </Link>
+          <Link
             href="/mentorship/register?role=mentor"
             className={btnOutline + " hidden md:inline-flex"}
           >
@@ -108,6 +114,13 @@ export function MntNav() {
                 {l.label}
               </Link>
             ))}
+            <Link
+              href="/mentorship/signin"
+              onClick={() => setOpen(false)}
+              className="text-body-md text-mnt-ink hover:text-mnt-brand mt-1 rounded-lg px-3 py-2.5 font-semibold transition-colors hover:bg-white/[0.03]"
+            >
+              Sign in
+            </Link>
             <div className="mt-2 flex flex-col gap-2.5">
               <Link
                 href="/mentorship/register?role=mentor"

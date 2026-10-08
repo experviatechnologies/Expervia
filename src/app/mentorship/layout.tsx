@@ -22,7 +22,7 @@ export default function MentorshipLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-mnt-bg text-mnt-ink min-h-screen font-sans">
+    <div className="bg-mnt-bg text-mnt-ink min-h-screen overflow-x-clip font-sans">
       {children}
     </div>
   );
