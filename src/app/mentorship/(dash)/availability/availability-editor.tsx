@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Check } from "lucide-react";
 import {
@@ -132,6 +132,27 @@ function PrefsCard({
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tzWarn, setTzWarn] = useState(false);
+
+  // Use the mentor's real browser timezone instead of the UTC placeholder.
+  // A new mentor's field is pre-filled with it; an existing mentor still on UTC
+  // (the old default) gets a nudge to fix it, since that makes mentees see the
+  // wrong times.
+  useEffect(() => {
+    let browserTz = "";
+    try {
+      browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    } catch {
+      browserTz = "";
+    }
+    if (!browserTz || browserTz === "UTC") return;
+    const t = setTimeout(() => {
+      if (!hasPrefs) setTimezone((cur) => (cur === "UTC" ? browserTz : cur));
+      else if (timezone === "UTC") setTzWarn(true);
+    }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function save() {
     setError(null);
@@ -172,7 +193,10 @@ function PrefsCard({
           <select
             id="tz"
             value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
+            onChange={(e) => {
+              setTimezone(e.target.value);
+              setTzWarn(false);
+            }}
             className={field + " mt-1.5 w-full"}
           >
             {timezones.map((tz) => (
@@ -181,6 +205,12 @@ function PrefsCard({
               </option>
             ))}
           </select>
+          {tzWarn && (
+            <p className="text-mnt-amber mt-1.5 text-[12px] leading-snug">
+              Your timezone is set to UTC. Pick your local timezone and save, or
+              mentees will see your times shifted.
+            </p>
+          )}
         </div>
 
         <div>
