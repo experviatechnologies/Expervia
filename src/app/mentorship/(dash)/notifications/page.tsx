@@ -33,7 +33,8 @@ function render(n: Notif, actor: string): { text: string; href: string } {
       : n.target_type === "request_received" ||
           n.target_type === "booking_requested" ||
           n.target_type === "booking_paid" ||
-          n.target_type === "booking_cancelled"
+          n.target_type === "booking_cancelled" ||
+          n.target_type === "mentor_rated"
         ? "/mentorship/mentor"
         : "/mentorship/dashboard";
   return { text: mentorshipNotifText(n.target_type, actor), href };

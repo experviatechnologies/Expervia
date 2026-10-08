@@ -1,10 +1,35 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Star } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getMentorSlots } from "@/lib/eten/availability";
+import { canRateMentor, summarizeRatings } from "@/lib/eten/ratings";
 import { RequestControl } from "../request-control";
 import { BookingPanel, type MyBooking } from "./booking-panel";
+import { RatingForm } from "./rating-form";
+
+/** Five stars, filled to the nearest whole rating. */
+function Stars({ value, className }: { value: number; className?: string }) {
+  const filled = Math.round(value);
+  return (
+    <span className={"inline-flex items-center gap-0.5 " + (className ?? "")}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={
+            "size-4 " +
+            (n <= filled ? "fill-mnt-amber text-mnt-amber" : "text-mnt-faint")
+          }
+        />
+      ))}
+    </span>
+  );
+}
+
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || "A mentee";
+}
 
 export const metadata = { title: "Book a mentor" };
 
@@ -47,6 +72,7 @@ export default async function MentorBookingPage({
     { data: reqRows },
     { data: bookingRows },
     { data: pricingRow },
+    { data: ratingRows },
     slotsResult,
   ] = await Promise.all([
     admin.from("members").select("validated_at").eq("id", me.id).maybeSingle(),
@@ -80,6 +106,11 @@ export default async function MentorBookingPage({
       .select("paid_sessions_enabled, currency, standard_amount")
       .eq("member_id", id)
       .maybeSingle(),
+    admin
+      .from("mentor_ratings")
+      .select("mentee_id, rating, review, updated_at")
+      .eq("mentor_id", id)
+      .order("updated_at", { ascending: false }),
     getMentorSlots(id, { days: 14 }),
   ]);
 
@@ -109,6 +140,28 @@ export default async function MentorBookingPage({
         }
       : null;
 
+  // Ratings: overall summary, this mentee's own rating, and recent written
+  // reviews (with reviewer first names). Eligibility gates the rating form.
+  const ratings = ratingRows ?? [];
+  const ratingSummary = summarizeRatings(ratings);
+  const myRating = ratings.find((r) => r.mentee_id === me.id) ?? null;
+  const reviews = ratings.filter((r) => (r.review ?? "").trim()).slice(0, 8);
+
+  const reviewerNames = new Map<string, string>();
+  if (reviews.length) {
+    const { data: reviewerRows } = await admin
+      .from("profiles")
+      .select("member_id, full_name")
+      .in(
+        "member_id",
+        reviews.map((r) => r.mentee_id),
+      );
+    for (const p of reviewerRows ?? [])
+      reviewerNames.set(p.member_id, firstName(p.full_name ?? "A mentee"));
+  }
+
+  const canRate = await canRateMentor(admin, me.id, id);
+
   return (
     <div className="mx-auto max-w-[820px] px-6 py-8">
       <Link
@@ -130,6 +183,15 @@ export default async function MentorBookingPage({
               <span className="text-mnt-faint"> · {areaRow.label}</span>
             ) : null}
           </div>
+          {ratingSummary.count > 0 && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <Stars value={ratingSummary.avg} />
+              <span className="text-mnt-ink-muted text-[12.5px]">
+                {ratingSummary.avg.toFixed(1)} · {ratingSummary.count} rating
+                {ratingSummary.count > 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -177,6 +239,52 @@ export default async function MentorBookingPage({
           myBookings={myBookings}
           pricing={pricing}
         />
+      </div>
+
+      {/* Ratings & reviews */}
+      <div className="mt-8">
+        <h2 className="font-display text-[17px] font-bold">
+          Ratings & reviews
+        </h2>
+
+        {canRate && (
+          <div className="mt-3">
+            <RatingForm
+              mentorId={id}
+              initialRating={myRating?.rating ?? null}
+              initialReview={myRating?.review ?? null}
+            />
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-col gap-3">
+          {reviews.length === 0 ? (
+            <p className="text-mnt-faint text-[13px]">
+              {ratingSummary.count > 0
+                ? "No written reviews yet."
+                : canRate
+                  ? "Be the first to rate this mentor."
+                  : "No ratings yet."}
+            </p>
+          ) : (
+            reviews.map((r, i) => (
+              <div
+                key={i}
+                className="bg-mnt-panel border-mnt-line rounded-2xl border p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[13.5px] font-semibold">
+                    {reviewerNames.get(r.mentee_id) ?? "A mentee"}
+                  </span>
+                  <Stars value={r.rating} />
+                </div>
+                <p className="text-mnt-ink-muted mt-2 text-[13.5px] leading-relaxed">
+                  {r.review}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

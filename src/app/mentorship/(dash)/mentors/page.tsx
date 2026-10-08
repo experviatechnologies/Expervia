@@ -1,10 +1,29 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Star } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { summarizeRatings } from "@/lib/eten/ratings";
 import { RequestControl } from "./request-control";
 
 export const metadata = { title: "Find a mentor" };
+
+function Stars({ value }: { value: number }) {
+  const filled = Math.round(value);
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={
+            "size-3.5 " +
+            (n <= filled ? "fill-mnt-amber text-mnt-amber" : "text-mnt-faint")
+          }
+        />
+      ))}
+    </span>
+  );
+}
 
 const TIER_LABEL: Record<string, string> = {
   verified: "Verified Mentor",
@@ -82,6 +101,23 @@ export default async function MentorsPage({
       },
     ]),
   );
+
+  // Rating summaries per mentor for the cards.
+  const { data: ratingRows } = mentors.length
+    ? await admin
+        .from("mentor_ratings")
+        .select("mentor_id, rating")
+        .in(
+          "mentor_id",
+          mentors.map((m) => m.member_id),
+        )
+    : { data: [] };
+  const ratingsByMentor = new Map<string, number[]>();
+  for (const r of ratingRows ?? []) {
+    const arr = ratingsByMentor.get(r.mentor_id) ?? [];
+    arr.push(r.rating);
+    ratingsByMentor.set(r.mentor_id, arr);
+  }
 
   // Latest request status per mentor (rows are newest-first).
   const reqByMentor = new Map<string, "pending" | "accepted" | "declined">();
@@ -170,6 +206,21 @@ export default async function MentorsPage({
                     {areaById.get(m.capability_area_id) ?? ""}
                   </div>
                 )}
+                {(() => {
+                  const s = summarizeRatings(
+                    (ratingsByMentor.get(m.member_id) ?? []).map((rating) => ({
+                      rating,
+                    })),
+                  );
+                  return s.count > 0 ? (
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <Stars value={s.avg} />
+                      <span className="text-mnt-ink-muted text-[12px]">
+                        {s.avg.toFixed(1)} ({s.count})
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="mt-4 flex flex-col gap-2.5">
                   <RequestControl
                     mentorId={m.member_id}

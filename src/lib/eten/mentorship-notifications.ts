@@ -25,6 +25,8 @@ export function mentorshipNotifText(
       return `${actor} cancelled a session`;
     case "refund_processed":
       return `Your refund has been initiated`;
+    case "mentor_rated":
+      return `${actor} rated you`;
     case "booking_accepted":
       return `${actor} confirmed your session`;
     case "booking_declined":
