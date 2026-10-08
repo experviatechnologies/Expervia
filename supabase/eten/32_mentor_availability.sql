@@ -51,7 +51,7 @@ create table if not exists public.mentor_scheduling_prefs (
   member_id             uuid primary key references public.members (id) on delete cascade,
   timezone              text    not null default 'UTC',          -- IANA tz, source of truth
   default_session_minutes int   not null default 40 check (default_session_minutes between 10 and 240),
-  min_notice_minutes    int     not null default 120 check (min_notice_minutes >= 0),
+  min_notice_minutes    int     not null default 60 check (min_notice_minutes >= 0),
   buffer_minutes        int     not null default 10  check (buffer_minutes >= 0),
   max_sessions_per_week int     check (max_sessions_per_week is null or max_sessions_per_week > 0),
   availability_status   public.mentor_availability_status not null default 'accepting',

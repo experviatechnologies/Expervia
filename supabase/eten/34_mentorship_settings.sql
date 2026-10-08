@@ -15,7 +15,7 @@
 create table if not exists public.mentorship_settings (
   id                      boolean primary key default true check (id),
   default_session_minutes int not null default 40  check (default_session_minutes between 10 and 240),
-  min_notice_minutes      int not null default 120 check (min_notice_minutes >= 0),
+  min_notice_minutes      int not null default 60 check (min_notice_minutes >= 0),
   buffer_minutes          int not null default 10  check (buffer_minutes >= 0),
   updated_at              timestamptz not null default now()
 );

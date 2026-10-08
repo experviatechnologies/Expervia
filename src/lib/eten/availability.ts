@@ -286,7 +286,7 @@ export type MentorshipDefaults = {
 
 const FALLBACK_DEFAULTS: MentorshipDefaults = {
   defaultSessionMinutes: 40,
-  minNoticeMinutes: 120,
+  minNoticeMinutes: 60,
   bufferMinutes: 10,
 };
 
@@ -309,7 +309,7 @@ export async function getMentorshipDefaults(): Promise<MentorshipDefaults> {
 const DEFAULT_PREFS: Prefs = {
   timezone: "UTC",
   default_session_minutes: 40,
-  min_notice_minutes: 120,
+  min_notice_minutes: 60,
   buffer_minutes: 10,
   max_sessions_per_week: null,
   availability_status: "accepting",
