@@ -42,3 +42,38 @@ export async function markMentorPayout(input: {
   revalidatePath("/admin/mentorship/payouts");
   return res;
 }
+
+/**
+ * Operations mark a mentor's payout account as verified (or not), after checking
+ * the bank details are correct. Verification is informational in V1; it does not
+ * gate the payout, but records that ops confirmed the account.
+ */
+export async function setPayoutAccountVerified(input: {
+  mentorId: string;
+  verified: boolean;
+}): Promise<{ ok: true } | { error: string }> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to do this." };
+  }
+  const me = await getCurrentMember();
+  const admin = getSupabaseAdmin();
+
+  const { error } = await admin
+    .from("payout_accounts")
+    .update({ verified: Boolean(input.verified) })
+    .eq("member_id", input.mentorId);
+  if (error) return { error: "Couldn't update the account. Please try again." };
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: input.verified
+      ? "payout_account.verified"
+      : "payout_account.unverified",
+    targetType: "member",
+    targetId: input.mentorId,
+    metadata: {},
+  });
+
+  revalidatePath("/admin/mentorship/payouts");
+  return { ok: true };
+}

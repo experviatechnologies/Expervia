@@ -5,6 +5,7 @@ import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { PayoutControl } from "./payout-control";
+import { VerifyControl } from "./verify-control";
 
 export const metadata: Metadata = {
   title: "Mentor payouts",
@@ -72,7 +73,9 @@ export default async function AdminPayoutsPage() {
       mentorIds.length
         ? admin
             .from("payout_accounts")
-            .select("member_id, verified")
+            .select(
+              "member_id, bank_name, account_number, account_name, bank_code, currency, verified",
+            )
             .in("member_id", mentorIds)
         : Promise.resolve({ data: [] }),
       admin
@@ -87,8 +90,26 @@ export default async function AdminPayoutsPage() {
   const nameById = new Map(
     (profileRows ?? []).map((p) => [p.member_id, p.full_name ?? "A mentor"]),
   );
-  const accountById = new Map(
-    (accountRows ?? []).map((a) => [a.member_id, a.verified]),
+  type Account = {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+    bankCode: string | null;
+    currency: string;
+    verified: boolean;
+  };
+  const accountById = new Map<string, Account>(
+    (accountRows ?? []).map((a) => [
+      a.member_id,
+      {
+        bankName: a.bank_name,
+        accountNumber: a.account_number,
+        accountName: a.account_name,
+        bankCode: a.bank_code ?? null,
+        currency: a.currency,
+        verified: a.verified,
+      },
+    ]),
   );
 
   // Mentors needing payout first (highest available), then the rest.
@@ -152,31 +173,58 @@ export default async function AdminPayoutsPage() {
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const hasAccount = accountById.has(r.id);
-                  const verified = accountById.get(r.id) === true;
+                  const acct = accountById.get(r.id);
                   return (
-                    <tr key={r.id} className="border-eten-line/60 border-b">
-                      <td className="py-2.5 pr-4 font-semibold">
+                    <tr
+                      key={r.id}
+                      className="border-eten-line/60 border-b align-top"
+                    >
+                      <td className="py-3 pr-4 font-semibold">
                         {nameById.get(r.id) ?? "A mentor"}
                       </td>
-                      <td className="text-eten-verified py-2.5 pr-4 font-semibold tabular-nums">
+                      <td className="text-eten-verified py-3 pr-4 font-semibold tabular-nums">
                         {money(r.available, r.currency)}
                       </td>
-                      <td className="text-eten-ink-muted py-2.5 pr-4 tabular-nums">
+                      <td className="text-eten-ink-muted py-3 pr-4 tabular-nums">
                         {money(r.pending, r.currency)}
                       </td>
-                      <td className="py-2.5 pr-4">
-                        {!hasAccount ? (
+                      <td className="py-3 pr-4">
+                        {!acct ? (
                           <span className="text-amber-400">Not set</span>
-                        ) : verified ? (
-                          <span className="text-eten-verified">Verified</span>
                         ) : (
-                          <span className="text-eten-ink-muted">
-                            Unverified
-                          </span>
+                          <div className="min-w-[180px]">
+                            <div className="text-eten-ink font-medium">
+                              {acct.accountName}
+                            </div>
+                            <div className="text-eten-ink font-mono tabular-nums">
+                              {acct.accountNumber}
+                            </div>
+                            <div className="text-eten-ink-muted text-xs">
+                              {acct.bankName}
+                              {acct.bankCode
+                                ? ` · ${acct.bankCode}`
+                                : ""} · {acct.currency}
+                            </div>
+                            <div className="mt-1.5 flex items-center gap-2">
+                              <span
+                                className={
+                                  "font-mono text-[10.5px] tracking-wide uppercase " +
+                                  (acct.verified
+                                    ? "text-eten-verified"
+                                    : "text-amber-400")
+                                }
+                              >
+                                {acct.verified ? "Verified" : "Unverified"}
+                              </span>
+                              <VerifyControl
+                                mentorId={r.id}
+                                verified={acct.verified}
+                              />
+                            </div>
+                          </div>
                         )}
                       </td>
-                      <td className="py-2.5 pr-0 text-right">
+                      <td className="py-3 pr-0 text-right">
                         <PayoutControl
                           mentorId={r.id}
                           disabled={r.available <= 0}
