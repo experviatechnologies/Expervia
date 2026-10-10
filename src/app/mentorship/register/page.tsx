@@ -288,7 +288,11 @@ function RegisterForm() {
                   disabled={submitting}
                   className="bg-mnt-brand text-mnt-on-brand mt-6 w-full rounded-[11px] py-3.5 text-[15px] font-bold transition hover:brightness-110 disabled:opacity-60"
                 >
-                  {submitting ? "Creating account…" : "Create account"}
+                  {submitting
+                    ? "Creating account…"
+                    : role === "mentor"
+                      ? "Create mentor account"
+                      : "Create mentee account"}
                 </button>
               </form>
 

@@ -17,6 +17,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { MemberStatusControl } from "../member-status-control";
 import { DeleteMemberControl } from "../delete-member-control";
 import { MemberVLevelControl } from "../member-vlevel-control";
+import { MentorshipIntentControl } from "../mentorship-intent-control";
 import { AddEvidence } from "../add-evidence";
 import { AwardRecognition } from "../award-recognition";
 import { vLevelLabel } from "@/lib/eten/v-levels";
@@ -65,7 +66,7 @@ export default async function AdminMemberDetailPage({
   const { data: member } = await admin
     .from("members")
     .select(
-      "id, status, role, origin, claimed_at, created_at, v_level, membership_id, validated_at",
+      "id, status, role, origin, claimed_at, created_at, v_level, membership_id, validated_at, mentorship_intent",
     )
     .eq("id", id)
     .maybeSingle();
@@ -291,6 +292,22 @@ export default async function AdminMemberDetailPage({
             </dd>
           </div>
           <MemberVLevelControl memberId={member.id} vLevel={member.v_level} />
+        </div>
+        <div className="border-eten-line-soft mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <div>
+            <dt className="text-eten-faint font-mono text-[11px] tracking-wider uppercase">
+              Mentorship role
+            </dt>
+            <dd className="text-eten-ink-muted mt-1 text-xs">
+              Which side of the mentorship app they land on. Switching to Mentor
+              puts them on the mentor track; they still need verification to
+              lead Circles.
+            </dd>
+          </div>
+          <MentorshipIntentControl
+            memberId={member.id}
+            intent={member.mentorship_intent === "mentor" ? "mentor" : "mentee"}
+          />
         </div>
       </Section>
 

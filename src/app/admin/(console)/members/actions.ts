@@ -355,3 +355,43 @@ export async function addMemberRecognition(input: {
   revalidatePath(`/admin/members/${input.memberId}`);
   return { ok: true };
 }
+
+/**
+ * Switch a member's mentorship role (mentee ↔ mentor). Fixes an account that
+ * registered on the wrong side. Switching to mentor puts them on the mentor
+ * track; they still need Readiness Panel verification to lead Circles. Ops-only
+ * and audit-logged.
+ */
+export async function setMentorshipIntent(input: {
+  memberId: string;
+  intent: "mentee" | "mentor";
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to do this." };
+  }
+  if (input.intent !== "mentee" && input.intent !== "mentor") {
+    return { error: "Invalid role." };
+  }
+
+  const me = await getCurrentMember();
+  const admin = getSupabaseAdmin();
+
+  const { error } = await admin
+    .from("members")
+    .update({ mentorship_intent: input.intent })
+    .eq("id", input.memberId);
+  if (error) return { error: "Couldn't change the role. Please try again." };
+
+  await writeAudit({
+    actorId: me?.id ?? null,
+    action: "member.mentorship_intent_changed",
+    targetType: "member",
+    targetId: input.memberId,
+    metadata: { intent: input.intent },
+  });
+
+  revalidatePath(`/admin/members/${input.memberId}`);
+  revalidatePath("/admin/members");
+  revalidatePath("/admin/mentorship");
+  return { ok: true };
+}
