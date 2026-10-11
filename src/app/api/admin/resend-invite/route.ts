@@ -15,7 +15,13 @@ import { writeAudit } from "@/lib/eten/audit";
  * the claim-on-sign-in trigger activates them. Anyone already claimed is skipped.
  */
 
+export const runtime = "nodejs";
+// A paced batch of up to 50 (~600ms each) can take ~30s; give it headroom.
+export const maxDuration = 60;
+
 const MAX_BATCH = 50;
+const SEND_DELAY_MS = 600;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function emailHtml(fullName: string | null, claimUrl: string): string {
   const greeting = fullName
@@ -58,23 +64,38 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { memberIds?: unknown };
+  let body: { memberIds?: unknown; all?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const memberIds = Array.isArray(body.memberIds)
-    ? [
-        ...new Set(
-          body.memberIds.filter((x): x is string => typeof x === "string"),
-        ),
-      ]
-    : [];
+  const admin = getSupabaseAdmin();
+
+  // `all: true` re-invites every migrated + still-unclaimed account (capped to
+  // one batch), so ops don't have to hand-pick them. Otherwise use the given ids.
+  let memberIds: string[];
+  if (body.all === true) {
+    const { data: unclaimed } = await admin
+      .from("members")
+      .select("id")
+      .eq("origin", "migrated")
+      .is("claimed_at", null)
+      .limit(MAX_BATCH);
+    memberIds = (unclaimed ?? []).map((m) => m.id);
+  } else {
+    memberIds = Array.isArray(body.memberIds)
+      ? [
+          ...new Set(
+            body.memberIds.filter((x): x is string => typeof x === "string"),
+          ),
+        ]
+      : [];
+  }
   if (memberIds.length === 0) {
     return NextResponse.json(
-      { error: "No members selected." },
+      { error: "No unclaimed members to invite." },
       { status: 400 },
     );
   }
@@ -84,8 +105,6 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-
-  const admin = getSupabaseAdmin();
   const resend = getResendClient();
   const fromEmail = process.env.CONTACT_FROM_EMAIL;
   const origin = request.nextUrl.origin;
@@ -152,6 +171,7 @@ export async function POST(request: NextRequest) {
         error: err instanceof Error ? err.message : "Unknown error",
       });
     }
+    await sleep(SEND_DELAY_MS);
   }
 
   const sent = processed.filter((p) => p.status === "sent").length;

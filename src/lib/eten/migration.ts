@@ -25,6 +25,14 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 /** Max accounts provisioned per send/test invocation (keeps us under timeouts). */
 export const BATCH_LIMIT = 50;
 
+/**
+ * Delay between provisions. Spreads out the auth/email calls so a run doesn't
+ * trip Supabase's per-second burst limits. (The hourly email rate limit is a
+ * separate Supabase setting that must be raised in the dashboard.)
+ */
+const SEND_DELAY_MS = 600;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 type ApplicationRow = {
   full_name: string | null;
   email: string | null;
@@ -366,7 +374,8 @@ export async function runMigration(
   // test / send — actually provision, up to the batch limit.
   const batch = toInvite.slice(0, BATCH_LIMIT);
   const processed: NonNullable<MigrationReport["processed"]> = [];
-  for (const candidate of batch) {
+  for (let i = 0; i < batch.length; i++) {
+    const candidate = batch[i];
     try {
       await provisionAndInvite(admin, resend, siteOrigin, fromEmail, candidate);
       processed.push({ email: candidate.email, status: "invited" });
@@ -377,6 +386,7 @@ export async function runMigration(
         error: err instanceof Error ? err.message : "Unknown error",
       });
     }
+    if (i < batch.length - 1) await sleep(SEND_DELAY_MS);
   }
 
   report.processed = processed;

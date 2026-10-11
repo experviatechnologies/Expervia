@@ -31,14 +31,40 @@ const fieldClass =
   "w-full rounded-lg border border-outline-variant bg-surface p-3 text-sm text-on-surface outline-none transition-all focus:border-primary placeholder:text-on-surface-variant/60";
 const CONFIRM_PHRASE = "SEND-ALL";
 
+type ResendResult = {
+  sent: number;
+  processed: { memberId: string; status: string; error?: string }[];
+};
+
 export function MigrationRunner() {
-  const [loading, setLoading] = useState<null | "dry-run" | "test" | "send">(
-    null,
-  );
+  const [loading, setLoading] = useState<
+    null | "dry-run" | "test" | "send" | "resend"
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [testEmails, setTestEmails] = useState("");
   const [confirmText, setConfirmText] = useState("");
+  const [resendResult, setResendResult] = useState<ResendResult | null>(null);
+
+  async function runResend() {
+    setLoading("resend");
+    setError(null);
+    setResendResult(null);
+    try {
+      const res = await fetch("/api/admin/resend-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error ?? "Something went wrong.");
+      else setResendResult(data as ResendResult);
+    } catch {
+      setError("Network error — please try again.");
+    } finally {
+      setLoading(null);
+    }
+  }
 
   async function run(
     mode: "dry-run" | "test" | "send",
@@ -176,12 +202,79 @@ export function MigrationRunner() {
             </Button>
           </div>
         </div>
+
+        <div className="border-outline-variant border-t" />
+
+        {/* Re-invite unclaimed */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-on-surface font-semibold">
+              4. Re-invite unclaimed accounts
+            </h2>
+            <p className="text-on-surface-variant text-sm">
+              Re-emails the &ldquo;set your password&rdquo; link to everyone
+              already migrated who hasn&rsquo;t claimed their account yet (one
+              paced batch).
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="brandOutline"
+            size="pill-sm"
+            disabled={loading !== null}
+            onClick={runResend}
+          >
+            {loading === "resend" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Send className="size-4" />
+            )}
+            Re-invite unclaimed
+          </Button>
+        </div>
       </div>
 
       {error && (
         <p className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
           {error}
         </p>
+      )}
+
+      {resendResult && (
+        <div className="glass-card rounded-2xl p-6">
+          <h3 className="font-display text-body-lg text-on-surface mb-3 font-bold">
+            Re-invite result
+          </h3>
+          <p className="text-on-surface mb-2 text-sm">
+            Sent <span className="font-semibold">{resendResult.sent}</span> of{" "}
+            {resendResult.processed.length} processed.
+          </p>
+          <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+            {resendResult.processed.map((p) => (
+              <li key={p.memberId} className="flex items-center gap-2">
+                <span
+                  className={
+                    p.status === "sent"
+                      ? "text-primary"
+                      : p.status === "failed"
+                        ? "text-destructive"
+                        : "text-on-surface-variant"
+                  }
+                >
+                  {p.status === "sent"
+                    ? "✓"
+                    : p.status === "failed"
+                      ? "✕"
+                      : "–"}
+                </span>
+                <span className="text-on-surface">{p.status}</span>
+                {p.error && (
+                  <span className="text-destructive text-xs">— {p.error}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {report && <ReportView report={report} />}

@@ -5,6 +5,10 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { getResendClient } from "@/lib/email";
 import { runMigration, type MigrationMode } from "@/lib/eten/migration";
 
+export const runtime = "nodejs";
+// A paced batch of up to 50 (~600ms each) can take ~30s; give it headroom.
+export const maxDuration = 60;
+
 /** Typed confirmation the UI must send to trigger a real mass invite. */
 const SEND_ALL_CONFIRM = "SEND-ALL";
 
