@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, MailCheck } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/shared/password-input";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import {
+  TurnstileWidget,
+  TURNSTILE_ENABLED,
+} from "@/components/shared/turnstile-widget";
 
 const inputClass =
   "w-full rounded-lg border border-white/10 bg-surface-container px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none transition-colors";
@@ -13,13 +16,13 @@ const inputClass =
 const labelClass = "text-label-sm text-on-surface-variant";
 
 export function JoinForm() {
-  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   function validate(): string | null {
     if (fullName.trim().length < 2) return "Please enter your full name.";
@@ -37,42 +40,40 @@ export function JoinForm() {
       setError(validationError);
       return;
     }
+    if (TURNSTILE_ENABLED && !captchaToken) {
+      setError("Please complete the verification below.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-      options: {
-        data: { full_name: fullName.trim() },
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
-      },
-    });
-
-    if (signUpError) {
-      // Supabase returns a generic message for an already-registered email when
-      // "confirm email" is on; surface a helpful hint either way.
-      setError(
-        signUpError.message.toLowerCase().includes("registered")
-          ? "That email is already registered. Try signing in instead."
-          : signUpError.message,
-      );
+    // Server-side route: anti-spam guards + we send our own confirmation email.
+    const fd = new FormData(e.currentTarget);
+    try {
+      const res = await fetch("/api/join/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          [HONEYPOT_FIELD]: String(fd.get(HONEYPOT_FIELD) ?? ""),
+          turnstileToken: captchaToken,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(json?.error ?? "Something went wrong. Please try again.");
+        setLoading(false);
+        return;
+      }
+      setSentTo(email.trim().toLowerCase());
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // If email confirmation is required, there is no session yet — tell them to
-    // check their inbox. If it's disabled, a session exists and we go straight in.
-    if (data.session) {
-      router.push("/dashboard");
-      router.refresh();
-      return;
-    }
-
-    setSentTo(email.trim().toLowerCase());
-    setLoading(false);
   }
 
   if (sentTo) {
@@ -98,6 +99,28 @@ export function JoinForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      {/* Honeypot: off-screen, real users never fill it. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+        }}
+      >
+        <label htmlFor={HONEYPOT_FIELD}>Company URL</label>
+        <input
+          id={HONEYPOT_FIELD}
+          name={HONEYPOT_FIELD}
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          defaultValue=""
+        />
+      </div>
+
       <div className="flex flex-col gap-2">
         <label htmlFor="fullName" className={labelClass}>
           Full name
@@ -148,6 +171,8 @@ export function JoinForm() {
           placeholder="At least 8 characters"
         />
       </div>
+
+      {TURNSTILE_ENABLED && <TurnstileWidget onToken={setCaptchaToken} />}
 
       {error && <p className="text-destructive text-sm">{error}</p>}
 

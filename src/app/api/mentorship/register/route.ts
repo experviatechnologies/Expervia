@@ -8,15 +8,23 @@ import {
 } from "@/lib/eten/spam-guard";
 import { verifyTurnstile } from "@/lib/eten/turnstile";
 
-function confirmEmailHtml(fullName: string, confirmUrl: string): string {
+function confirmEmailHtml(
+  fullName: string,
+  confirmUrl: string,
+  intent: "mentor" | "mentee",
+): string {
   const first = escapeHtml(fullName.split(/\s+/)[0] || "there");
+  const roleLine =
+    intent === "mentor"
+      ? "Thanks for joining ETEN Mentorship as a mentor."
+      : "Thanks for joining ETEN Mentorship as a mentee.";
   return `
     <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:520px;margin:0 auto;">
       <h2 style="margin:0 0 12px;">Confirm your ETEN Mentorship account</h2>
       <p style="margin:0 0 12px;line-height:1.6;">Hi ${first},</p>
       <p style="margin:0 0 12px;line-height:1.6;">
-        Thanks for joining ETEN Mentorship. Confirm your email to activate your
-        account and set up your goal.
+        ${roleLine} Confirm your email to activate your account and set up your
+        goal.
       </p>
       <p style="margin:24px 0;">
         <a href="${confirmUrl}" style="background:#7c6cf0;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
@@ -170,7 +178,7 @@ export async function POST(request: Request) {
     from: fromEmail,
     to: email.toLowerCase(),
     subject: "Confirm your ETEN Mentorship account",
-    html: confirmEmailHtml(fullName, confirmUrl),
+    html: confirmEmailHtml(fullName, confirmUrl, intent),
   });
   if (mailError) {
     return Response.json(
