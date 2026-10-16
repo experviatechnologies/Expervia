@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, Loader2, Play, Send, TestTube } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  Loader2,
+  Play,
+  RefreshCw,
+  Send,
+  TestTube,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Report = {
@@ -42,6 +49,7 @@ export function MigrationRunner() {
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
+  const [reportAt, setReportAt] = useState<Date | null>(null);
   const [testEmails, setTestEmails] = useState("");
   const [confirmText, setConfirmText] = useState("");
   const [resendResult, setResendResult] = useState<ResendResult | null>(null);
@@ -83,6 +91,7 @@ export function MigrationRunner() {
         setError(data.error ?? "Something went wrong.");
       } else {
         setReport(data as Report);
+        setReportAt(new Date());
       }
     } catch {
       setError("Network error — please try again.");
@@ -90,6 +99,18 @@ export function MigrationRunner() {
       setLoading(null);
     }
   }
+
+  // Auto-run a preview on mount so the counts are always fresh on page load
+  // (they read live from the DB), rather than showing a stale snapshot from a
+  // click made before some other change. Deferred a tick to avoid setting
+  // state synchronously during the effect.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      void run("dry-run");
+    }, 0);
+    return () => clearTimeout(t);
+    // Run once on mount.
+  }, []);
 
   const parsedTestEmails = testEmails
     .split(/[\s,;]+/)
@@ -277,12 +298,29 @@ export function MigrationRunner() {
         </div>
       )}
 
-      {report && <ReportView report={report} />}
+      {report && (
+        <ReportView
+          report={report}
+          at={reportAt}
+          refreshing={loading === "dry-run"}
+          onRefresh={() => run("dry-run")}
+        />
+      )}
     </div>
   );
 }
 
-function ReportView({ report }: { report: Report }) {
+function ReportView({
+  report,
+  at,
+  refreshing,
+  onRefresh,
+}: {
+  report: Report;
+  at: Date | null;
+  refreshing: boolean;
+  onRefresh: () => void;
+}) {
   const c = report.counts;
   const stats: [string, number][] = [
     ["Applications", c.applications],
@@ -298,9 +336,33 @@ function ReportView({ report }: { report: Report }) {
 
   return (
     <div className="glass-card rounded-2xl p-6">
-      <h3 className="font-display text-body-lg text-on-surface mb-4 font-bold">
-        {report.mode === "dry-run" ? "Preview" : "Result"}
-      </h3>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-body-lg text-on-surface font-bold">
+          {report.mode === "dry-run" ? "Preview" : "Result"}
+        </h3>
+        <div className="text-on-surface-variant flex items-center gap-2 text-xs">
+          {at && (
+            <span>
+              Snapshot&nbsp;
+              {at.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="text-primary hover:text-primary/80 inline-flex items-center gap-1 font-medium disabled:opacity-60"
+          >
+            <RefreshCw
+              className={`size-3.5 ${refreshing ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </button>
+        </div>
+      </div>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {stats.map(([label, value]) => (
