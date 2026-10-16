@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { listPendingMigration } from "@/lib/eten/migration-pending";
 import { MigrationRunner } from "./migration-runner";
 import { PendingClaims } from "./pending-claims";
+import { CleanupUnconfirmed } from "./cleanup-unconfirmed";
 
 export const metadata: Metadata = {
   title: "Member Migration",
@@ -43,6 +44,8 @@ export default async function MigrationPage() {
       </div>
 
       <MigrationRunner />
+
+      <CleanupUnconfirmed />
     </div>
   );
 }
