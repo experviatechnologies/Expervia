@@ -5,7 +5,12 @@ import { AlertTriangle, Loader2, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Preview = { graceDays: number; count: number; sample: string[] };
-type Result = { graceDays: number; deleted: number; remaining: number };
+type Result = {
+  graceDays: number;
+  deleted: number;
+  sourceRowsRemoved: number;
+  remaining: number;
+};
 
 const fieldClass =
   "w-24 rounded-lg border border-outline-variant bg-surface p-2 text-sm text-on-surface outline-none transition-all focus:border-primary";
@@ -148,8 +153,19 @@ export function CleanupUnconfirmed() {
       {result && (
         <p className="border-primary/30 bg-primary/10 text-on-surface rounded-lg border p-3 text-sm">
           Removed <span className="font-semibold">{result.deleted}</span>{" "}
-          account{result.deleted === 1 ? "" : "s"}.{" "}
-          <span className="font-semibold">{result.remaining}</span> still
+          account{result.deleted === 1 ? "" : "s"}
+          {result.sourceRowsRemoved > 0 && (
+            <>
+              {" "}
+              and{" "}
+              <span className="font-semibold">
+                {result.sourceRowsRemoved}
+              </span>{" "}
+              leftover application record
+              {result.sourceRowsRemoved === 1 ? "" : "s"}
+            </>
+          )}
+          . <span className="font-semibold">{result.remaining}</span> still
           unconfirmed (recent / staff).
         </p>
       )}

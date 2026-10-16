@@ -36,6 +36,35 @@ async function allAuthUsers(admin: ReturnType<typeof getSupabaseAdmin>) {
   return map;
 }
 
+/**
+ * Remove leftover migration-source rows for the given (lower-cased) emails.
+ * The migration "to invite" list is built from community_applications +
+ * event_registrations, so if we purge an account but leave its application row
+ * behind, that person reappears as a candidate to invite. Deleting their source
+ * rows here keeps the migration preview in sync with the accounts that exist.
+ */
+async function cleanupSourceRows(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  emails: Set<string>,
+): Promise<number> {
+  if (emails.size === 0) return 0;
+  let removed = 0;
+  for (const table of ["community_applications", "event_registrations"]) {
+    const { data } = await admin.from(table).select("id, email");
+    const ids = (data ?? [])
+      .filter((r) => {
+        const e = (r.email ?? "").trim().toLowerCase();
+        return e.length > 0 && emails.has(e);
+      })
+      .map((r) => r.id);
+    if (ids.length > 0) {
+      const { error } = await admin.from(table).delete().in("id", ids);
+      if (!error) removed += ids.length;
+    }
+  }
+  return removed;
+}
+
 export async function POST(request: NextRequest) {
   const manager = await getCurrentManager();
   if (!manager) {
@@ -96,10 +125,19 @@ export async function POST(request: NextRequest) {
   }
 
   let deleted = 0;
+  const purgedEmails = new Set<string>();
   for (const m of targets) {
     const { error } = await admin.auth.admin.deleteUser(m.id);
-    if (!error) deleted++;
+    if (!error) {
+      deleted++;
+      const email = emailById.get(m.id); // already lower-cased
+      if (email) purgedEmails.add(email);
+    }
   }
+
+  // Also clear their leftover application/event source rows so they don't
+  // resurface in the migration "to invite" list.
+  const sourceRowsRemoved = await cleanupSourceRows(admin, purgedEmails);
 
   const me = await getCurrentMember();
   await writeAudit({
@@ -107,7 +145,7 @@ export async function POST(request: NextRequest) {
     action: "members.purged_unconfirmed",
     targetType: "member",
     targetId: null,
-    metadata: { deleted, graceDays },
+    metadata: { deleted, sourceRowsRemoved, graceDays },
   });
 
   const { count: remaining } = await admin
@@ -115,5 +153,10 @@ export async function POST(request: NextRequest) {
     .select("id", { count: "exact", head: true })
     .is("claimed_at", null);
 
-  return NextResponse.json({ graceDays, deleted, remaining });
+  return NextResponse.json({
+    graceDays,
+    deleted,
+    sourceRowsRemoved,
+    remaining,
+  });
 }
