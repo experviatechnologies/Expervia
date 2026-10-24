@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { SettingsForm } from "./settings-form";
+import { CapacityTable, type MentorCapacity } from "./capacity-table";
 
 export const metadata: Metadata = {
   title: "Mentor availability",
   robots: { index: false, follow: false },
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  accepting: "Accepting",
-  limited: "Limited",
-  unavailable: "Unavailable",
 };
 
 export default async function AdminAvailabilityPage() {
@@ -84,98 +80,45 @@ export default async function AdminAvailabilityPage() {
     bufferMinutes: settings?.buffer_minutes ?? 10,
   };
 
+  const mentors: MentorCapacity[] = prefs.map((p) => ({
+    id: p.member_id,
+    name: nameById.get(p.member_id) ?? "A mentor",
+    status: p.availability_status,
+    timezone: p.timezone,
+    blocks: blockCount.get(p.member_id) ?? 0,
+    sessionLen: p.default_session_minutes,
+    maxPerWeek: p.max_sessions_per_week ?? null,
+    upcoming: upcomingCount.get(p.member_id) ?? 0,
+  }));
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-extrabold">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-7 md:px-8">
+      {/* Heading + back */}
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-[640px]">
+          <h1 className="text-eten-ink text-[30px] font-extrabold tracking-[-0.02em]">
             Mentor availability
           </h1>
-          <p className="text-eten-ink-muted mt-1 text-sm">
+          <p className="text-eten-ink-muted mt-1.5 text-[15px] leading-relaxed">
             Platform scheduling defaults and a live view of mentor capacity.
           </p>
         </div>
         <Link
           href="/admin/mentorship"
-          className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
+          className="border-eten-line text-eten-ink hover:bg-eten-hover inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors"
         >
-          ← Mentorship
+          <ArrowLeft className="size-4" strokeWidth={2} />
+          Back to Mentorship
         </Link>
       </header>
 
-      <section className="border-eten-line bg-eten-panel mb-8 rounded-2xl border p-5">
-        <h2 className="text-eten-ink text-sm font-bold">Scheduling defaults</h2>
-        <p className="text-eten-ink-muted mt-1 mb-4 text-xs">
-          Used to seed a mentor&apos;s availability editor the first time they
-          open it. Changing these does not alter mentors who already set their
-          own.
-        </p>
+      {/* Scheduling defaults */}
+      <section className="bg-eten-panel border-eten-line mb-6 rounded-[18px] border p-6">
         <SettingsForm initial={defaults} />
       </section>
 
-      <section className="border-eten-line bg-eten-panel rounded-2xl border p-5">
-        <h2 className="text-eten-ink text-sm font-bold">
-          Mentor capacity · {prefs.length}
-        </h2>
-        {prefs.length === 0 ? (
-          <p className="text-eten-ink-muted mt-2 text-sm">
-            No mentors have set their availability yet.
-          </p>
-        ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-eten-ink-muted border-eten-line border-b text-xs">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Mentor</th>
-                  <th className="py-2 pr-4 font-medium">Status</th>
-                  <th className="py-2 pr-4 font-medium">Timezone</th>
-                  <th className="py-2 pr-4 font-medium">Weekly blocks</th>
-                  <th className="py-2 pr-4 font-medium">Session len</th>
-                  <th className="py-2 pr-4 font-medium">Max/wk</th>
-                  <th className="py-2 pr-4 font-medium">Upcoming</th>
-                </tr>
-              </thead>
-              <tbody>
-                {prefs.map((p) => (
-                  <tr
-                    key={p.member_id}
-                    className="border-eten-line/60 border-b"
-                  >
-                    <td className="py-2 pr-4 font-semibold">
-                      {nameById.get(p.member_id) ?? "A mentor"}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <span
-                        className={
-                          p.availability_status === "accepting"
-                            ? "text-eten-verified"
-                            : p.availability_status === "limited"
-                              ? "text-amber-400"
-                              : "text-eten-ink-muted"
-                        }
-                      >
-                        {STATUS_LABEL[p.availability_status] ??
-                          p.availability_status}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-4">{p.timezone}</td>
-                    <td className="py-2 pr-4">
-                      {blockCount.get(p.member_id) ?? 0}
-                    </td>
-                    <td className="py-2 pr-4">{p.default_session_minutes}m</td>
-                    <td className="py-2 pr-4">
-                      {p.max_sessions_per_week ?? "—"}
-                    </td>
-                    <td className="py-2 pr-4">
-                      {upcomingCount.get(p.member_id) ?? 0}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {/* Mentor capacity */}
+      <CapacityTable mentors={mentors} />
     </div>
   );
 }
