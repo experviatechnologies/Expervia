@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
 import { markMentorPayout } from "./actions";
 
 /**
@@ -37,8 +38,9 @@ export function PayoutControl({
         type="button"
         onClick={run}
         disabled={pending || disabled}
-        className="bg-eten-accent inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-black transition hover:brightness-110 disabled:opacity-50"
+        className="bg-eten-accent inline-flex h-11 items-center gap-2 rounded-xl px-[18px] text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
+        <Check className="size-4" strokeWidth={2} />
         {pending ? "Paying…" : "Mark paid out"}
       </button>
       {error && <span className="text-destructive text-[11px]">{error}</span>}

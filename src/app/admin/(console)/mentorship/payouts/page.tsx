@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Wallet,
+  Clock,
+  CheckCircle2,
+  Landmark,
+  Check,
+} from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -31,6 +40,17 @@ function fmtDate(iso: string): string {
     month: "short",
     year: "numeric",
   });
+}
+function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
 }
 
 type Balance = { available: number; pending: number; currency: string };
@@ -130,147 +150,240 @@ export default async function AdminPayoutsPage() {
       nameById.set(p.member_id, p.full_name ?? "A mentor");
   }
 
+  const cur = rows[0]?.currency ?? payoutRows?.[0]?.currency ?? "NGN";
+  const totalAvailable = rows.reduce((s, r) => s + r.available, 0);
+  const totalPending = rows.reduce((s, r) => s + r.pending, 0);
+  const totalPaid = (payoutRows ?? []).reduce((s, p) => s + p.amount, 0);
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-extrabold">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-7 md:px-8">
+      {/* Heading + back */}
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-[680px]">
+          <h1 className="text-eten-ink text-[30px] font-extrabold tracking-[-0.02em]">
             Mentor payouts
           </h1>
-          <p className="text-eten-ink-muted mt-1 text-sm">
-            Available balances clear the settlement hold after each session. Pay
-            out records the payout and marks those earnings paid; send the bank
-            transfer out-of-band.
+          <p className="text-eten-ink-muted mt-1.5 text-[15px] leading-relaxed">
+            Track what each mentor has earned and record payouts.
           </p>
         </div>
         <Link
           href="/admin/mentorship"
-          className="border-eten-line text-eten-ink-muted hover:text-eten-ink inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
+          className="border-eten-line text-eten-ink hover:bg-eten-hover inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors"
         >
-          ← Mentorship
+          <ArrowLeft className="size-4" strokeWidth={2} />
+          Back to Mentorship
         </Link>
       </header>
 
-      <section className="border-eten-line bg-eten-panel mb-8 rounded-2xl border p-5">
-        <h2 className="text-eten-ink text-sm font-bold">
-          Mentor balances · {rows.length}
-        </h2>
+      {/* How payouts work */}
+      <div className="bg-eten-panel border-eten-line text-eten-ink-muted mb-6 flex flex-wrap items-center gap-x-5 gap-y-2.5 rounded-2xl border px-5 py-4 text-[13px]">
+        <span className="text-eten-faint font-mono text-[11px] font-bold tracking-[0.1em] uppercase">
+          How payouts work
+        </span>
+        <Step n={1}>
+          Session ends, earnings are{" "}
+          <b className="text-amber-600 dark:text-amber-400">pending</b>
+        </Step>
+        <ArrowRight className="text-eten-faint size-3.5" />
+        <Step n={2}>
+          Settlement hold clears, they become{" "}
+          <b className="text-eten-verified">available</b>
+        </Step>
+        <ArrowRight className="text-eten-faint size-3.5" />
+        <Step n={3}>
+          Send the bank transfer, then{" "}
+          <b className="text-eten-ink">mark paid out</b>
+        </Step>
+      </div>
+
+      {/* Summary */}
+      <div className="mb-6 grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <Summary
+          Icon={Wallet}
+          tone="verified"
+          label="Available to pay"
+          value={money(totalAvailable, cur)}
+        />
+        <Summary
+          Icon={Clock}
+          tone="amber"
+          label="Pending settlement"
+          value={money(totalPending, cur)}
+        />
+        <Summary
+          Icon={CheckCircle2}
+          tone="accent"
+          label="Paid out (recent)"
+          value={money(totalPaid, cur)}
+        />
+      </div>
+
+      {/* Mentor balances */}
+      <div className="mb-6 flex flex-col gap-3">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-eten-ink text-[17px] font-bold">
+            Mentor balances
+          </h2>
+          <span className="bg-eten-accent-soft text-eten-accent rounded-full px-2.5 py-0.5 text-[13px] font-bold">
+            {rows.length}
+          </span>
+        </div>
         {rows.length === 0 ? (
-          <p className="text-eten-ink-muted mt-2 text-sm">
+          <div className="bg-eten-panel border-eten-line text-eten-ink-muted rounded-2xl border p-8 text-center text-sm">
             No mentor has outstanding earnings.
-          </p>
+          </div>
         ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-eten-ink-muted border-eten-line border-b text-xs">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Mentor</th>
-                  <th className="py-2 pr-4 font-medium">Available</th>
-                  <th className="py-2 pr-4 font-medium">Pending</th>
-                  <th className="py-2 pr-4 font-medium">Payout account</th>
-                  <th className="py-2 pr-4 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const acct = accountById.get(r.id);
-                  return (
-                    <tr
-                      key={r.id}
-                      className="border-eten-line/60 border-b align-top"
-                    >
-                      <td className="py-3 pr-4 font-semibold">
+          <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-4">
+            {rows.map((r) => {
+              const acct = accountById.get(r.id);
+              const cantPay = r.available <= 0;
+              const hint = cantPay
+                ? r.pending > 0
+                  ? `${money(r.pending, r.currency)} clears after the settlement hold`
+                  : "Nothing to pay out"
+                : `Send ${money(r.available, r.currency)} by bank transfer first`;
+              return (
+                <article
+                  key={r.id}
+                  className="bg-eten-panel border-eten-line flex flex-col gap-4 rounded-[18px] border p-[22px]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="bg-eten-accent-soft text-eten-accent grid size-11 shrink-0 place-items-center rounded-full text-sm font-bold">
+                      {initials(nameById.get(r.id) ?? "A mentor")}
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-eten-ink text-[16px] font-bold">
                         {nameById.get(r.id) ?? "A mentor"}
-                      </td>
-                      <td className="text-eten-verified py-3 pr-4 font-semibold tabular-nums">
+                      </h3>
+                      <div className="text-eten-faint text-xs">Mentor</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-eten-verified-soft rounded-xl p-3.5">
+                      <div className="text-eten-verified text-xs font-semibold">
+                        Available
+                      </div>
+                      <div className="text-eten-ink mt-0.5 text-2xl font-extrabold tabular-nums">
                         {money(r.available, r.currency)}
-                      </td>
-                      <td className="text-eten-ink-muted py-3 pr-4 tabular-nums">
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-amber-500/10 p-3.5">
+                      <div className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                        Pending
+                      </div>
+                      <div className="text-eten-ink mt-0.5 text-2xl font-extrabold tabular-nums">
                         {money(r.pending, r.currency)}
-                      </td>
-                      <td className="py-3 pr-4">
-                        {!acct ? (
-                          <span className="text-amber-400">Not set</span>
-                        ) : (
-                          <div className="min-w-[180px]">
-                            <div className="text-eten-ink font-medium">
-                              {acct.accountName}
-                            </div>
-                            <div className="text-eten-ink font-mono tabular-nums">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-eten-line flex flex-wrap items-center gap-3 rounded-[14px] border p-3.5">
+                    <span className="bg-eten-panel-hi text-eten-ink-muted grid size-9 shrink-0 place-items-center rounded-[10px]">
+                      <Landmark className="size-[18px]" strokeWidth={1.8} />
+                    </span>
+                    {acct ? (
+                      <>
+                        <div className="min-w-0 flex-1 basis-[160px]">
+                          <div className="text-eten-ink text-sm font-bold">
+                            {acct.accountName}
+                          </div>
+                          <div className="text-eten-ink-muted text-[13px]">
+                            <span className="font-mono tabular-nums">
                               {acct.accountNumber}
-                            </div>
-                            <div className="text-eten-ink-muted text-xs">
-                              {acct.bankName}
-                              {acct.bankCode
-                                ? ` · ${acct.bankCode}`
-                                : ""} · {acct.currency}
-                            </div>
-                            <div className="mt-1.5 flex items-center gap-2">
-                              <span
-                                className={
-                                  "font-mono text-[10.5px] tracking-wide uppercase " +
-                                  (acct.verified
-                                    ? "text-eten-verified"
-                                    : "text-amber-400")
-                                }
-                              >
-                                {acct.verified ? "Verified" : "Unverified"}
-                              </span>
-                              <VerifyControl
-                                mentorId={r.id}
-                                verified={acct.verified}
-                              />
-                            </div>
+                            </span>{" "}
+                            · {acct.bankName} · {acct.currency}
+                          </div>
+                        </div>
+                        {acct.verified ? (
+                          <span className="bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-bold">
+                            <Check className="size-3" strokeWidth={3} />
+                            Verified
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-amber-500/10 px-2.5 py-1.5 text-[12px] font-bold text-amber-600 dark:text-amber-400">
+                              Unverified
+                            </span>
+                            <VerifyControl mentorId={r.id} verified={false} />
                           </div>
                         )}
-                      </td>
-                      <td className="py-3 pr-0 text-right">
-                        <PayoutControl
-                          mentorId={r.id}
-                          disabled={r.available <= 0}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </>
+                    ) : (
+                      <span className="text-[13px] font-semibold text-amber-600 dark:text-amber-400">
+                        No payout account set
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-eten-faint text-xs">{hint}</span>
+                    <PayoutControl mentorId={r.id} disabled={cantPay} />
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
-      </section>
+      </div>
 
-      <section className="border-eten-line bg-eten-panel rounded-2xl border p-5">
-        <h2 className="text-eten-ink text-sm font-bold">Recent payouts</h2>
+      {/* Recent payouts */}
+      <section className="bg-eten-panel border-eten-line flex min-w-0 flex-col rounded-[18px] border">
+        <div className="border-eten-line border-b px-6 py-5">
+          <h2 className="text-eten-ink text-[17px] font-bold">
+            Recent payouts
+          </h2>
+        </div>
         {(payoutRows ?? []).length === 0 ? (
-          <p className="text-eten-ink-muted mt-2 text-sm">No payouts yet.</p>
+          <p className="text-eten-ink-muted p-8 text-center text-sm">
+            No payouts yet.
+          </p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-eten-ink-muted border-eten-line border-b text-xs">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Mentor</th>
-                  <th className="py-2 pr-4 font-medium">Amount</th>
-                  <th className="py-2 pr-4 font-medium">Method</th>
-                  <th className="py-2 pr-4 font-medium">Status</th>
-                  <th className="py-2 pr-4 font-medium">Date</th>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
+              <thead>
+                <tr className="bg-eten-panel-hi text-left">
+                  <Th className="pl-6">Mentor</Th>
+                  <Th>Amount</Th>
+                  <Th>Method</Th>
+                  <Th>Status</Th>
+                  <Th className="pr-6 text-right">Date</Th>
                 </tr>
               </thead>
               <tbody>
                 {(payoutRows ?? []).map((p) => (
-                  <tr key={p.id} className="border-eten-line/60 border-b">
-                    <td className="py-2.5 pr-4 font-semibold">
-                      {nameById.get(p.mentor_id) ?? "A mentor"}
+                  <tr
+                    key={p.id}
+                    className="border-eten-line-soft hover:bg-eten-hover border-b last:border-0"
+                  >
+                    <td className="py-3.5 pr-3 pl-6">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-eten-accent-soft text-eten-accent grid size-8 shrink-0 place-items-center rounded-full text-[12px] font-bold">
+                          {initials(nameById.get(p.mentor_id) ?? "A mentor")}
+                        </span>
+                        <span className="text-eten-ink font-semibold">
+                          {nameById.get(p.mentor_id) ?? "A mentor"}
+                        </span>
+                      </div>
                     </td>
-                    <td className="py-2.5 pr-4 tabular-nums">
+                    <td className="text-eten-ink px-3 py-3.5 font-extrabold tabular-nums">
                       {money(p.amount, p.currency)}
                     </td>
-                    <td className="text-eten-ink-muted py-2.5 pr-4">
-                      {p.method}
+                    <td className="px-3 py-3.5">
+                      <span className="bg-eten-panel-hi border-eten-line text-eten-ink-muted rounded-[7px] border px-2 py-0.5 text-[12px] font-semibold">
+                        {p.method === "manual" || !p.method
+                          ? "Manual transfer"
+                          : p.method}
+                      </span>
                     </td>
-                    <td className="text-eten-verified py-2.5 pr-4">
-                      {p.status}
+                    <td className="px-3 py-3.5">
+                      <span className="bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold capitalize">
+                        <span className="bg-eten-verified size-1.5 rounded-full" />
+                        {p.status}
+                      </span>
                     </td>
-                    <td className="text-eten-ink-muted py-2.5 pr-4">
+                    <td className="text-eten-ink-muted py-3.5 pr-6 pl-3 text-right whitespace-nowrap">
                       {fmtDate(p.paid_at ?? p.created_at)}
                     </td>
                   </tr>
@@ -281,5 +394,73 @@ export default async function AdminPayoutsPage() {
         )}
       </section>
     </div>
+  );
+}
+
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="bg-eten-accent-soft text-eten-accent grid size-[22px] place-items-center rounded-full text-[12px] font-extrabold">
+        {n}
+      </span>
+      {children}
+    </span>
+  );
+}
+
+function Summary({
+  Icon,
+  tone,
+  label,
+  value,
+}: {
+  Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  tone: "accent" | "verified" | "amber";
+  label: string;
+  value: string;
+}) {
+  const square =
+    tone === "verified"
+      ? "bg-eten-verified-soft text-eten-verified"
+      : tone === "amber"
+        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+        : "bg-eten-accent-soft text-eten-accent";
+  return (
+    <div className="bg-eten-panel border-eten-line flex items-center gap-4 rounded-2xl border p-5">
+      <span
+        className={
+          "grid size-12 shrink-0 place-items-center rounded-[14px] " + square
+        }
+      >
+        <Icon className="size-[22px]" strokeWidth={1.8} />
+      </span>
+      <div className="min-w-0">
+        <div className="text-eten-ink-muted text-[13px] font-semibold">
+          {label}
+        </div>
+        <div className="text-eten-ink truncate text-[26px] font-extrabold tracking-[-0.02em] tabular-nums">
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Th({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <th
+      className={
+        "text-eten-ink-muted border-eten-line border-b px-3 py-3 text-[12px] font-bold " +
+        className
+      }
+    >
+      {children}
+    </th>
   );
 }
