@@ -47,6 +47,40 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* App-surface palettes are runtime-switchable (light default / dark).
+     The literal values live in the :root + [data-theme="dark"] blocks below
+     so a light/dark toggle can repoint them; marketing keeps its own tokens. */
+  --color-eten-rail: var(--eten-rail);
+  --color-eten-canvas: var(--eten-canvas);
+  --color-eten-panel: var(--eten-panel);
+  --color-eten-panel-hi: var(--eten-panel-hi);
+  --color-eten-hover: var(--eten-hover);
+  --color-eten-line: var(--eten-line);
+  --color-eten-line-soft: var(--eten-line-soft);
+  --color-eten-ink: var(--eten-ink);
+  --color-eten-ink-muted: var(--eten-ink-muted);
+  --color-eten-faint: var(--eten-faint);
+  --color-eten-accent: var(--eten-accent);
+  --color-eten-accent-press: var(--eten-accent-press);
+  --color-eten-accent-soft: var(--eten-accent-soft);
+  --color-eten-verified: var(--eten-verified);
+  --color-eten-verified-soft: var(--eten-verified-soft);
+
+  --color-mnt-bg: var(--mnt-bg);
+  --color-mnt-panel: var(--mnt-panel);
+  --color-mnt-panel-2: var(--mnt-panel-2);
+  --color-mnt-line: var(--mnt-line);
+  --color-mnt-line-strong: var(--mnt-line-strong);
+  --color-mnt-ink: var(--mnt-ink);
+  --color-mnt-ink-muted: var(--mnt-ink-muted);
+  --color-mnt-faint: var(--mnt-faint);
+  --color-mnt-brand: var(--mnt-brand);
+  --color-mnt-brand-2: var(--mnt-brand-2);
+  --color-mnt-on-brand: var(--mnt-on-brand);
+  --color-mnt-green: var(--mnt-green);
+  --color-mnt-amber: var(--mnt-amber);
+  --color-mnt-blue: var(--mnt-blue);
 }
 
 /* ------------------------------------------------------------------ */
@@ -81,47 +115,9 @@
   --color-secondary-container: #56378d;
   --color-on-secondary-container: #c7aaff;
 
-  /* ---------------------------------------------------------------- */
-  /* ETEN member-app "workspace" palette (Slack/Circle direction).    */
-  /* Layered slate surfaces + a blue accent + a verified-green.       */
-  /* The accent is isolated here so it can be re-pointed in one place. */
-  /* ---------------------------------------------------------------- */
-  --color-eten-rail: #0a0f19; /* deepest — sidebar / drawer */
-  --color-eten-canvas: #0f1622; /* content ground */
-  --color-eten-panel: #161f2e; /* cards */
-  --color-eten-panel-hi: #1c2839; /* inputs / raised */
-  --color-eten-hover: #1a2434;
-  --color-eten-line: #253145;
-  --color-eten-line-soft: #1c2636;
-  --color-eten-ink: #eaf0f8;
-  --color-eten-ink-muted: #aebccf;
-  --color-eten-faint: #778699;
-  --color-eten-accent: #4f86ec;
-  --color-eten-accent-press: #6e9df0;
-  --color-eten-accent-soft: #16233d;
-  --color-eten-verified: #3ec98a;
-  --color-eten-verified-soft: #10241c;
-
-  /* ---------------------------------------------------------------- */
-  /* ETEN Mentorship standalone product palette (mnt-*).              */
-  /* Same dark family as the app, but a LIGHTER purple brand accent   */
-  /* (vs the marketing --color-brand #8a5cf5). amber = Prospect,      */
-  /* green = ETEN-Validated — the two-tier funnel colour system.      */
-  /* ---------------------------------------------------------------- */
-  --color-mnt-bg: #0b0e13; /* page ground */
-  --color-mnt-panel: #141922; /* cards */
-  --color-mnt-panel-2: #1b212c; /* raised / inputs */
-  --color-mnt-line: #28303c;
-  --color-mnt-line-strong: #39424f;
-  --color-mnt-ink: #e9edf3;
-  --color-mnt-ink-muted: #9aa6b5;
-  --color-mnt-faint: #6b7688;
-  --color-mnt-brand: #a78bfa; /* lighter purple — primary actions */
-  --color-mnt-brand-2: #7c6cf0; /* gradient partner */
-  --color-mnt-on-brand: #17102e; /* text on the brand fill */
-  --color-mnt-green: #34d399; /* ETEN-Validated */
-  --color-mnt-amber: #f5b13d; /* Prospect */
-  --color-mnt-blue: #5b8def; /* secondary category */
+  /* App-surface palettes (eten-* member/admin, mnt-* mentorship) are defined
+     as runtime-switchable variables in the :root / [data-theme] blocks below,
+     and exposed to Tailwind via the @theme inline block above. */
 
   /* Layout spacing tokens. */
   --spacing-section: 120px;
@@ -302,6 +298,109 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* ================================================================= */
+/* App-surface palettes (eten-* admin/member, mnt-* mentorship).      */
+/* LIGHT is the default (redesign mockups); [data-theme="dark"] on    */
+/* <html> repoints them to the original dark workspace palette.       */
+/* Marketing/auth pages don't use these tokens, so they're untouched. */
+/* ================================================================= */
+:root {
+  --eten-rail: #ffffff;
+  --eten-canvas: #f7f6fb;
+  --eten-panel: #ffffff;
+  --eten-panel-hi: #fbfafe;
+  --eten-hover: #f4f0fe;
+  --eten-line: #eceaf4;
+  --eten-line-soft: #f1eff7;
+  --eten-ink: #17123d;
+  --eten-ink-muted: #5e5a7d;
+  --eten-faint: #6e6a8c;
+  --eten-accent: #4a16c4;
+  --eten-accent-press: #2e0a86;
+  --eten-accent-soft: #f1ecfd;
+  --eten-verified: #11703a;
+  --eten-verified-soft: #e7f6ec;
+
+  --mnt-bg: #f7f6fb;
+  --mnt-panel: #ffffff;
+  --mnt-panel-2: #fbfafe;
+  --mnt-line: #eceaf4;
+  --mnt-line-strong: #e4e1ef;
+  --mnt-ink: #17123d;
+  --mnt-ink-muted: #5e5a7d;
+  --mnt-faint: #6e6a8c;
+  --mnt-brand: #4a16c4;
+  --mnt-brand-2: #6a2bdb;
+  --mnt-on-brand: #ffffff;
+  --mnt-green: #11703a;
+  --mnt-amber: #a15c07;
+  --mnt-blue: #2e5395;
+}
+
+[data-theme="dark"] {
+  --eten-rail: #0a0f19;
+  --eten-canvas: #0f1622;
+  --eten-panel: #161f2e;
+  --eten-panel-hi: #1c2839;
+  --eten-hover: #1a2434;
+  --eten-line: #253145;
+  --eten-line-soft: #1c2636;
+  --eten-ink: #eaf0f8;
+  --eten-ink-muted: #aebccf;
+  --eten-faint: #778699;
+  --eten-accent: #4f86ec;
+  --eten-accent-press: #6e9df0;
+  --eten-accent-soft: #16233d;
+  --eten-verified: #3ec98a;
+  --eten-verified-soft: #10241c;
+
+  --mnt-bg: #0b0e13;
+  --mnt-panel: #141922;
+  --mnt-panel-2: #1b212c;
+  --mnt-line: #28303c;
+  --mnt-line-strong: #39424f;
+  --mnt-ink: #e9edf3;
+  --mnt-ink-muted: #9aa6b5;
+  --mnt-faint: #6b7688;
+  --mnt-brand: #a78bfa;
+  --mnt-brand-2: #7c6cf0;
+  --mnt-on-brand: #17102e;
+  --mnt-green: #34d399;
+  --mnt-amber: #f5b13d;
+  --mnt-blue: #5b8def;
+}
+
+/* Shared shadcn UI (buttons, inputs) inside an app surface follows the toggle
+   too. Scoped to [data-app-surface] so marketing keeps the global .dark values.
+   In dark mode the global .dark tokens already apply, so only light needs an
+   override here. */
+[data-theme="light"] [data-app-surface] {
+  --background: #ffffff;
+  --foreground: #17123d;
+  --card: #ffffff;
+  --card-foreground: #17123d;
+  --popover: #ffffff;
+  --popover-foreground: #17123d;
+  --primary: #4a16c4;
+  --primary-foreground: #ffffff;
+  --secondary: #f1ecfd;
+  --secondary-foreground: #2e0a86;
+  --muted: #f4f0fe;
+  --muted-foreground: #5e5a7d;
+  --accent: #f1ecfd;
+  --accent-foreground: #2e0a86;
+  --border: #eceaf4;
+  --input: #e4e1ef;
+  --ring: #4a16c4;
+}
+
+/* App surfaces use Plus Jakarta Sans to match the redesign (loaded via a
+   runtime Google Fonts <link> in the root layout — not next/font, which
+   fails the Vercel build). Falls back to the self-hosted sans otherwise. */
+[data-app-surface] {
+  font-family: "Plus Jakarta Sans", var(--font-sans), system-ui, sans-serif;
 }
 
 @layer base {

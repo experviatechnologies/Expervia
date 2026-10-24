@@ -59,8 +59,33 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`dark ${manrope.variable} ${inter.variable} ${jetbrainsMono.variable} h-full scroll-smooth antialiased`}
+      data-theme="light"
       suppressHydrationWarning
     >
+      <head>
+        {/* App surfaces (admin/member/mentorship) use Plus Jakarta Sans.
+            Loaded at runtime (not next/font) so it can't break the build. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font -- runtime
+            link is intentional; next/font/google breaks the Vercel build here */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+        {/* No-flash theme init: default is light (SSR), switch to dark only
+            if the viewer chose it. Runs before paint. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('eten-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();",
+          }}
+        />
+      </head>
       <body className="bg-surface text-on-surface flex min-h-full flex-col">
         <SiteChrome forceBare={isMentorshipHost}>{children}</SiteChrome>
       </body>

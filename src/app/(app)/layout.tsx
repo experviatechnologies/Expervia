@@ -68,7 +68,7 @@ export default async function AppLayout({
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" data-app-surface>
       <AppNav
         memberName={member.fullName}
         email={member.email}

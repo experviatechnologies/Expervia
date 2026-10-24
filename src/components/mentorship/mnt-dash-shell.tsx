@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MntMobileBar } from "./mnt-mobile-bar";
 import { MntSignOutButton } from "./mnt-signout-button";
 import { MntNavLinks } from "./mnt-nav-links";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 export type MntNavItem = { label: string; href?: string; badge?: number };
 
@@ -25,8 +26,11 @@ export function MntDashShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-screen md:grid-cols-[244px_1fr]">
-      <aside className="border-mnt-line hidden flex-col border-r p-3.5 [background:#0d1219] md:flex">
+    <div
+      className="grid min-h-screen md:grid-cols-[244px_1fr]"
+      data-app-surface
+    >
+      <aside className="border-mnt-line bg-mnt-panel hidden flex-col border-r p-3.5 md:flex">
         <Link
           href="/mentorship"
           className="flex items-center gap-2.5 px-2 pt-1.5 pb-4"
@@ -59,6 +63,7 @@ export function MntDashShell({
               {user.role}
             </span>
           </span>
+          <ThemeToggle className="text-mnt-faint hover:text-mnt-ink grid size-8 shrink-0 place-items-center rounded-lg transition-colors" />
           <MntSignOutButton />
         </div>
       </aside>

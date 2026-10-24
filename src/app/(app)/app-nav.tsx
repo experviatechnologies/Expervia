@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 export type NavPod = {
   name: string;
@@ -240,6 +241,7 @@ export function AppNav({
         >
           <Settings className="size-[17px]" strokeWidth={1.8} />
         </Link>
+        <ThemeToggle className="text-eten-faint hover:bg-eten-hover hover:text-eten-ink grid size-8 place-items-center rounded-lg" />
         <button
           type="button"
           onClick={handleSignOut}

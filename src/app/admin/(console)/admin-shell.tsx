@@ -25,6 +25,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 type NavItem = {
   label: string;
@@ -207,6 +208,7 @@ export function AdminShell({
           </div>
           <div className="text-eten-faint text-[11px]">Operations</div>
         </div>
+        <ThemeToggle className="text-eten-faint hover:text-eten-ink hover:bg-eten-hover grid size-8 shrink-0 place-items-center rounded-lg transition-colors" />
         <button
           type="button"
           onClick={signOut}
@@ -222,7 +224,7 @@ export function AdminShell({
   );
 
   return (
-    <div className="bg-eten-canvas text-eten-ink min-h-screen">
+    <div className="bg-eten-canvas text-eten-ink min-h-screen" data-app-surface>
       {/* Desktop sidebar */}
       <aside className="bg-eten-rail border-eten-line-soft fixed inset-y-0 left-0 z-30 hidden w-64 border-r md:block">
         {rail}
