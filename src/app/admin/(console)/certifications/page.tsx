@@ -69,28 +69,21 @@ export default async function AdminCertificationsPage() {
     createdAt: c.created_at,
   }));
 
-  const pendingCount = certs.filter((c) => c.status === "unverified").length;
-
   return (
-    <div className="px-margin-mobile md:px-margin-desktop mx-auto max-w-6xl py-10">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-label-sm text-primary mb-1 font-mono tracking-widest uppercase">
-            Expervia Admin
-          </p>
-          <h1 className="font-display text-headline-lg text-on-surface font-bold">
-            Certifications
-          </h1>
-          <p className="text-on-surface-variant mt-1 text-sm">
-            {certs.length} submitted · {pendingCount} awaiting review. Verified
-            credentials appear on the member&apos;s public profile.
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-[1360px] px-4 py-7 md:px-8">
+      <header className="mb-6 max-w-[680px]">
+        <h1 className="text-eten-ink text-[30px] font-extrabold tracking-[-0.02em]">
+          Certifications
+        </h1>
+        <p className="text-eten-ink-muted mt-1.5 text-[15px] leading-relaxed">
+          Review members&apos; credentials. Verified credentials appear on the
+          member&apos;s public profile.
+        </p>
+      </header>
 
       {certs.length === 0 ? (
-        <div className="glass-card text-on-surface-variant flex flex-col items-center gap-3 rounded-2xl p-16 text-center">
-          <BadgeCheck className="text-on-surface-variant/50 size-10" />
+        <div className="bg-eten-panel border-eten-line text-eten-ink-muted flex flex-col items-center gap-3 rounded-2xl border p-16 text-center">
+          <BadgeCheck className="text-eten-faint size-10" />
           <p>No certifications submitted yet.</p>
         </div>
       ) : (

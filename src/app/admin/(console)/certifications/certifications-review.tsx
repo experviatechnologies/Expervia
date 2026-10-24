@@ -1,8 +1,19 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, FileText, Loader2, RotateCcw, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  BadgeCheck,
+  Check,
+  Clock,
+  FileText,
+  Layers,
+  Loader2,
+  RotateCcw,
+  Search,
+  X,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { setVerificationStatus } from "./actions";
 
 export type CertRow = {
@@ -22,33 +33,78 @@ export type CertRow = {
 
 type Filter = "unverified" | "verified" | "rejected" | "all";
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: "unverified", label: "Pending" },
-  { key: "verified", label: "Verified" },
-  { key: "rejected", label: "Rejected" },
-  { key: "all", label: "All" },
+const TABS: {
+  key: Filter;
+  label: string;
+  Icon: LucideIcon;
+  tint: string;
+}[] = [
+  {
+    key: "unverified",
+    label: "Pending review",
+    Icon: Clock,
+    tint: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  },
+  {
+    key: "verified",
+    label: "Verified",
+    Icon: BadgeCheck,
+    tint: "bg-eten-verified-soft text-eten-verified",
+  },
+  {
+    key: "rejected",
+    label: "Rejected",
+    Icon: XCircle,
+    tint: "bg-red-500/10 text-red-600 dark:text-red-400",
+  },
+  {
+    key: "all",
+    label: "All submitted",
+    Icon: Layers,
+    tint: "bg-eten-accent-soft text-eten-accent",
+  },
 ];
 
-function StatusBadge({ status }: { status: CertRow["status"] }) {
+function initials(name: string | null): string {
+  return (
+    (name ?? "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
+}
+
+function shortId(id: string): string {
+  return id.length > 12 ? `${id.slice(0, 6)}…${id.slice(-4)}` : id;
+}
+
+function StatusChip({ status }: { status: CertRow["status"] }) {
   const map = {
     unverified: {
-      cls: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+      cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+      dot: "bg-amber-500",
       label: "Pending",
     },
     verified: {
-      cls: "border-primary/30 bg-primary/10 text-primary",
+      cls: "bg-eten-verified-soft text-eten-verified",
+      dot: "bg-eten-verified",
       label: "Verified",
     },
     rejected: {
-      cls: "border-destructive/30 bg-destructive/10 text-destructive",
+      cls: "bg-red-500/10 text-red-600 dark:text-red-400",
+      dot: "bg-red-500",
       label: "Rejected",
     },
   } as const;
-  const { cls, label } = map[status];
+  const { cls, dot, label } = map[status];
   return (
     <span
-      className={`inline-block rounded-full border px-2.5 py-1 text-xs font-medium ${cls}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap ${cls}`}
     >
+      <span className={`size-1.5 rounded-full ${dot}`} />
       {label}
     </span>
   );
@@ -56,6 +112,7 @@ function StatusBadge({ status }: { status: CertRow["status"] }) {
 
 export function CertificationsReview({ certs }: { certs: CertRow[] }) {
   const [filter, setFilter] = useState<Filter>("unverified");
+  const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -70,8 +127,18 @@ export function CertificationsReview({ certs }: { certs: CertRow[] }) {
     [certs],
   );
 
-  const shown =
-    filter === "all" ? certs : certs.filter((c) => c.status === filter);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return certs
+      .filter((c) => filter === "all" || c.status === filter)
+      .filter(
+        (c) =>
+          !q ||
+          `${c.memberName ?? ""} ${c.memberEmail ?? ""} ${c.name} ${c.issuer ?? ""} ${c.credentialId ?? ""}`
+            .toLowerCase()
+            .includes(q),
+      );
+  }, [certs, filter, query]);
 
   function act(certId: string, status: CertRow["status"]) {
     setError(null);
@@ -84,170 +151,245 @@ export function CertificationsReview({ certs }: { certs: CertRow[] }) {
   }
 
   return (
-    <div>
-      {/* Filter tabs */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setFilter(key)}
-            className={
-              filter === key
-                ? "bg-primary text-primary-foreground rounded-full px-3.5 py-1.5 text-sm font-semibold"
-                : "border-outline-variant text-on-surface-variant hover:text-on-surface rounded-full border px-3.5 py-1.5 text-sm transition-colors"
-            }
-          >
-            {label}
-            <span className="ml-1.5 opacity-60">{counts[key]}</span>
-          </button>
-        ))}
+    <div className="flex flex-col gap-6">
+      {/* Status cards act as tabs */}
+      <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3">
+        {TABS.map(({ key, label, Icon, tint }) => {
+          const on = filter === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => setFilter(key)}
+              className={
+                "bg-eten-panel flex items-center gap-3.5 rounded-2xl p-4 text-left transition-shadow " +
+                (on
+                  ? "border-eten-accent border-2 shadow-sm"
+                  : "border-eten-line hover:border-eten-accent/40 border")
+              }
+            >
+              <span
+                className={
+                  "grid size-10 shrink-0 place-items-center rounded-xl " + tint
+                }
+              >
+                <Icon className="size-[18px]" strokeWidth={1.9} />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-eten-ink-muted text-[13px] font-semibold">
+                  {label}
+                </span>
+                <span className="text-eten-ink text-2xl font-extrabold">
+                  {counts[key]}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {error && (
-        <p className="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm">
+        <p className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
           {error}
         </p>
       )}
 
-      {shown.length === 0 ? (
-        <div className="glass-card text-on-surface-variant rounded-2xl p-12 text-center text-sm">
-          Nothing here.
+      {/* Table card */}
+      <section className="bg-eten-panel border-eten-line flex min-w-0 flex-col rounded-[18px] border">
+        <div className="border-eten-line flex flex-wrap items-center gap-3 border-b p-4 sm:px-5">
+          <label className="border-eten-line bg-eten-panel-hi text-eten-faint flex h-11 max-w-[420px] min-w-0 flex-1 items-center gap-2.5 rounded-xl border px-3.5">
+            <Search className="size-[18px] shrink-0" strokeWidth={1.8} />
+            <span className="sr-only">Search certifications</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search member, certification or issuer"
+              className="text-eten-ink min-w-0 flex-1 border-0 bg-transparent text-sm outline-none placeholder:text-current"
+            />
+          </label>
         </div>
-      ) : (
-        <div className="glass-card overflow-x-auto rounded-2xl">
-          <table className="w-full min-w-[820px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-left">
-                <Th>Member</Th>
-                <Th>Certification</Th>
-                <Th>Proof</Th>
-                <Th>Status</Th>
-                <Th>Actions</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((c) => {
-                const isBusy = pending && busyId === c.id;
-                return (
-                  <tr
-                    key={c.id}
-                    className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]"
-                  >
-                    <td className="px-4 py-4 align-top">
-                      <div className="text-on-surface font-medium">
-                        {c.memberName ?? "—"}
-                      </div>
-                      {c.memberEmail && (
-                        <div className="text-on-surface-variant text-xs">
-                          {c.memberEmail}
+
+        {shown.length === 0 ? (
+          <div className="flex flex-col items-center gap-2.5 px-6 py-12 text-center">
+            <span className="bg-eten-verified-soft text-eten-verified grid size-13 place-items-center rounded-2xl">
+              <BadgeCheck className="size-6" />
+            </span>
+            <div className="text-eten-ink text-[15px] font-bold">
+              {query ? "No matches" : "Nothing here"}
+            </div>
+            <div className="text-eten-ink-muted text-[13px]">
+              {query
+                ? "Try a different search."
+                : "New submissions will show up here."}
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px] border-collapse text-sm">
+              <thead>
+                <tr className="bg-eten-panel-hi text-left">
+                  <Th className="pl-5">Member</Th>
+                  <Th>Certification</Th>
+                  <Th>Proof</Th>
+                  <Th>Status</Th>
+                  <Th className="pr-5 text-right">Actions</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((c) => {
+                  const isBusy = pending && busyId === c.id;
+                  return (
+                    <tr
+                      key={c.id}
+                      className="border-eten-line-soft hover:bg-eten-hover border-b last:border-0"
+                    >
+                      <td className="py-4 pr-3 pl-5">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-eten-accent-soft text-eten-accent grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-bold">
+                            {initials(c.memberName)}
+                          </span>
+                          <div className="flex min-w-0 flex-col">
+                            <span className="text-eten-ink font-bold">
+                              {c.memberName ?? "—"}
+                            </span>
+                            {c.memberEmail && (
+                              <span className="text-eten-ink-muted text-[13px]">
+                                {c.memberEmail}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 align-top">
-                      <div className="text-on-surface font-medium">
-                        {c.name}
-                      </div>
-                      <div className="text-on-surface-variant text-xs">
-                        {[
-                          c.issuer,
-                          c.credentialId && `ID: ${c.credentialId}`,
-                          formatDate(c.dateObtained),
-                        ]
-                          .filter(Boolean)
-                          .join(" · ") || "—"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 align-top">
-                      {c.certificatePath ? (
-                        <a
-                          href={`/api/admin/certificate?path=${encodeURIComponent(
-                            c.certificatePath,
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary inline-flex items-center gap-1.5 hover:underline"
-                        >
-                          <FileText className="size-4" />
-                          View file
-                        </a>
-                      ) : (
-                        <span className="text-on-surface-variant/60 text-xs italic">
-                          No file
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 align-top">
-                      <StatusBadge status={c.status} />
-                    </td>
-                    <td className="px-4 py-4 align-top">
-                      {isBusy ? (
-                        <Loader2 className="text-on-surface-variant size-4 animate-spin" />
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {c.status !== "verified" && (
-                            <Button
-                              type="button"
-                              variant="brand"
-                              size="sm"
-                              disabled={pending}
-                              onClick={() => act(c.id, "verified")}
-                            >
-                              <Check className="size-3.5" />
-                              Verify
-                            </Button>
-                          )}
-                          {c.status !== "rejected" && (
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              disabled={pending}
-                              onClick={() => act(c.id, "rejected")}
-                            >
-                              <X className="size-3.5" />
-                              Reject
-                            </Button>
-                          )}
-                          {c.status !== "unverified" && (
-                            <Button
-                              type="button"
-                              variant="brandOutline"
-                              size="sm"
-                              disabled={pending}
-                              onClick={() => act(c.id, "unverified")}
-                            >
-                              <RotateCcw className="size-3.5" />
-                              Reset
-                            </Button>
-                          )}
+                      </td>
+                      <td className="px-3 py-4">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-eten-accent-soft text-eten-accent grid size-9 shrink-0 place-items-center rounded-[10px] text-[12px] font-extrabold">
+                            {initials(c.issuer)}
+                          </span>
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <span className="text-eten-ink font-semibold">
+                              {c.name}
+                            </span>
+                            <span className="text-eten-ink-muted flex flex-wrap items-center gap-1.5 text-[12px]">
+                              {c.issuer && (
+                                <span className="font-semibold">
+                                  {c.issuer}
+                                </span>
+                              )}
+                              {c.credentialId && (
+                                <span
+                                  title={c.credentialId}
+                                  className="bg-eten-panel-hi border-eten-line text-eten-ink-muted rounded-md border px-1.5 py-0.5 font-mono text-[11px]"
+                                >
+                                  ID {shortId(c.credentialId)}
+                                </span>
+                              )}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-3 py-4">
+                        {c.certificatePath ? (
+                          <a
+                            href={`/api/admin/certificate?path=${encodeURIComponent(
+                              c.certificatePath,
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="border-eten-line text-eten-accent hover:bg-eten-hover inline-flex h-9 items-center gap-1.5 rounded-[10px] border px-3 text-[13px] font-semibold whitespace-nowrap"
+                          >
+                            <FileText className="size-3.5" />
+                            View file
+                          </a>
+                        ) : (
+                          <span className="text-eten-faint text-xs italic">
+                            No file
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-4">
+                        <StatusChip status={c.status} />
+                      </td>
+                      <td className="py-4 pr-5 pl-3">
+                        {isBusy ? (
+                          <div className="flex justify-end">
+                            <Loader2 className="text-eten-faint size-4 animate-spin" />
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {c.status !== "verified" && (
+                              <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => act(c.id, "verified")}
+                                className="bg-eten-verified-soft text-eten-verified inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[13px] font-bold disabled:opacity-50"
+                              >
+                                <Check className="size-3.5" strokeWidth={2.4} />
+                                Verify
+                              </button>
+                            )}
+                            {c.status !== "rejected" && (
+                              <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => act(c.id, "rejected")}
+                                className="border-eten-line inline-flex h-9 items-center gap-1.5 rounded-[10px] border px-3 text-[13px] font-bold text-red-600 hover:bg-red-500/10 disabled:opacity-50 dark:text-red-400"
+                              >
+                                <X className="size-3.5" strokeWidth={2.4} />
+                                Reject
+                              </button>
+                            )}
+                            {c.status !== "unverified" && (
+                              <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => act(c.id, "unverified")}
+                                aria-label="Reset to pending"
+                                title="Reset to pending"
+                                className="border-eten-line text-eten-ink-muted hover:bg-eten-hover grid size-9 place-items-center rounded-[10px] border disabled:opacity-50"
+                              >
+                                <RotateCcw className="size-[15px]" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="text-eten-ink-muted flex items-center justify-between px-5 py-3.5 text-[13px]">
+          <span>
+            Showing <b className="text-eten-ink">{shown.length}</b> of{" "}
+            {counts[filter]}
+          </span>
         </div>
-      )}
+      </section>
     </div>
   );
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function Th({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <th className="text-label-sm text-on-surface-variant px-4 py-3 font-mono font-normal tracking-wider uppercase">
+    <th
+      className={
+        "text-eten-ink-muted border-eten-line border-b px-3 py-3 text-[12px] font-bold " +
+        className
+      }
+    >
       {children}
     </th>
   );
-}
-
-/** Human date from a YYYY-MM-DD string; "" if absent. */
-function formatDate(date: string | null): string {
-  if (!date) return "";
-  const d = new Date(date);
-  return Number.isNaN(d.getTime())
-    ? ""
-    : d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
 }
