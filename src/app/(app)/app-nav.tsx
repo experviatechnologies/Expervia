@@ -110,19 +110,18 @@ export function AppNav({
 
   const rail = (
     <>
-      <Link
-        href="/feed"
-        className="border-eten-line-soft flex items-center gap-3 border-b px-4 py-4"
-      >
-        <span className="from-eten-accent font-display grid size-9 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br to-[#2f5fbf] text-lg font-bold text-white shadow-[0_2px_10px_-2px_rgba(79,134,236,.5)]">
-          E
-        </span>
-        <span>
-          <span className="text-eten-ink font-display block text-lg leading-none font-bold tracking-tight">
-            ETEN
-          </span>
-          <span className="text-eten-faint mt-0.5 block font-mono text-[9.5px] tracking-[.12em] uppercase">
-            by Expervia
+      <Link href="/feed" className="flex flex-col gap-2.5 px-4 pt-5 pb-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/expervia-logo.png"
+          alt="Expervia Technologies"
+          data-app-logo
+          className="h-auto w-[150px]"
+        />
+        <span className="flex items-center gap-2 pl-0.5">
+          <span className="text-eten-ink text-[13px] font-bold">ETEN</span>
+          <span className="bg-eten-accent-soft text-eten-accent rounded-full px-2 py-[3px] font-mono text-[10px] font-semibold tracking-[0.1em] uppercase">
+            Community
           </span>
         </span>
       </Link>
@@ -136,10 +135,10 @@ export function AppNav({
               <Link
                 key={href}
                 href={href}
-                className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm transition-colors ${
                   active
-                    ? "bg-eten-accent-soft before:bg-eten-accent text-[#cddcfb] before:absolute before:top-2 before:bottom-2 before:-left-2.5 before:w-[3px] before:rounded-r before:content-['']"
-                    : "text-eten-ink-muted hover:bg-eten-hover hover:text-eten-ink"
+                    ? "bg-eten-accent-soft text-eten-accent font-bold"
+                    : "text-eten-ink-muted hover:bg-eten-hover hover:text-eten-accent font-medium"
                 }`}
               >
                 <Icon className="size-[18px] shrink-0" strokeWidth={1.9} />
@@ -174,20 +173,16 @@ export function AppNav({
                 <Link
                   key={pod.slug}
                   href={`/pods/${pod.slug}`}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                  className={`flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13px] transition-colors ${
                     active
-                      ? "bg-eten-hover text-eten-ink font-semibold"
-                      : "text-eten-ink-muted hover:bg-eten-hover hover:text-eten-ink"
+                      ? "bg-eten-accent-soft text-eten-accent font-semibold"
+                      : "text-eten-ink-muted hover:bg-eten-hover hover:text-eten-accent font-medium"
                   }`}
                 >
                   <span
-                    className={`font-mono ${active ? "text-eten-accent" : "text-eten-faint"}`}
-                  >
-                    #
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {pod.name.toLowerCase().replace(/\s+/g, "-")}
-                  </span>
+                    className={`size-2 shrink-0 rounded-[3px] ${active ? "bg-eten-accent" : "bg-eten-faint"}`}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{pod.name}</span>
                   {pod.role !== "member" && (
                     <span className="text-eten-verified bg-eten-verified-soft rounded px-1.5 py-0.5 font-mono text-[9px] tracking-[.06em] uppercase">
                       {pod.role === "lead" ? "Lead" : "Co-lead"}
@@ -217,19 +212,19 @@ export function AppNav({
         )}
       </div>
 
-      <div className="border-eten-line-soft flex items-center gap-2.5 border-t px-2.5 py-2.5">
+      <div className="border-eten-line bg-eten-panel-hi mx-3 mb-3 flex items-center gap-2.5 rounded-[14px] border p-2.5">
         <Link
           href="/profile"
           className="flex min-w-0 flex-1 items-center gap-2.5"
         >
-          <span className="from-eten-accent grid size-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br to-[#3257b8] text-[13px] font-bold text-white">
+          <span className="bg-eten-accent grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-bold text-white">
             {initial}
           </span>
           <span className="min-w-0 leading-tight">
-            <span className="text-eten-ink block truncate text-sm font-semibold">
+            <span className="text-eten-ink block truncate text-[13px] font-bold">
               {memberName ?? "Member"}
             </span>
-            <span className="text-eten-faint block text-xs">
+            <span className="text-eten-ink-muted block text-[12px]">
               {isOps ? "Operations" : "Member"}
             </span>
           </span>
