@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, GraduationCap, AlertTriangle, Users } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { RegisterMentorControl } from "./register-mentor-control";
+import { PilotPods, type PilotPod } from "./pilot-pods";
 
 export const metadata: Metadata = {
   title: "Mentorship pilot",
@@ -110,34 +111,92 @@ export default async function MentorshipPilotPage() {
     menteesByPod.set(m.pod_id, list);
   }
 
-  return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 py-6 md:px-6">
-      <Link
-        href="/admin/mentorship"
-        className="text-eten-faint hover:text-eten-ink mb-4 inline-flex items-center gap-1.5 text-sm"
-      >
-        <ArrowLeft className="size-4" />
-        Mentorship
-      </Link>
+  // Summary figures + per-pod candidate cards.
+  const podsWithLeader = new Set(leaders.map((l) => l.podId)).size;
+  const podsWithoutLeader = pods.length - podsWithLeader;
+  const leaderByPod = new Map<string, string>();
+  for (const l of leaders)
+    if (!leaderByPod.has(l.podId))
+      leaderByPod.set(l.podId, nameById.get(l.memberId) ?? "A member");
+  const podCards: PilotPod[] = pods.map((p) => {
+    const list = menteesByPod.get(p.id) ?? [];
+    return {
+      slug: p.slug,
+      name: p.name,
+      count: list.length,
+      names: list.slice(0, 4),
+      hasLeader: leaderByPod.has(p.id),
+      leaderName: leaderByPod.get(p.id) ?? null,
+    };
+  });
+  const candidatePlaces = podCards.reduce((sum, p) => sum + p.count, 0);
+  const maxCount = Math.max(1, ...podCards.map((p) => p.count));
 
-      <header className="mb-6">
-        <h1 className="text-eten-ink text-2xl font-extrabold tracking-[-0.02em]">
-          Mentorship pilot
-        </h1>
-        <p className="text-eten-ink-muted mt-1 text-sm">
-          Register pod leaders as verified mentors and see the candidate pilot
-          mentees in each pod.
-        </p>
+  return (
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-7 md:px-8">
+      {/* Heading + back */}
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-[680px]">
+          <h1 className="text-eten-ink text-[30px] font-extrabold tracking-[-0.02em]">
+            Mentorship pilot
+          </h1>
+          <p className="text-eten-ink-muted mt-1.5 text-[15px] leading-relaxed">
+            Register pod leaders as verified mentors and see the candidate pilot
+            mentees in each pod.
+          </p>
+        </div>
+        <Link
+          href="/admin/mentorship"
+          className="border-eten-line text-eten-ink hover:bg-eten-hover inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors"
+        >
+          <ArrowLeft className="size-4" strokeWidth={2} />
+          Back to Mentorship
+        </Link>
       </header>
 
+      {/* Summary */}
+      <div className="mb-6 grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <Summary
+          Icon={GraduationCap}
+          tone="accent"
+          label="Pod leaders"
+          value={String(leaders.length)}
+        />
+        <Summary
+          Icon={AlertTriangle}
+          tone="amber"
+          label="Pods without a leader"
+          value={`${podsWithoutLeader} of ${pods.length}`}
+        />
+        <Summary
+          Icon={Users}
+          tone="accent"
+          label="Candidate places across pods"
+          value={String(candidatePlaces)}
+        />
+      </div>
+
       {/* Pod leaders */}
-      <section className="mb-8">
-        <h2 className="text-eten-faint mb-3 font-mono text-xs tracking-wider uppercase">
-          Pod leaders · {leaders.length}
-        </h2>
+      <section className="mb-6">
+        <div className="mb-3 flex items-center gap-2.5">
+          <h2 className="text-eten-ink text-[17px] font-bold">Pod leaders</h2>
+          <span className="bg-eten-panel-hi text-eten-ink-muted rounded-full px-2.5 py-0.5 text-[13px] font-bold">
+            {leaders.length}
+          </span>
+        </div>
         {leaders.length === 0 ? (
-          <div className="bg-eten-panel border-eten-line text-eten-faint rounded-2xl border p-8 text-center text-sm">
-            No pod leaders yet.
+          <div className="border-eten-line bg-eten-panel-hi flex flex-col items-center gap-3 rounded-2xl border border-dashed p-8 text-center">
+            <span className="bg-eten-accent-soft text-eten-accent grid size-14 place-items-center rounded-2xl">
+              <GraduationCap className="size-6" strokeWidth={1.8} />
+            </span>
+            <div className="text-eten-ink text-[16px] font-bold">
+              No pod leaders yet
+            </div>
+            <p className="text-eten-ink-muted max-w-[460px] text-[13px] leading-relaxed">
+              Pod leads are set on each pod. Once a pod has a lead, register
+              them as a verified mentor here so the pod has someone to guide its
+              pilot mentees.
+            </p>
           </div>
         ) : (
           <div className="bg-eten-panel border-eten-line overflow-hidden rounded-2xl border">
@@ -197,43 +256,51 @@ export default async function MentorshipPilotPage() {
         )}
       </section>
 
-      {/* Pilot mentees per pod */}
-      <section>
-        <h2 className="text-eten-faint mb-3 font-mono text-xs tracking-wider uppercase">
-          Candidate pilot mentees by pod
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {pods.map((p) => {
-            const list = menteesByPod.get(p.id) ?? [];
-            return (
-              <div
-                key={p.id}
-                className="bg-eten-panel border-eten-line rounded-2xl border p-4"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-eten-ink font-semibold">{p.name}</div>
-                  <span className="text-eten-ink-muted font-mono text-xs tabular-nums">
-                    {list.length}
-                  </span>
-                </div>
-                <p className="text-eten-faint mt-2 text-xs leading-relaxed">
-                  {list.length === 0
-                    ? "No candidate mentees yet."
-                    : list.slice(0, 6).join(", ") +
-                      (list.length > 6 ? `, +${list.length - 6} more` : "")}
-                </p>
-              </div>
-            );
-          })}
+      {/* Candidate pilot mentees per pod */}
+      <PilotPods pods={podCards} maxCount={maxCount} />
+    </div>
+  );
+}
+
+function Summary({
+  Icon,
+  tone,
+  label,
+  value,
+}: {
+  Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  tone: "accent" | "amber";
+  label: string;
+  value: string;
+}) {
+  const square =
+    tone === "amber"
+      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+      : "bg-eten-accent-soft text-eten-accent";
+  return (
+    <div className="bg-eten-panel border-eten-line flex items-center gap-4 rounded-2xl border p-5">
+      <span
+        className={
+          "grid size-12 shrink-0 place-items-center rounded-[14px] " + square
+        }
+      >
+        <Icon className="size-[22px]" strokeWidth={1.8} />
+      </span>
+      <div>
+        <div className="text-eten-ink-muted text-[13px] font-semibold">
+          {label}
         </div>
-      </section>
+        <div className="text-eten-ink text-[28px] font-extrabold tracking-[-0.02em] tabular-nums">
+          {value}
+        </div>
+      </div>
     </div>
   );
 }
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="text-eten-faint px-4 py-3 font-mono text-[11px] font-bold tracking-wider uppercase">
+    <th className="text-eten-ink-muted px-4 py-3 text-[12px] font-bold">
       {children}
     </th>
   );
