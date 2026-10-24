@@ -403,6 +403,14 @@
   font-family: "Plus Jakarta Sans", var(--font-sans), system-ui, sans-serif;
 }
 
+/* The Expervia wordmark is dark navy (made for a white sidebar). In dark mode
+   flip it to a clean white silhouette so it stays legible. (dark: utilities
+   can't be used on app surfaces because <html> always carries .dark.) */
+[data-theme="dark"] [data-app-logo] {
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

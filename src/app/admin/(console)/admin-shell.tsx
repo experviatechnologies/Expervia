@@ -22,6 +22,7 @@ import {
   LogOut,
   Menu,
   X,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -110,10 +111,13 @@ export function AdminShell({
   const [signingOut, setSigningOut] = useState(false);
 
   const initials = (managerEmail || "?").trim().charAt(0).toUpperCase();
+  const activeGroup = GROUPS.find((g) =>
+    g.items.some((i) => i.href && isActive(pathname, i.href)),
+  );
   const sectionTitle =
-    GROUPS.flatMap((g) => g.items).find(
-      (i) => i.href && isActive(pathname, i.href),
-    )?.label ?? "Admin";
+    activeGroup?.items.find((i) => i.href && isActive(pathname, i.href))
+      ?.label ?? "Admin";
+  const groupHeading = activeGroup?.heading ?? "Dashboard";
 
   async function signOut() {
     setSigningOut(true);
@@ -126,20 +130,24 @@ export function AdminShell({
   const rail = (
     <div className="flex h-full flex-col">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
-        <span className="from-eten-accent grid size-8 place-items-center rounded-[9px] bg-gradient-to-br to-[#3257b8] text-sm font-extrabold text-white">
-          E
-        </span>
-        <div className="leading-tight">
-          <div className="text-eten-ink text-[15px] font-bold">ETEN</div>
-          <div className="text-eten-faint font-mono text-[10px] font-semibold tracking-[0.14em] uppercase">
-            Admin Console
-          </div>
+      <div className="flex flex-col gap-2.5 px-4 pt-5 pb-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/expervia-logo.png"
+          alt="Expervia Technologies"
+          data-app-logo
+          className="h-auto w-[150px]"
+        />
+        <div className="flex items-center gap-2 pl-0.5">
+          <span className="text-eten-ink text-[13px] font-bold">ETEN</span>
+          <span className="bg-eten-accent-soft text-eten-accent rounded-full px-2 py-[3px] font-mono text-[10px] font-semibold tracking-[0.1em] uppercase">
+            Admin console
+          </span>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
         {GROUPS.map((group) => (
           <div key={group.heading} className="mb-1">
             <h6 className="text-eten-faint mx-2 mt-4 mb-1.5 font-mono text-[10.5px] font-bold tracking-[0.16em] uppercase">
@@ -185,8 +193,8 @@ export function AdminShell({
                     base +
                     " " +
                     (active
-                      ? "bg-eten-accent-soft text-[#cddcfb]"
-                      : "text-eten-ink-muted hover:bg-eten-hover hover:text-eten-ink")
+                      ? "bg-eten-accent-soft text-eten-accent font-bold"
+                      : "text-eten-ink-muted hover:bg-eten-hover hover:text-eten-accent")
                   }
                 >
                   {inner}
@@ -197,27 +205,26 @@ export function AdminShell({
         ))}
       </nav>
 
-      {/* Footer: identity + sign out */}
-      <div className="border-eten-line-soft flex items-center gap-2.5 border-t px-4 py-3.5">
-        <span className="bg-eten-accent-soft text-eten-accent grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold">
+      {/* Footer: account card */}
+      <div className="border-eten-line bg-eten-panel-hi mx-3 mb-3 flex items-center gap-2.5 rounded-[14px] border p-3">
+        <span className="bg-eten-accent grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold text-white">
           {initials}
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-eten-ink truncate text-[13px] font-semibold">
+        <div className="min-w-0 flex-1 leading-tight">
+          <div className="text-eten-ink truncate text-[13px] font-bold">
             {managerEmail || "Operations"}
           </div>
-          <div className="text-eten-faint text-[11px]">Operations</div>
+          <div className="text-eten-ink-muted text-[12px]">Operations</div>
         </div>
-        <ThemeToggle className="text-eten-faint hover:text-eten-ink hover:bg-eten-hover grid size-8 shrink-0 place-items-center rounded-lg transition-colors" />
         <button
           type="button"
           onClick={signOut}
           disabled={signingOut}
           aria-label="Sign out"
           title="Sign out"
-          className="text-eten-faint hover:text-eten-ink hover:bg-eten-hover grid size-8 shrink-0 place-items-center rounded-lg transition-colors disabled:opacity-50"
+          className="text-eten-ink-muted hover:text-eten-ink hover:bg-eten-hover grid size-9 shrink-0 place-items-center rounded-lg transition-colors disabled:opacity-50"
         >
-          <LogOut className="size-4" />
+          <LogOut className="size-[18px]" strokeWidth={1.8} />
         </button>
       </div>
     </div>
@@ -258,18 +265,32 @@ export function AdminShell({
 
       {/* Main */}
       <div className="md:pl-64">
-        {/* Mobile top bar */}
-        <div className="border-eten-line-soft bg-eten-rail/80 sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 backdrop-blur md:hidden">
+        {/* Top bar: breadcrumb + theme toggle (desktop and mobile) */}
+        <header className="border-eten-line bg-eten-panel sticky top-0 z-20 flex h-16 items-center gap-3 border-b px-4 md:px-8">
           <button
             type="button"
             aria-label="Open menu"
             onClick={() => setOpen(true)}
-            className="text-eten-ink"
+            className="text-eten-ink md:hidden"
           >
             <Menu className="size-6" />
           </button>
-          <span className="text-eten-ink font-semibold">{sectionTitle}</span>
-        </div>
+          <nav
+            aria-label="Breadcrumb"
+            className="flex min-w-0 items-center gap-2 text-[14px]"
+          >
+            <span className="text-eten-ink-muted hidden font-medium sm:inline">
+              {groupHeading}
+            </span>
+            <ChevronRight className="text-eten-faint hidden size-3.5 shrink-0 sm:inline" />
+            <span className="text-eten-ink truncate font-bold">
+              {sectionTitle}
+            </span>
+          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle className="border-eten-line text-eten-ink-muted hover:text-eten-ink grid size-10 place-items-center rounded-xl border transition-colors" />
+          </div>
+        </header>
 
         <main className="min-w-0">{children}</main>
       </div>
