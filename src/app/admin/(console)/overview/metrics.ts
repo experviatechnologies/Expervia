@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -7,14 +8,26 @@ import { getSupabaseAdmin } from "@/lib/supabase";
  * operations-gated). Steps 2.2 and 2.3 render these as cards, an activity feed
  * and charts.
  *
- * Note: the verification funnel is certification-based for now. Member identity
- * & address (KYC) verification arrives in Phase 6 and will feed this too.
+ * Accuracy notes:
+ *   - Member figures EXCLUDE the operations/staff accounts (role = operations),
+ *     so "Total members" reflects the real community, not our own logins.
+ *   - "Active" = has signed in at least once (claimed + not suspended).
+ *     "Active (30d)" is true recency, read from auth.users.last_sign_in_at.
+ *   - The growth chart's "new per month" bars count only self-serve sign-ups.
+ *     Migrated legacy members were provisioned in bulk, so dating them by their
+ *     account-creation time would invent a huge phantom spike in the migration
+ *     month. They still count toward the cumulative total line (they are real
+ *     members), which is why the line can step up more than the bars.
+ *
+ * The verification funnel is certification-based for now. Member identity &
+ * address (KYC) verification arrives in Phase 6 and will feed this too.
  */
 
 export type OverviewMetrics = {
   counts: {
     totalMembers: number;
     activeMembers: number;
+    activeLast30: number;
     pendingActivation: number;
     suspendedMembers: number;
     multiPodMembers: number;
@@ -62,15 +75,31 @@ function monthBuckets(n: number) {
   return buckets;
 }
 
+/** member id -> auth last_sign_in_at (ISO or null), paginated across all users. */
+async function lastSignInById(
+  admin: SupabaseClient,
+): Promise<Map<string, string | null>> {
+  const map = new Map<string, string | null>();
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+    if (error || !data?.users?.length) break;
+    for (const u of data.users) map.set(u.id, u.last_sign_in_at ?? null);
+    if (data.users.length < 1000) break;
+  }
+  return map;
+}
+
 export async function getOverviewMetrics(): Promise<OverviewMetrics> {
   const admin = getSupabaseAdmin();
   const head = { count: "exact" as const, head: true };
+  const now = Date.now();
+  const THIRTY_DAYS_MS = 30 * 86_400_000;
 
   const [
-    totalMembers,
-    activeMembers,
-    pendingActivation,
-    suspendedMembers,
+    { data: memberRows },
     posts,
     comments,
     certsSubmitted,
@@ -83,17 +112,13 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
     kycPending,
     { data: podRows },
     { data: membershipRows },
-    { data: memberDates },
     { data: auditRows },
   ] = await Promise.all([
-    admin.from("members").select("*", head),
+    // Pull members once and derive every member figure client-side so the
+    // operations/staff accounts can be excluded consistently everywhere.
     admin
       .from("members")
-      .select("*", head)
-      .eq("status", "active")
-      .not("claimed_at", "is", null),
-    admin.from("members").select("*", head).is("claimed_at", null),
-    admin.from("members").select("*", head).eq("status", "suspended"),
+      .select("id, role, status, origin, claimed_at, created_at"),
     admin.from("posts").select("*", head).eq("is_removed", false),
     admin.from("comments").select("*", head).eq("is_removed", false),
     admin.from("certifications").select("*", head),
@@ -126,13 +151,32 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
       .eq("status", "unverified"),
     admin.from("pods").select("id, name, is_main").order("name"),
     admin.from("pod_memberships").select("pod_id, member_id"),
-    admin.from("members").select("created_at"),
     admin
       .from("audit_log")
       .select("id, action, target_type, created_at, actor_id")
       .order("created_at", { ascending: false })
       .limit(6),
   ]);
+
+  // Real community = everyone except our own operations/staff logins.
+  const members = (memberRows ?? []).filter((m) => m.role !== "operations");
+  const totalMembers = members.length;
+  const activeMembers = members.filter(
+    (m) => m.status === "active" && m.claimed_at,
+  ).length;
+  const pendingActivation = members.filter((m) => !m.claimed_at).length;
+  const suspendedMembers = members.filter(
+    (m) => m.status === "suspended",
+  ).length;
+
+  // True recency: how many real members actually signed in within 30 days.
+  const lastSignIn = await lastSignInById(admin);
+  const memberIdSet = new Set(members.map((m) => m.id));
+  let activeLast30 = 0;
+  for (const [id, ts] of lastSignIn) {
+    if (!memberIdSet.has(id) || !ts) continue;
+    if (now - Date.parse(ts) <= THIRTY_DAYS_MS) activeLast30 += 1;
+  }
 
   // Per-pod counts + how many members belong to more than one pod.
   const podCounts = new Map<string, number>();
@@ -149,15 +193,23 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
     .map((p) => ({ name: p.name, members: podCounts.get(p.id) ?? 0 }))
     .sort((a, b) => b.members - a.members);
 
-  // Member growth over the last 8 months.
+  // Member growth over the last 8 months. Bars = new self-serve sign-ups
+  // (migrated legacy members excluded so the import month isn't a phantom
+  // spike). Line = cumulative real membership (migrated included, since they
+  // are real members — this is why the line can rise faster than the bars).
   const buckets = monthBuckets(8);
-  const times = (memberDates ?? [])
-    .map((r) => new Date(r.created_at).getTime())
+  const parse = (iso: string) => new Date(iso).getTime();
+  const addedTimes = members
+    .filter((m) => m.origin !== "migrated")
+    .map((m) => parse(m.created_at))
+    .filter((t) => !Number.isNaN(t));
+  const allTimes = members
+    .map((m) => parse(m.created_at))
     .filter((t) => !Number.isNaN(t));
   const growth = buckets.map((b) => ({
     label: b.label,
-    added: times.filter((t) => t >= b.start && t < b.end).length,
-    cumulative: times.filter((t) => t < b.end).length,
+    added: addedTimes.filter((t) => t >= b.start && t < b.end).length,
+    cumulative: allTimes.filter((t) => t < b.end).length,
   }));
 
   // Resolve actor names for the recent-activity feed.
@@ -182,10 +234,11 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
 
   return {
     counts: {
-      totalMembers: totalMembers.count ?? 0,
-      activeMembers: activeMembers.count ?? 0,
-      pendingActivation: pendingActivation.count ?? 0,
-      suspendedMembers: suspendedMembers.count ?? 0,
+      totalMembers,
+      activeMembers,
+      activeLast30,
+      pendingActivation,
+      suspendedMembers,
       multiPodMembers,
       podCount: pods.length,
       certsToReview: certsPending.count ?? 0,

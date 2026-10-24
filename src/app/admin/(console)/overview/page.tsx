@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   Users,
   UserCheck,
+  Activity,
   Clock,
   Boxes,
   BadgeCheck,
@@ -32,6 +33,9 @@ export default async function AdminOverviewPage() {
   const activePct = counts.totalMembers
     ? Math.round((counts.activeMembers / counts.totalMembers) * 100)
     : 0;
+  const recentPct = counts.totalMembers
+    ? Math.round((counts.activeLast30 / counts.totalMembers) * 100)
+    : 0;
   const maxPod = Math.max(1, ...pods.map((p) => p.members));
   const funnelBase = Math.max(1, verification.submitted);
 
@@ -47,23 +51,30 @@ export default async function AdminOverviewPage() {
       </header>
 
       {/* KPI cards */}
-      <div className="mb-4 grid grid-cols-2 gap-3.5 md:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-4 grid grid-cols-2 gap-3.5 md:grid-cols-3">
         <Kpi
           Icon={Users}
           label="Total members"
           value={counts.totalMembers}
           hint={
             addedThisMonth > 0
-              ? `+${addedThisMonth} this month`
+              ? `+${addedThisMonth} new this month`
               : "No new joins"
           }
           tone={addedThisMonth > 0 ? "up" : "flat"}
         />
         <Kpi
+          Icon={Activity}
+          label="Active (30d)"
+          value={counts.activeLast30}
+          hint={`${recentPct}% signed in recently`}
+          tone="flat"
+        />
+        <Kpi
           Icon={UserCheck}
-          label="Active"
+          label="Signed in"
           value={counts.activeMembers}
-          hint={`${activePct}% of members`}
+          hint={`${activePct}% ever signed in`}
           tone="flat"
         />
         <Kpi
@@ -119,7 +130,7 @@ export default async function AdminOverviewPage() {
       <div className="mb-4">
         <Card
           title="Member growth"
-          sub="New & cumulative members · last 8 months"
+          sub="New self-serve sign-ups (bars) vs total members (line) · last 8 months"
         >
           <GrowthChart data={growth} />
         </Card>
@@ -507,7 +518,10 @@ function GrowthChart({
             className="inline-block h-2 w-3 rounded-sm"
             style={{ background: "rgba(79,134,236,0.28)" }}
           />
-          New per month
+          New sign-ups
+        </span>
+        <span className="text-eten-faint/80">
+          Bulk-migrated legacy members are excluded from the bars.
         </span>
       </div>
     </div>
