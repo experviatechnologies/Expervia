@@ -1,18 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  Bell,
-  GraduationCap,
-  MessageSquare,
-  Sparkles,
-  ThumbsUp,
-  type LucideIcon,
-} from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { timeAgo } from "@/lib/time";
 import { mentorshipNotifText } from "@/lib/eten/mentorship-notifications";
+import { NotificationsList, type NotifItem } from "./notifications-list";
 
 export const metadata: Metadata = {
   title: "Notifications",
@@ -27,47 +19,80 @@ type NotificationType =
   | "pod_activity"
   | "mentorship";
 
+type Described = {
+  who: string;
+  what: string;
+  href: string;
+  iconKey: NotifItem["iconKey"];
+  tag: string;
+  tone: NotifItem["tone"];
+};
+
 function describe(
   type: NotificationType,
   actor: string,
   targetId: string | null,
   targetType: string | null,
-): { text: string; href: string; Icon: LucideIcon } {
+): Described {
   switch (type) {
     case "comment":
       return {
-        text: `${actor} commented on your post`,
+        who: actor,
+        what: "commented on your post",
         href: targetId ? `/feed/${targetId}` : "/feed",
-        Icon: MessageSquare,
+        iconKey: "comment",
+        tag: "Comment",
+        tone: "blue",
       };
     case "reaction":
       return {
-        text: `${actor} reacted to your post`,
+        who: actor,
+        what: "reacted to your post",
         href: targetId ? `/feed/${targetId}` : "/feed",
-        Icon: ThumbsUp,
+        iconKey: "reaction",
+        tag: "Reaction",
+        tone: "accent",
       };
     case "message":
       return {
-        text: `${actor} sent you a message`,
+        who: actor,
+        what: "sent you a message",
         href: targetId ? `/messages/${targetId}` : "/messages",
-        Icon: MessageSquare,
+        iconKey: "message",
+        tag: "Message",
+        tone: "blue",
       };
     case "mention":
       return {
-        text: `${actor} mentioned you`,
+        who: actor,
+        what: "mentioned you",
         href: targetId ? `/feed/${targetId}` : "/feed",
-        Icon: Sparkles,
+        iconKey: "mention",
+        tag: "Mention",
+        tone: "accent",
       };
     case "mentorship":
       return {
-        text: mentorshipNotifText(targetType, actor),
+        who: "",
+        what: mentorshipNotifText(targetType, actor),
         href: targetId ? `/circles/${targetId}` : "/circles",
-        Icon: GraduationCap,
+        iconKey: "mentorship",
+        tag: "Mentorship",
+        tone: "accent",
       };
     default:
-      return { text: `${actor} — pod activity`, href: "/pods", Icon: Bell };
+      return {
+        who: actor,
+        what: "posted in a pod you follow",
+        href: "/pods",
+        iconKey: "pod",
+        tag: "Pod",
+        tone: "amber",
+      };
   }
 }
+
+const WEEK_MS = 7 * 86_400_000;
 
 export default async function NotificationsPage() {
   const member = await getCurrentMember();
@@ -96,71 +121,62 @@ export default async function NotificationsPage() {
     (actorRows ?? []).map((a) => [a.member_id, a.full_name]),
   );
 
-  // Mark everything read now that it's on screen (the current render still shows
-  // which were unread).
-  if (notifications.some((n) => !n.is_read)) {
-    await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("recipient_id", member.id)
-      .eq("is_read", false);
-  }
+  const now = new Date().getTime();
+  const items: NotifItem[] = notifications.map((n) => {
+    const actor = n.actor_id
+      ? (nameById.get(n.actor_id) ?? "A member")
+      : "Someone";
+    const d = describe(
+      n.type as NotificationType,
+      actor,
+      n.target_id,
+      n.target_type,
+    );
+    return {
+      id: n.id,
+      who: d.who,
+      what: d.what,
+      href: d.href,
+      iconKey: d.iconKey,
+      tag: d.tag,
+      tone: d.tone,
+      when: timeAgo(n.created_at),
+      isRead: n.is_read,
+      group: now - Date.parse(n.created_at) <= WEEK_MS ? "recent" : "earlier",
+    };
+  });
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6">
-      <header className="mb-6 hidden md:block">
-        <h1 className="font-display text-eten-ink text-xl font-semibold">
-          Notifications
-        </h1>
-      </header>
-
-      {notifications.length === 0 ? (
-        <div className="bg-eten-panel border-eten-line text-eten-faint flex flex-col items-center gap-3 rounded-2xl border p-12 text-center">
-          <Bell className="text-eten-faint/50 size-9" />
-          <p className="text-sm">
-            You&apos;re all caught up. Activity on your posts and messages shows
-            up here.
-          </p>
-        </div>
+    <div className="mx-auto w-full max-w-[920px] px-5 py-8 md:px-8 md:py-9">
+      {items.length === 0 ? (
+        <>
+          <h1 className="text-eten-ink text-[30px] font-extrabold tracking-[-0.02em]">
+            Notifications
+          </h1>
+          <div className="bg-eten-panel border-eten-line text-eten-ink-muted mt-6 flex flex-col items-center gap-3 rounded-[18px] border p-12 text-center">
+            <span className="bg-eten-accent-soft text-eten-accent grid size-13 place-items-center rounded-2xl">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+              </svg>
+            </span>
+            <p className="text-sm">
+              You&apos;re all caught up. Activity on your posts, pods and
+              mentorship shows up here.
+            </p>
+          </div>
+        </>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {notifications.map((n) => {
-            const actor = n.actor_id
-              ? (nameById.get(n.actor_id) ?? "A member")
-              : "Someone";
-            const { text, href, Icon } = describe(
-              n.type as NotificationType,
-              actor,
-              n.target_id,
-              n.target_type,
-            );
-            return (
-              <li key={n.id}>
-                <Link
-                  href={href}
-                  className={
-                    n.is_read
-                      ? "bg-eten-panel border-eten-line hover:bg-eten-hover flex items-center gap-3 rounded-xl border p-4 transition-colors"
-                      : "border-eten-accent/40 bg-eten-accent-soft hover:bg-eten-hover flex items-center gap-3 rounded-xl border p-4 transition-colors"
-                  }
-                >
-                  <span className="bg-eten-accent-soft text-eten-accent grid size-9 shrink-0 place-items-center rounded-lg">
-                    <Icon className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="text-eten-ink block text-sm">{text}</span>
-                    <span className="text-eten-faint text-xs">
-                      {timeAgo(n.created_at)}
-                    </span>
-                  </span>
-                  {!n.is_read && (
-                    <span className="bg-eten-accent size-2 shrink-0 rounded-full" />
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <NotificationsList initial={items} />
       )}
     </div>
   );
