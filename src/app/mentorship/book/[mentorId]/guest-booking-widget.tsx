@@ -3,6 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import { CalendarDays, Check, Clock } from "lucide-react";
 import { createGuestBooking, type SessionTier } from "./actions";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import {
+  TurnstileWidget,
+  TURNSTILE_ENABLED,
+} from "@/components/shared/turnstile-widget";
 
 export type SessionTypeOption = {
   id: SessionTier;
@@ -102,6 +107,8 @@ export function GuestBookingWidget({
   const [email, setEmail] = useState("");
   const [goal, setGoal] = useState("");
   const [ext, setExt] = useState(false);
+  const [hp, setHp] = useState("");
+  const [captcha, setCaptcha] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -176,6 +183,10 @@ export function GuestBookingWidget({
       setError("Add a valid email so we can send the link.");
       return;
     }
+    if (TURNSTILE_ENABLED && !captcha) {
+      setError("Please complete the verification below.");
+      return;
+    }
     start(async () => {
       const res = await createGuestBooking({
         mentorId,
@@ -186,6 +197,8 @@ export function GuestBookingWidget({
         goal: goal.trim() || undefined,
         tz,
         extension: canExtend ? ext : undefined,
+        honeypot: hp,
+        turnstileToken: captcha,
       });
       if ("error" in res) {
         setError(res.error);
@@ -222,6 +235,29 @@ export function GuestBookingWidget({
       </div>
 
       <div className="flex flex-col gap-3.5 p-5">
+        {/* Honeypot: hidden from people, tempting to bots. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            width: 1,
+            height: 1,
+            overflow: "hidden",
+          }}
+        >
+          <label htmlFor={HONEYPOT_FIELD}>Company URL</label>
+          <input
+            id={HONEYPOT_FIELD}
+            name={HONEYPOT_FIELD}
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={hp}
+            onChange={(e) => setHp(e.target.value)}
+          />
+        </div>
+
         {/* Step 1: session type */}
         {step === 1 && (
           <>
@@ -517,6 +553,9 @@ export function GuestBookingWidget({
               Payment is held securely by ETEN and released to the mentor after
               the session. You can reschedule for free up to 24 hours before.
             </p>
+            {TURNSTILE_ENABLED && (
+              <TurnstileWidget onToken={setCaptcha} theme="auto" />
+            )}
             {error && <ErrorNote>{error}</ErrorNote>}
             <div className="flex gap-2.5">
               <button

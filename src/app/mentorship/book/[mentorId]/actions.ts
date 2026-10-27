@@ -1,11 +1,18 @@
 "use server";
 
 import { randomUUID } from "crypto";
+import { headers } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getMentorSlots, isSlotBookable } from "@/lib/eten/availability";
 import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
 import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
 import { requestOrigin } from "@/lib/eten/request-origin";
+import {
+  isDisposableEmail,
+  clientIp,
+  checkRateLimit,
+} from "@/lib/eten/spam-guard";
+import { verifyTurnstile } from "@/lib/eten/turnstile";
 
 export type GuestBookingResult =
   | { ok: true; authorizationUrl: string }
@@ -99,7 +106,14 @@ export async function createGuestBooking(input: {
   goal?: string;
   tz?: string;
   extension?: boolean;
+  honeypot?: string;
+  turnstileToken?: string | null;
 }): Promise<GuestBookingResult> {
+  // Honeypot: a filled hidden field means a bot. Fail generically, do nothing.
+  if (typeof input.honeypot === "string" && input.honeypot.trim() !== "") {
+    return { error: "We couldn't process that. Please try again." };
+  }
+
   const name = (input.name ?? "").trim();
   const email = (input.email ?? "").trim().toLowerCase();
   const goal = (input.goal ?? "").trim().slice(0, 1000) || null;
@@ -110,12 +124,35 @@ export async function createGuestBooking(input: {
     ? input.tier
     : "standard";
 
+  // Best-effort per-IP rate limit before any account/payment work.
+  const ip = clientIp(await headers());
+  if (
+    !checkRateLimit(`guest-booking:${ip}`, {
+      limit: 5,
+      windowMs: 15 * 60 * 1000,
+    })
+  ) {
+    return {
+      error: "Too many attempts. Please try again in a little while.",
+    };
+  }
+
   if (name.length < 2) return { error: "Please enter your name." };
   if (!EMAIL_RE.test(email)) {
     return { error: "Please enter a valid email so we can send the link." };
   }
+  if (isDisposableEmail(email)) {
+    return { error: "Please use a permanent email address." };
+  }
   if (!isPaystackConfigured()) {
     return { error: "Payments aren't available right now." };
+  }
+
+  // Bot check (Cloudflare Turnstile). No-op until TURNSTILE_SECRET_KEY is set.
+  if (!(await verifyTurnstile(input.turnstileToken, ip))) {
+    return {
+      error: "Verification failed. Please complete the check and try again.",
+    };
   }
 
   const startMs = Date.parse(input.startsAt ?? "");
