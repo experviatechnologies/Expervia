@@ -7,6 +7,7 @@ import { getMentorSlots, isSlotBookable } from "@/lib/eten/availability";
 import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
 import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
 import { requestOrigin } from "@/lib/eten/request-origin";
+import { convertMinor } from "@/lib/eten/fx";
 import {
   isDisposableEmail,
   clientIp,
@@ -106,6 +107,7 @@ export async function createGuestBooking(input: {
   goal?: string;
   tz?: string;
   extension?: boolean;
+  chargeCurrency?: string;
   honeypot?: string;
   turnstileToken?: string | null;
 }): Promise<GuestBookingResult> {
@@ -220,6 +222,43 @@ export async function createGuestBooking(input: {
     };
   }
 
+  // Server-authoritative pricing. The mentor is always settled in their base
+  // currency; an international guest may pay in USD at the live FX rate, with
+  // ETEN absorbing any FX spread. The commission split is computed in both the
+  // base currency (the settlement truth) and the charge currency (the payment
+  // row + Paystack). The frontend never computes money.
+  const { commissionPercent } = await getMonetizationSettings();
+  const baseSplit = computeSplit(amount, commissionPercent);
+
+  const CHARGE_CURRENCIES = ["NGN", "USD", "GHS", "KES", "ZAR"];
+  const requested = (input.chargeCurrency ?? currency).toUpperCase();
+  const chargeCurrency = CHARGE_CURRENCIES.includes(requested)
+    ? requested
+    : currency;
+
+  let chargeAmount = amount;
+  let settlement: {
+    settlement_currency: string;
+    settlement_mentor_amount: number;
+    settlement_platform_fee: number;
+  } | null = null;
+  if (chargeCurrency !== currency) {
+    const converted = await convertMinor(amount, currency, chargeCurrency);
+    if (converted == null || converted <= 0) {
+      return {
+        error: `Paying in ${chargeCurrency} isn't available right now. Please pay in ${currency}.`,
+      };
+    }
+    chargeAmount = converted;
+    // Settle the mentor in their base currency, locked at this FX rate.
+    settlement = {
+      settlement_currency: currency,
+      settlement_mentor_amount: baseSplit.mentorAmount,
+      settlement_platform_fee: baseSplit.platformFee,
+    };
+  }
+  const chargeSplit = computeSplit(chargeAmount, commissionPercent);
+
   const member = await resolveGuestMember(admin, email, name);
   if ("error" in member) return { error: member.error };
   const menteeId = member.id;
@@ -260,9 +299,6 @@ export async function createGuestBooking(input: {
     return { error: "Couldn't start that booking. Please try again." };
   }
 
-  // Server-authoritative commission split (the frontend never computes money).
-  const { commissionPercent } = await getMonetizationSettings();
-  const { platformFee, mentorAmount } = computeSplit(amount, commissionPercent);
   const reference = `ETEN-SESS-${Date.now()}-${randomUUID().slice(0, 8)}`;
 
   const { data: payment, error: payErr } = await admin
@@ -272,11 +308,12 @@ export async function createGuestBooking(input: {
       mentor_id: input.mentorId,
       purpose: "session",
       booking_id: booking.id,
-      amount,
-      currency,
+      amount: chargeAmount,
+      currency: chargeCurrency,
       commission_percent: commissionPercent,
-      platform_fee: platformFee,
-      mentor_amount: mentorAmount,
+      platform_fee: chargeSplit.platformFee,
+      mentor_amount: chargeSplit.mentorAmount,
+      ...(settlement ?? {}),
       reference,
       status: "pending",
     })
@@ -290,8 +327,8 @@ export async function createGuestBooking(input: {
   const origin = await requestOrigin();
   const init = await paystackInitialize({
     email,
-    amountMinor: amount,
-    currency,
+    amountMinor: chargeAmount,
+    currency: chargeCurrency,
     reference,
     callbackUrl: `${origin}/mentorship/book/${input.mentorId}/return`,
     metadata: {

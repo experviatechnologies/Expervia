@@ -19,7 +19,7 @@ export async function recordMentorEarning(
   const { data: payment } = await admin
     .from("payments")
     .select(
-      "id, mentor_id, purpose, booking_id, extension_id, mentor_amount, platform_fee, payment_fee, currency, status",
+      "id, mentor_id, purpose, booking_id, extension_id, mentor_amount, platform_fee, payment_fee, currency, status, settlement_currency, settlement_mentor_amount, settlement_platform_fee",
     )
     .eq("id", paymentId)
     .maybeSingle();
@@ -72,7 +72,15 @@ export async function recordMentorEarning(
 
   // V1: ETEN absorbs the provider fee; the mentor's net is their post-commission
   // share. platform_fee / payment_fee / tax are recorded for reconciliation.
-  const gross = payment.mentor_amount;
+  //
+  // Settlement currency: when the guest paid in a different currency (e.g. USD
+  // for an NGN-priced mentor), the mentor is still settled in their base
+  // currency, carried on settlement_* (locked at the FX rate used at charge
+  // time). When those are null (every in-app payment), fall back to the charge
+  // currency, so existing single-currency behaviour is unchanged.
+  const currency = payment.settlement_currency ?? payment.currency;
+  const gross = payment.settlement_mentor_amount ?? payment.mentor_amount;
+  const platformFee = payment.settlement_platform_fee ?? payment.platform_fee;
   const net = gross;
 
   const { error } = await admin.from("mentor_earnings").insert({
@@ -81,11 +89,11 @@ export async function recordMentorEarning(
     session_id: sessionId,
     extension_id: payment.purpose === "extension" ? payment.extension_id : null,
     gross_amount: gross,
-    platform_fee: payment.platform_fee,
+    platform_fee: platformFee,
     payment_fee: payment.payment_fee ?? 0,
     tax: 0,
     net_amount: net,
-    currency: payment.currency,
+    currency,
     status: "pending",
     available_at: availableAt,
   });

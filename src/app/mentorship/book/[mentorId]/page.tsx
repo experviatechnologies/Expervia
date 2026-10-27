@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Briefcase, MapPin, ShieldCheck, Star } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getMentorSlots } from "@/lib/eten/availability";
+import { getFxRate } from "@/lib/eten/fx";
 import { summarizeRatings } from "@/lib/eten/ratings";
 import {
   GuestBookingWidget,
@@ -194,6 +195,12 @@ export default async function GuestBookingPage({
     paidEnabled && pricing?.extension_enabled && extensionAmount
       ? { amount: extensionAmount, minutes: 30 }
       : null;
+
+  // Live FX so an international guest can pay (and see prices) in USD. Null when
+  // the mentor already prices in USD or the rate is unavailable: the widget then
+  // only offers the mentor's own currency.
+  const usdRate =
+    canBook && currency !== "USD" ? await getFxRate(currency, "USD") : null;
 
   // Reviewer names for real testimonials.
   const reviewMenteeIds = Array.from(
@@ -495,6 +502,7 @@ export default async function GuestBookingPage({
               types={sessionTypes}
               slots={slotsResult.slots.map((s) => s.start)}
               extension={extensionOption}
+              usdRate={usdRate}
             />
           ) : (
             <div className={card + " text-center"}>
