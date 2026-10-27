@@ -33,13 +33,20 @@ export function MntDashShell({
       <aside className="border-mnt-line bg-mnt-panel hidden flex-col border-r p-3.5 md:flex">
         <Link
           href="/mentorship"
-          className="flex items-center gap-2.5 px-2 pt-1.5 pb-4"
+          className="flex flex-col gap-2.5 px-2 pt-1.5 pb-3"
         >
-          <span className="from-mnt-brand to-mnt-brand-2 text-mnt-on-brand font-display grid size-7 place-items-center rounded-lg bg-gradient-to-br text-[13px] font-extrabold">
-            E
-          </span>
-          <span className="font-display text-[14px] font-extrabold">
-            ETEN Mentorship
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/expervia-logo.png"
+            alt="Expervia Technologies"
+            data-app-logo
+            className="h-auto w-[150px]"
+          />
+          <span className="flex items-center gap-2 pl-0.5">
+            <span className="text-mnt-ink text-[13px] font-bold">ETEN</span>
+            <span className="text-mnt-brand rounded-full px-2 py-[3px] font-mono text-[10px] font-semibold tracking-[0.1em] uppercase [background:rgba(74,22,196,0.1)]">
+              Mentorship
+            </span>
           </span>
         </Link>
 

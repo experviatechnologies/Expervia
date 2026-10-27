@@ -70,8 +70,8 @@ export function MntNavLinks({
               base +
               " " +
               (active
-                ? "bg-mnt-brand/10 text-[#d8ccff]"
-                : "text-mnt-ink-muted hover:text-mnt-ink hover:bg-white/[0.03]")
+                ? "bg-mnt-brand/10 text-mnt-brand"
+                : "text-mnt-ink-muted hover:text-mnt-ink hover:bg-mnt-panel-2")
             }
           >
             {inner}
