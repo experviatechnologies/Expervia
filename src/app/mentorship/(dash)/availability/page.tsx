@@ -99,37 +99,77 @@ export default async function MentorshipAvailabilityPage() {
     };
   }
 
+  const blocks = (blockRows ?? []).map((b) => ({
+    id: b.id,
+    weekday: b.weekday,
+    startTime: String(b.start_time).slice(0, 5),
+    endTime: String(b.end_time).slice(0, 5),
+  }));
+  const exceptions = (excRows ?? []).map((e) => ({
+    id: e.id,
+    date: e.exception_date,
+    kind: e.kind,
+    startTime: e.start_time ? String(e.start_time).slice(0, 5) : null,
+    endTime: e.end_time ? String(e.end_time).slice(0, 5) : null,
+  }));
+
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const totalMin = blocks.reduce(
+    (t, b) => t + Math.max(0, toMin(b.endTime) - toMin(b.startTime)),
+    0,
+  );
+  const hrs = Math.floor(totalMin / 60);
+  const rem = totalMin % 60;
+  const hoursLabel = rem ? `${hrs}h ${rem}m` : `${hrs}h`;
+  const paidLabel = pricing.paidSessionsEnabled ? "On" : "Free";
+
+  const stats = [
+    { label: "Weekly blocks", value: String(blocks.length) },
+    { label: "Hours open per week", value: hoursLabel },
+    { label: "Session length", value: `${prefs.defaultSessionMinutes} min` },
+    { label: "Paid sessions", value: paidLabel },
+  ];
+
   return (
-    <div className="mx-auto max-w-[820px] px-6 py-8">
-      <header>
-        <h1 className="font-display text-2xl font-extrabold">Availability</h1>
-        <p className="text-mnt-ink-muted mt-1 text-[14px] leading-relaxed">
-          Publish when you&apos;re free. Mentees see conflict-free slots
-          generated from this, converted to their own timezone, never your raw
-          calendar.
-        </p>
-      </header>
+    <div className="px-6 py-8 md:px-9">
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-6">
+        <header className="max-w-[640px]">
+          <h1 className="font-display text-mnt-ink text-[30px] font-extrabold tracking-[-0.02em]">
+            Availability
+          </h1>
+          <p className="text-mnt-ink-muted mt-1.5 text-[15px] leading-relaxed">
+            Publish when you&apos;re free. Mentees only see open slots,
+            converted to their own timezone, never your calendar.
+          </p>
+        </header>
 
-      <AvailabilityEditor
-        prefs={prefs}
-        hasPrefs={Boolean(prefsRow)}
-        blocks={(blockRows ?? []).map((b) => ({
-          id: b.id,
-          weekday: b.weekday,
-          startTime: String(b.start_time).slice(0, 5),
-          endTime: String(b.end_time).slice(0, 5),
-        }))}
-        exceptions={(excRows ?? []).map((e) => ({
-          id: e.id,
-          date: e.exception_date,
-          kind: e.kind,
-          startTime: e.start_time ? String(e.start_time).slice(0, 5) : null,
-          endTime: e.end_time ? String(e.end_time).slice(0, 5) : null,
-        }))}
-      />
+        {/* Summary strip */}
+        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="bg-mnt-panel border-mnt-line rounded-[16px] border px-[18px] py-4"
+            >
+              <div className="text-mnt-ink-muted text-[12px] font-semibold">
+                {s.label}
+              </div>
+              <div className="text-mnt-ink mt-0.5 text-[24px] font-extrabold tabular-nums">
+                {s.value}
+              </div>
+            </div>
+          ))}
+        </div>
 
-      <div className="mt-6">
-        <PricingCard pricing={pricing} />
+        <AvailabilityEditor
+          prefs={prefs}
+          hasPrefs={Boolean(prefsRow)}
+          blocks={blocks}
+          exceptions={exceptions}
+          pricingSlot={<PricingCard pricing={pricing} />}
+        />
       </div>
     </div>
   );

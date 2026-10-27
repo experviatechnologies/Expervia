@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Check } from "lucide-react";
+import { CalendarOff, CalendarPlus, Check, Plus, X } from "lucide-react";
 import {
   saveSchedulingPrefs,
   addAvailabilityBlock,
@@ -44,6 +50,8 @@ const WEEKDAYS = [
   "Friday",
   "Saturday",
 ];
+// Monday-first display order.
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 const FALLBACK_TZS = [
   "UTC",
@@ -61,22 +69,36 @@ const FALLBACK_TZS = [
 ];
 
 const field =
-  "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand rounded-[10px] border px-3 py-2.5 text-[14px] outline-none";
-const label = "text-mnt-ink-muted text-[12.5px] font-medium";
+  "border-mnt-line bg-mnt-panel text-mnt-ink focus:border-mnt-brand h-[46px] rounded-xl border px-3 text-[14px] outline-none";
+const label = "text-mnt-ink-muted text-[12px] font-semibold";
 const btn =
-  "bg-mnt-brand text-mnt-on-brand inline-flex items-center gap-1.5 rounded-[10px] px-4 py-2.5 text-[13px] font-bold transition hover:brightness-110 disabled:opacity-60";
-const card = "bg-mnt-panel border-mnt-line rounded-2xl border p-5";
+  "bg-mnt-brand text-mnt-on-brand inline-flex h-[46px] items-center gap-1.5 rounded-xl px-[18px] text-[14px] font-bold transition hover:brightness-110 disabled:opacity-60";
+const card =
+  "bg-mnt-panel border-mnt-line flex flex-col gap-[18px] rounded-[18px] border p-6";
+const sectionTitle = "text-mnt-ink text-[17px] font-bold";
+const sectionSub = "text-mnt-ink-muted mt-1 text-[13px] leading-relaxed";
+const addBox =
+  "bg-mnt-panel-2 flex flex-wrap items-end gap-2.5 rounded-[14px] p-3.5";
+const errBox =
+  "rounded-[10px] px-3 py-2.5 text-[13px] font-semibold text-red-600 dark:text-red-400 [background:rgba(239,68,68,0.1)]";
+
+function minutesOf(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
 
 export function AvailabilityEditor({
   prefs,
   hasPrefs,
   blocks,
   exceptions,
+  pricingSlot,
 }: {
   prefs: Prefs;
   hasPrefs: boolean;
   blocks: Block[];
   exceptions: Exception[];
+  pricingSlot?: ReactNode;
 }) {
   const router = useRouter();
 
@@ -90,20 +112,27 @@ export function AvailabilityEditor({
     } catch {
       /* fall back to the curated list */
     }
-    // Make sure the saved timezone is always selectable.
     return list.includes(prefs.timezone) ? list : [prefs.timezone, ...list];
   }, [prefs.timezone]);
 
   return (
-    <div className="mt-6 flex flex-col gap-6">
-      <PrefsCard
-        prefs={prefs}
-        hasPrefs={hasPrefs}
-        timezones={timezones}
-        onDone={() => router.refresh()}
-      />
-      <WeeklyCard blocks={blocks} onDone={() => router.refresh()} />
-      <ExceptionsCard exceptions={exceptions} onDone={() => router.refresh()} />
+    <div className="flex flex-wrap items-start gap-5">
+      <div className="flex min-w-0 flex-[3_1_520px] flex-col gap-5">
+        <WeeklyCard blocks={blocks} onDone={() => router.refresh()} />
+        <ExceptionsCard
+          exceptions={exceptions}
+          onDone={() => router.refresh()}
+        />
+      </div>
+      <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-5">
+        <PrefsCard
+          prefs={prefs}
+          hasPrefs={hasPrefs}
+          timezones={timezones}
+          onDone={() => router.refresh()}
+        />
+        {pricingSlot}
+      </div>
     </div>
   );
 }
@@ -134,10 +163,6 @@ function PrefsCard({
   const [error, setError] = useState<string | null>(null);
   const [tzWarn, setTzWarn] = useState(false);
 
-  // Use the mentor's real browser timezone instead of the UTC placeholder.
-  // A new mentor's field is pre-filled with it; an existing mentor still on UTC
-  // (the old default) gets a nudge to fix it, since that makes mentees see the
-  // wrong times.
   useEffect(() => {
     let browserTz = "";
     try {
@@ -176,70 +201,58 @@ function PrefsCard({
 
   return (
     <div className={card}>
-      <div className="text-mnt-ink text-[14px] font-bold">
-        Status &amp; preferences
+      <div>
+        <h2 className={sectionTitle}>Booking preferences</h2>
+        <p className={sectionSub}>
+          These control how your bookable slots are generated.
+        </p>
       </div>
-      <p className="text-mnt-ink-muted mt-1 text-[13px]">
-        {hasPrefs
-          ? "These control how your bookable slots are generated."
-          : "Set these first. They control how your bookable slots are generated."}
-      </p>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={label} htmlFor="tz">
-            Your timezone
-          </label>
-          <select
-            id="tz"
-            value={timezone}
-            onChange={(e) => {
-              setTimezone(e.target.value);
-              setTzWarn(false);
-            }}
-            className={field + " mt-1.5 w-full"}
-          >
-            {timezones.map((tz) => (
-              <option key={tz} value={tz}>
-                {tz}
-              </option>
-            ))}
-          </select>
-          {tzWarn && (
-            <p className="text-mnt-amber mt-1.5 text-[12px] leading-snug">
-              Your timezone is set to UTC. Pick your local timezone and save, or
-              mentees will see your times shifted.
-            </p>
-          )}
-        </div>
+      <label className="flex flex-col gap-1.5">
+        <span className={label}>Your timezone</span>
+        <select
+          value={timezone}
+          onChange={(e) => {
+            setTimezone(e.target.value);
+            setTzWarn(false);
+          }}
+          className={field + " w-full"}
+        >
+          {timezones.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz}
+            </option>
+          ))}
+        </select>
+        {tzWarn && (
+          <span className="text-mnt-amber text-[12px] leading-snug">
+            Your timezone is set to UTC. Pick your local timezone and save, or
+            mentees will see your times shifted.
+          </span>
+        )}
+      </label>
 
-        <div>
-          <label className={label} htmlFor="status">
-            Availability status
-          </label>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Availability status</span>
           <select
-            id="status"
             value={status}
             onChange={(e) =>
               setStatus(e.target.value as Prefs["availabilityStatus"])
             }
-            className={field + " mt-1.5 w-full"}
+            className={field + " w-full"}
           >
-            <option value="accepting">Accepting requests</option>
-            <option value="limited">Limited availability</option>
-            <option value="unavailable">Currently unavailable</option>
+            <option value="accepting">Accepting</option>
+            <option value="limited">Limited</option>
+            <option value="unavailable">Unavailable</option>
           </select>
-        </div>
-
-        <div>
-          <label className={label} htmlFor="duration">
-            Default session length
-          </label>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Session length</span>
           <select
-            id="duration"
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className={field + " mt-1.5 w-full"}
+            className={field + " w-full"}
           >
             {[20, 30, 40, 45, 60, 90].map((m) => (
               <option key={m} value={m}>
@@ -247,17 +260,13 @@ function PrefsCard({
               </option>
             ))}
           </select>
-        </div>
-
-        <div>
-          <label className={label} htmlFor="notice">
-            Minimum booking notice
-          </label>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Booking notice</span>
           <select
-            id="notice"
             value={notice}
             onChange={(e) => setNotice(Number(e.target.value))}
-            className={field + " mt-1.5 w-full"}
+            className={field + " w-full"}
           >
             <option value={0}>No minimum</option>
             <option value={60}>1 hour</option>
@@ -267,17 +276,13 @@ function PrefsCard({
             <option value={1440}>1 day</option>
             <option value={2880}>2 days</option>
           </select>
-        </div>
-
-        <div>
-          <label className={label} htmlFor="buffer">
-            Buffer between sessions
-          </label>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Buffer between</span>
           <select
-            id="buffer"
             value={buffer}
             onChange={(e) => setBuffer(Number(e.target.value))}
-            className={field + " mt-1.5 w-full"}
+            className={field + " w-full"}
           >
             {[0, 5, 10, 15, 30].map((m) => (
               <option key={m} value={m}>
@@ -285,32 +290,28 @@ function PrefsCard({
               </option>
             ))}
           </select>
-        </div>
-
-        <div>
-          <label className={label} htmlFor="maxweek">
-            Max sessions per week
-          </label>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Max per week</span>
           <input
-            id="maxweek"
             type="number"
             min={1}
             value={maxWeek}
             onChange={(e) => setMaxWeek(e.target.value)}
             placeholder="No limit"
-            className={field + " mt-1.5 w-full"}
+            className={field + " w-full"}
           />
-        </div>
+        </label>
       </div>
 
-      {error && <p className="text-destructive mt-3 text-[12.5px]">{error}</p>}
-      <div className="mt-4 flex items-center gap-3">
+      {error && <p className={errBox}>{error}</p>}
+      <div className="flex items-center gap-3">
         <button type="button" className={btn} disabled={pending} onClick={save}>
           {pending ? "Saving…" : "Save preferences"}
         </button>
         {saved && (
-          <span className="text-mnt-green inline-flex items-center gap-1 text-[12.5px]">
-            <Check className="size-4" /> Saved
+          <span className="text-mnt-green inline-flex items-center gap-1.5 text-[13px] font-semibold">
+            <Check className="size-4" strokeWidth={2.4} /> Saved
           </span>
         )}
       </div>
@@ -344,54 +345,47 @@ function WeeklyCard({
 
   return (
     <div className={card}>
-      <div className="text-mnt-ink text-[14px] font-bold">Weekly schedule</div>
-      <p className="text-mnt-ink-muted mt-1 text-[13px]">
-        Recurring blocks when you&apos;re usually free. Times are in your
-        timezone.
-      </p>
+      <div>
+        <h2 className={sectionTitle}>Weekly schedule</h2>
+        <p className={sectionSub}>
+          Recurring blocks when you&apos;re usually free. Times are in your
+          timezone.
+        </p>
+      </div>
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <label className={label} htmlFor="weekday">
-            Day
-          </label>
+      <div className={addBox}>
+        <label className="flex flex-[2_1_160px] flex-col gap-1.5">
+          <span className={label}>Day</span>
           <select
-            id="weekday"
             value={weekday}
             onChange={(e) => setWeekday(Number(e.target.value))}
-            className={field + " mt-1.5 w-full"}
+            className={field + " w-full"}
           >
-            {WEEKDAYS.map((d, i) => (
-              <option key={d} value={i}>
-                {d}
+            {DAY_ORDER.map((i) => (
+              <option key={i} value={i}>
+                {WEEKDAYS[i]}
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className={label} htmlFor="start">
-            From
-          </label>
+        </label>
+        <label className="flex flex-[1_1_110px] flex-col gap-1.5">
+          <span className={label}>From</span>
           <input
-            id="start"
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className={field + " mt-1.5 w-full [color-scheme:dark]"}
+            className={field + " w-full"}
           />
-        </div>
-        <div>
-          <label className={label} htmlFor="end">
-            To
-          </label>
+        </label>
+        <label className="flex flex-[1_1_110px] flex-col gap-1.5">
+          <span className={label}>To</span>
           <input
-            id="end"
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className={field + " mt-1.5 w-full [color-scheme:dark]"}
+            className={field + " w-full"}
           />
-        </div>
+        </label>
         <button
           type="button"
           className={btn}
@@ -400,40 +394,58 @@ function WeeklyCard({
             run(() => addAvailabilityBlock({ weekday, startTime, endTime }))
           }
         >
-          <Plus className="size-4" /> Add
+          <Plus className="size-4" strokeWidth={2.4} /> Add block
         </button>
       </div>
 
-      {error && <p className="text-destructive mt-3 text-[12.5px]">{error}</p>}
+      {error && <p className={errBox}>{error}</p>}
 
-      <div className="mt-4 flex flex-col gap-2">
-        {blocks.length === 0 ? (
-          <p className="text-mnt-faint text-[13px]">No weekly blocks yet.</p>
-        ) : (
-          blocks.map((b) => (
+      <div className="flex flex-col">
+        {DAY_ORDER.map((i) => {
+          const dayBlocks = blocks
+            .filter((b) => b.weekday === i)
+            .sort((a, b) => minutesOf(a.startTime) - minutesOf(b.startTime));
+          return (
             <div
-              key={b.id}
-              className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between rounded-xl border px-3.5 py-2.5"
+              key={i}
+              className="border-mnt-line flex flex-wrap items-center gap-2.5 border-b py-3 last:border-b-0"
             >
-              <span className="text-[13.5px]">
-                <span className="font-semibold">{WEEKDAYS[b.weekday]}</span>
-                <span className="text-mnt-ink-muted">
-                  {" "}
-                  · {b.startTime} to {b.endTime}
-                </span>
-              </span>
-              <button
-                type="button"
-                aria-label="Remove block"
-                className="text-mnt-faint hover:text-destructive transition"
-                disabled={pending}
-                onClick={() => run(() => removeAvailabilityBlock(b.id))}
+              <span
+                className={
+                  "w-[110px] shrink-0 text-[14px] font-bold " +
+                  (dayBlocks.length ? "text-mnt-ink" : "text-mnt-faint")
+                }
               >
-                <Trash2 className="size-4" />
-              </button>
+                {WEEKDAYS[i]}
+              </span>
+              <div className="flex flex-[1_1_260px] flex-wrap gap-2">
+                {dayBlocks.length === 0 ? (
+                  <span className="text-mnt-faint flex h-9 items-center text-[13px]">
+                    Not available
+                  </span>
+                ) : (
+                  dayBlocks.map((b) => (
+                    <span
+                      key={b.id}
+                      className="bg-mnt-brand/10 text-mnt-brand inline-flex h-9 items-center gap-1 rounded-[10px] py-0 pr-1 pl-3 text-[13px] font-bold"
+                    >
+                      {b.startTime} – {b.endTime}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${WEEKDAYS[i]} ${b.startTime} to ${b.endTime}`}
+                        className="text-mnt-faint hover:text-mnt-ink grid size-7 place-items-center rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-500"
+                        disabled={pending}
+                        onClick={() => run(() => removeAvailabilityBlock(b.id))}
+                      >
+                        <X className="size-3.5" strokeWidth={2.4} />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
     </div>
   );
@@ -466,65 +478,67 @@ function ExceptionsCard({
 
   const needsTimes = kind === "available";
 
+  function fmtDate(iso: string): string {
+    const d = new Date(iso + "T00:00:00");
+    return Number.isNaN(d.getTime())
+      ? iso
+      : d.toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+  }
+
   return (
     <div className={card}>
-      <div className="text-mnt-ink text-[14px] font-bold">Date exceptions</div>
-      <p className="text-mnt-ink-muted mt-1 text-[13px]">
-        Override a specific date: block time off (leave times empty to block the
-        whole day) or add extra availability.
-      </p>
+      <div>
+        <h2 className={sectionTitle}>Date exceptions</h2>
+        <p className={sectionSub}>
+          Override a specific date. Block time off (leave times empty to block
+          the whole day) or add extra availability.
+        </p>
+      </div>
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-        <div>
-          <label className={label} htmlFor="excdate">
-            Date
-          </label>
+      <div className={addBox}>
+        <label className="flex flex-[1_1_150px] flex-col gap-1.5">
+          <span className={label}>Date</span>
           <input
-            id="excdate"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className={field + " mt-1.5 w-full [color-scheme:dark]"}
+            className={field + " w-full"}
           />
-        </div>
-        <div>
-          <label className={label} htmlFor="kind">
-            Type
-          </label>
+        </label>
+        <label className="flex flex-[1_1_180px] flex-col gap-1.5">
+          <span className={label}>Type</span>
           <select
-            id="kind"
             value={kind}
             onChange={(e) => setKind(e.target.value as "available" | "blocked")}
-            className={field + " mt-1.5 w-full"}
+            className={field + " w-full"}
           >
             <option value="blocked">Block time off</option>
             <option value="available">Extra availability</option>
           </select>
-        </div>
-        <div>
-          <label className={label} htmlFor="excstart">
-            From {needsTimes ? "" : "(optional)"}
-          </label>
+        </label>
+        <label className="flex flex-[1_1_100px] flex-col gap-1.5">
+          <span className={label}>From {needsTimes ? "" : "(optional)"}</span>
           <input
-            id="excstart"
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className={field + " mt-1.5 w-full [color-scheme:dark]"}
+            className={field + " w-full"}
           />
-        </div>
-        <div>
-          <label className={label} htmlFor="excend">
-            To {needsTimes ? "" : "(optional)"}
-          </label>
+        </label>
+        <label className="flex flex-[1_1_100px] flex-col gap-1.5">
+          <span className={label}>To {needsTimes ? "" : "(optional)"}</span>
           <input
-            id="excend"
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className={field + " mt-1.5 w-full [color-scheme:dark]"}
+            className={field + " w-full"}
           />
-        </div>
+        </label>
         <button
           type="button"
           className={btn}
@@ -540,46 +554,66 @@ function ExceptionsCard({
             )
           }
         >
-          <Plus className="size-4" /> Add
+          <Plus className="size-4" strokeWidth={2.4} /> Add
         </button>
       </div>
 
-      {error && <p className="text-destructive mt-3 text-[12.5px]">{error}</p>}
+      {error && <p className={errBox}>{error}</p>}
 
-      <div className="mt-4 flex flex-col gap-2">
-        {exceptions.length === 0 ? (
-          <p className="text-mnt-faint text-[13px]">No date exceptions.</p>
-        ) : (
-          exceptions.map((e) => (
-            <div
-              key={e.id}
-              className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between rounded-xl border px-3.5 py-2.5"
-            >
-              <span className="text-[13.5px]">
-                <span className="font-semibold">{e.date}</span>
-                <span className="text-mnt-ink-muted">
-                  {" "}
-                  · {e.kind === "available" ? "Extra availability" : "Blocked"}
-                  {e.startTime && e.endTime
-                    ? ` ${e.startTime} to ${e.endTime}`
-                    : e.kind === "blocked"
-                      ? " (whole day)"
-                      : ""}
-                </span>
-              </span>
-              <button
-                type="button"
-                aria-label="Remove exception"
-                className="text-mnt-faint hover:text-destructive transition"
-                disabled={pending}
-                onClick={() => run(() => removeAvailabilityException(e.id))}
+      {exceptions.length === 0 ? (
+        <div className="border-mnt-line text-mnt-ink-muted flex items-center gap-2.5 rounded-[14px] border border-dashed p-4 text-[13px]">
+          <CalendarPlus className="text-mnt-faint size-[18px] shrink-0" />
+          No date exceptions. Your weekly schedule applies every week.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {exceptions.map((e) => {
+            const blocked = e.kind === "blocked";
+            const span =
+              e.startTime && e.endTime
+                ? `${e.startTime} – ${e.endTime}`
+                : "Whole day";
+            return (
+              <div
+                key={e.id}
+                className="border-mnt-line flex items-center gap-3 rounded-xl border p-2.5 px-3"
               >
-                <Trash2 className="size-4" />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
+                <span
+                  className={
+                    "grid size-9 shrink-0 place-items-center rounded-[10px] " +
+                    (blocked
+                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                      : "bg-mnt-green/12 text-mnt-green")
+                  }
+                >
+                  {blocked ? (
+                    <CalendarOff className="size-4" strokeWidth={2} />
+                  ) : (
+                    <CalendarPlus className="size-4" strokeWidth={2} />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-mnt-ink text-[14px] font-bold">
+                    {fmtDate(e.date)}
+                  </div>
+                  <div className="text-mnt-ink-muted text-[12px]">
+                    {blocked ? "Time off" : "Extra availability"} · {span}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Remove exception on ${e.date}`}
+                  className="text-mnt-faint grid size-9 place-items-center rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-500"
+                  disabled={pending}
+                  onClick={() => run(() => removeAvailabilityException(e.id))}
+                >
+                  <X className="size-4" strokeWidth={2} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
