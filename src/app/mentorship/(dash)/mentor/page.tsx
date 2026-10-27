@@ -1,5 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  ArrowRight,
+  Calendar,
+  Check,
+  CircleDot,
+  Clock,
+  FileCheck,
+  GraduationCap,
+  Plus,
+  Users,
+} from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { ApplyMentorControl } from "./apply-control";
 import { RequestDecisionControl } from "./request-decision-control";
@@ -7,9 +18,6 @@ import { BookingDecisionControl } from "./booking-decision-control";
 import { AddToCircleControl } from "./add-to-circle-control";
 
 export const metadata = { title: "Mentor dashboard" };
-
-const lbl =
-  "text-mnt-faint font-mono text-[10.5px] tracking-[0.13em] uppercase";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "";
@@ -246,244 +254,399 @@ export default async function MentorDashboardPage() {
       timeZone: mentorTz,
     });
 
+  const firstName = name.split(/\s+/)[0];
+  const todoCount = incoming.length + bookingReqs.length + toPlace.length;
+
   return (
     <div className="px-6 py-8 md:px-9">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className={lbl}>Mentor workspace</div>
-          <h1 className="font-display mt-1.5 text-[26px] font-extrabold">
-            Welcome, {name.split(" ")[0]}
-          </h1>
-        </div>
-        {verified && (
-          <Link
-            href="/mentorship/circles/new"
-            className="bg-mnt-brand text-mnt-on-brand rounded-[10px] px-4 py-2.5 text-[13px] font-bold"
-          >
-            + New Circle
-          </Link>
-        )}
-      </div>
-
-      {!verified && (
-        <div className="border-mnt-amber/30 mt-5 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">
-          {pendingArea ? (
-            <>
-              <div className="text-[14px] font-bold">
-                Application under review
-              </div>
-              <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
-                The ETEN Readiness Panel is reviewing your application to mentor
-                in {pendingArea}. You will be able to create Circles once you
-                are verified.
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-[14px] font-bold">
-                Become a verified mentor
-              </div>
-              {isValidated ? (
-                <>
-                  <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
-                    Apply for verification in your capability area. The ETEN
-                    Readiness Panel reviews every mentor before they can lead a
-                    Circle.
-                  </div>
-                  {areas.length > 0 && <ApplyMentorControl areas={areas} />}
-                </>
-              ) : (
-                <>
-                  <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
-                    Mentoring is for validated ETEN members. Complete your ETEN
-                    membership first, then apply for verification.
-                  </div>
-                  <a
-                    href="/mentorship/validate"
-                    className="bg-mnt-amber mt-3 inline-block rounded-[10px] px-4 py-2 text-[13px] font-bold text-[#241a05]"
-                  >
-                    Validate my account
-                  </a>
-                </>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* stat tiles */}
-      <div className="mt-5 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-        <Tile label="Active Circles" value={activeCircles} />
-        <Tile label="Mentees" value={mentees} />
-        <Tile
-          label="Pending reviews"
-          value={pending}
-          tone={pending > 0 ? "text-mnt-amber" : undefined}
-        />
-        <Tile
-          label="Circle graduates"
-          value={graduates}
-          tone={graduates > 0 ? "text-mnt-green" : undefined}
-        />
-      </div>
-
-      {/* incoming 1:1 requests */}
-      {verified && (
-        <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
-          <div className={`${lbl} mb-3.5`}>
-            Incoming requests · {incoming.length}
-          </div>
-          {incoming.length === 0 ? (
-            <p className="text-mnt-ink-muted text-[13px] leading-relaxed">
-              No pending mentorship requests. Mentees can request you from the
-              mentor directory.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {incoming.map((r) => (
-                <div
-                  key={r.id}
-                  className="bg-mnt-panel-2 border-mnt-line rounded-xl border p-3.5"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[14px] font-bold">
-                        {menteeName.get(r.mentee_id) ?? "A member"}
-                      </div>
-                      {r.message && (
-                        <p className="text-mnt-ink-muted mt-1 text-[13px] whitespace-pre-line">
-                          {r.message}
-                        </p>
-                      )}
-                      <div className="text-mnt-faint mt-1 text-[11.5px]">
-                        {fmtDate(r.created_at)}
-                      </div>
-                    </div>
-                    <RequestDecisionControl requestId={r.id} />
-                  </div>
-                </div>
-              ))}
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-6">
+        {/* Greeting */}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="text-mnt-brand text-[13px] font-semibold">
+              Mentor workspace
             </div>
-          )}
-        </div>
-      )}
-
-      {/* session booking requests (from availability) */}
-      {verified && (
-        <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
-          <div className={`${lbl} mb-3.5`}>
-            Session requests · {bookingReqs.length}
-          </div>
-          {bookingReqs.length === 0 ? (
-            <p className="text-mnt-ink-muted text-[13px] leading-relaxed">
-              No pending session requests. Mentees book these from your
-              availability. Set your times under Availability.
+            <h1 className="font-display text-mnt-ink mt-1.5 text-[30px] font-extrabold tracking-[-0.02em]">
+              Welcome back, {firstName}
+            </h1>
+            <p className="text-mnt-ink-muted mt-1.5 text-[15px]">
+              {verified
+                ? todoCount > 0
+                  ? `You have ${todoCount} thing${todoCount === 1 ? "" : "s"} waiting for you today.`
+                  : "You are all caught up. Nice work."
+                : "Complete verification to start leading Circles."}
             </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {bookingReqs.map((b) => (
-                <div
-                  key={b.id}
-                  className="bg-mnt-panel-2 border-mnt-line flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5"
-                >
-                  <div className="min-w-0">
-                    <div className="text-[14px] font-bold">
-                      {bookingMenteeName.get(b.mentee_id) ?? "A member"}
-                    </div>
-                    <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
-                      {fmtWhen(b.starts_at)} · {b.duration_minutes} min
-                    </div>
-                    <div className="text-mnt-faint mt-0.5 text-[11px]">
-                      Your timezone ({mentorTz})
-                    </div>
-                  </div>
-                  <BookingDecisionControl bookingId={b.id} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* accepted 1:1 mentees to place in a Circle */}
-      {verified && toPlace.length > 0 && (
-        <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
-          <div className={`${lbl} mb-1.5`}>
-            Accepted · place in a Circle · {toPlace.length}
           </div>
-          <p className="text-mnt-ink-muted mb-3.5 text-[12.5px] leading-relaxed">
-            Add each mentee you accepted to a new or existing Circle. Mentees
-            can join a Circle that is already running.
-          </p>
-          <div className="flex flex-col gap-3">
-            {toPlace.map((a) => (
-              <div
-                key={a.id}
-                className="bg-mnt-panel-2 border-mnt-line flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5"
-              >
-                <div className="text-[14px] font-bold">
-                  {placeName.get(a.mentee_id) ?? "A member"}
-                </div>
-                <AddToCircleControl
-                  menteeId={a.mentee_id}
-                  circles={openCircles}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* circles I lead */}
-      <div className="bg-mnt-panel border-mnt-line mt-4 rounded-2xl border p-[18px]">
-        <div className={`${lbl} mb-3.5`}>Circles I lead</div>
-        {circles.length === 0 ? (
-          <p className="text-mnt-ink-muted text-[13px] leading-relaxed">
-            {verified
-              ? "You are not leading any Circles yet."
-              : "Once you are verified, your Circles will appear here."}
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {circles.map((c) => (
+          {verified && (
+            <div className="flex flex-wrap gap-2.5">
               <Link
-                key={c.id}
-                href={`/mentorship/circles/${c.id}`}
-                className="bg-mnt-panel-2 border-mnt-line hover:border-mnt-brand/40 block rounded-xl border p-3.5 transition"
+                href="/mentorship/availability"
+                className="border-mnt-line text-mnt-ink hover:bg-mnt-panel-2 inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <h4 className="font-display text-[15px] font-bold">
-                    {c.title ?? "Circle"}
-                  </h4>
-                  <span className="text-mnt-ink-muted font-mono text-[10px] capitalize">
-                    {c.status}
+                <Clock className="size-4" strokeWidth={1.8} />
+                Set availability
+              </Link>
+              <Link
+                href="/mentorship/circles/new"
+                className="bg-mnt-brand text-mnt-on-brand inline-flex h-11 items-center gap-2 rounded-xl px-[18px] text-sm font-bold"
+              >
+                <Plus className="size-4" strokeWidth={2.4} />
+                New Circle
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {!verified && (
+          <div className="border-mnt-amber/30 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">
+            {pendingArea ? (
+              <>
+                <div className="text-mnt-ink text-[14px] font-bold">
+                  Application under review
+                </div>
+                <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                  The ETEN Readiness Panel is reviewing your application to
+                  mentor in {pendingArea}. You will be able to create Circles
+                  once you are verified.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-mnt-ink text-[14px] font-bold">
+                  Become a verified mentor
+                </div>
+                {isValidated ? (
+                  <>
+                    <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                      Apply for verification in your capability area. The ETEN
+                      Readiness Panel reviews every mentor before they can lead
+                      a Circle.
+                    </div>
+                    {areas.length > 0 && <ApplyMentorControl areas={areas} />}
+                  </>
+                ) : (
+                  <>
+                    <div className="text-mnt-ink-muted mt-0.5 text-[12.5px]">
+                      Mentoring is for validated ETEN members. Complete your
+                      ETEN membership first, then apply for verification.
+                    </div>
+                    <a
+                      href="/mentorship/validate"
+                      className="bg-mnt-amber mt-3 inline-block rounded-[10px] px-4 py-2 text-[13px] font-bold text-[#241a05]"
+                    >
+                      Validate my account
+                    </a>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Stats */}
+        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))] gap-4">
+          <Stat
+            Icon={CircleDot}
+            tone="brand"
+            label="Active circles"
+            value={activeCircles}
+          />
+          <Stat Icon={Users} tone="brand" label="Mentees" value={mentees} />
+          <Stat
+            Icon={FileCheck}
+            tone="amber"
+            label="Pending reviews"
+            value={pending}
+          />
+          <Stat
+            Icon={GraduationCap}
+            tone="green"
+            label="Circle graduates"
+            value={graduates}
+          />
+        </div>
+
+        {/* Needs your attention */}
+        {verified && (
+          <section className="bg-mnt-panel border-mnt-line flex flex-col gap-[18px] rounded-[18px] border p-6">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-mnt-ink text-[17px] font-bold">
+                Needs your attention
+              </h2>
+              {todoCount > 0 && (
+                <span className="bg-mnt-brand text-mnt-on-brand rounded-full px-2.5 py-0.5 text-[13px] font-bold">
+                  {todoCount}
+                </span>
+              )}
+            </div>
+
+            <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))] gap-4">
+              {/* Mentee requests */}
+              <div className="border-mnt-line flex flex-col gap-3.5 rounded-[16px] border p-[18px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-mnt-faint font-mono text-[11px] font-bold tracking-[0.06em] uppercase">
+                    Mentee requests
+                  </span>
+                  <span className="bg-mnt-panel-2 text-mnt-ink-muted rounded-full px-2 py-0.5 text-[12px] font-bold">
+                    {incoming.length}
                   </span>
                 </div>
-              </Link>
-            ))}
-          </div>
+                {incoming.length === 0 ? (
+                  <div className="bg-mnt-panel-2 text-mnt-ink-muted flex items-center gap-2.5 rounded-xl p-3.5 text-[13px]">
+                    <Check className="text-mnt-green size-[18px]" />
+                    You&apos;re all caught up on mentee requests.
+                  </div>
+                ) : (
+                  incoming.map((r) => (
+                    <div key={r.id} className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-mnt-brand/12 text-mnt-brand grid size-[42px] shrink-0 place-items-center rounded-full text-[14px] font-bold">
+                          {(menteeName.get(r.mentee_id) ?? "A member")
+                            .trim()
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-mnt-ink text-[15px] font-bold">
+                            {menteeName.get(r.mentee_id) ?? "A member"}
+                          </div>
+                          <div className="text-mnt-ink-muted text-[13px]">
+                            Wants to join your mentorship ·{" "}
+                            {fmtDate(r.created_at)}
+                          </div>
+                          {r.message && (
+                            <p className="text-mnt-ink-muted mt-1 text-[13px] whitespace-pre-line">
+                              {r.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <RequestDecisionControl requestId={r.id} />
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Session requests */}
+              <div className="border-mnt-line flex flex-col gap-3.5 rounded-[16px] border p-[18px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-mnt-faint font-mono text-[11px] font-bold tracking-[0.06em] uppercase">
+                    Session requests
+                  </span>
+                  <span className="bg-mnt-panel-2 text-mnt-ink-muted rounded-full px-2 py-0.5 text-[12px] font-bold">
+                    {bookingReqs.length}
+                  </span>
+                </div>
+                {bookingReqs.length === 0 ? (
+                  <div className="bg-mnt-panel-2 text-mnt-ink-muted flex items-start gap-2.5 rounded-xl p-3.5 text-[13px] leading-relaxed">
+                    <Calendar className="text-mnt-brand mt-0.5 size-[18px] shrink-0" />
+                    <span>
+                      No pending session requests. Mentees book these from your
+                      availability.{" "}
+                      <Link
+                        href="/mentorship/availability"
+                        className="text-mnt-brand font-semibold"
+                      >
+                        Set your times
+                      </Link>
+                    </span>
+                  </div>
+                ) : (
+                  bookingReqs.map((b) => (
+                    <div key={b.id} className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="border-mnt-line w-[52px] shrink-0 overflow-hidden rounded-xl border text-center">
+                          <span className="bg-mnt-brand text-mnt-on-brand block py-[3px] text-[11px] font-bold">
+                            {new Date(b.starts_at)
+                              .toLocaleString("en-GB", {
+                                month: "short",
+                                timeZone: mentorTz,
+                              })
+                              .toUpperCase()}
+                          </span>
+                          <span className="text-mnt-ink block py-[3px] text-[20px] font-extrabold">
+                            {new Date(b.starts_at).toLocaleString("en-GB", {
+                              day: "2-digit",
+                              timeZone: mentorTz,
+                            })}
+                          </span>
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-mnt-ink text-[15px] font-bold">
+                            {bookingMenteeName.get(b.mentee_id) ?? "A member"}
+                          </div>
+                          <div className="text-mnt-ink text-[13px]">
+                            {fmtWhen(b.starts_at)} · {b.duration_minutes} min
+                          </div>
+                          <div className="text-mnt-faint text-[12px]">
+                            Your timezone ({mentorTz})
+                          </div>
+                        </div>
+                      </div>
+                      <BookingDecisionControl bookingId={b.id} />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Place accepted mentees in a Circle */}
+            {toPlace.length > 0 && (
+              <div className="border-mnt-brand/40 flex flex-col gap-3.5 rounded-[16px] border-[1.5px] p-[18px] [background:rgba(74,22,196,0.04)]">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-mnt-brand font-mono text-[11px] font-bold tracking-[0.06em] uppercase">
+                      Accepted · place in a circle
+                    </span>
+                    <span className="bg-mnt-brand text-mnt-on-brand rounded-full px-2 py-px text-[12px] font-bold">
+                      {toPlace.length}
+                    </span>
+                  </div>
+                  <p className="text-mnt-ink-muted mt-1.5 text-[13px]">
+                    Add each mentee you accepted to a new or existing Circle.
+                  </p>
+                </div>
+                {toPlace.map((a) => (
+                  <div
+                    key={a.id}
+                    className="bg-mnt-panel border-mnt-line flex flex-wrap items-center gap-3 rounded-[14px] border p-3.5"
+                  >
+                    <span className="bg-mnt-brand/12 text-mnt-brand grid size-[38px] shrink-0 place-items-center rounded-full text-[13px] font-bold">
+                      {(placeName.get(a.mentee_id) ?? "A member")
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+                    <span className="text-mnt-ink flex-[1_1_200px] text-[15px] font-bold">
+                      {placeName.get(a.mentee_id) ?? "A member"}
+                    </span>
+                    <AddToCircleControl
+                      menteeId={a.mentee_id}
+                      circles={openCircles}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         )}
+
+        {/* Circles I lead */}
+        <section className="flex flex-col gap-3.5">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-mnt-ink text-[17px] font-bold">
+              Circles I lead
+            </h2>
+            {circles.length > 0 && (
+              <span className="bg-mnt-brand/12 text-mnt-brand rounded-full px-2.5 py-0.5 text-[13px] font-bold">
+                {circles.length}
+              </span>
+            )}
+          </div>
+          {circles.length === 0 ? (
+            <div className="bg-mnt-panel border-mnt-line text-mnt-ink-muted rounded-[18px] border p-6 text-[13px] leading-relaxed">
+              {verified
+                ? "You are not leading any Circles yet."
+                : "Once you are verified, your Circles will appear here."}
+            </div>
+          ) : (
+            <div className="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-3.5">
+              {circles.map((c) => {
+                const active = c.status === "active";
+                const untitled = !c.title;
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/mentorship/circles/${c.id}`}
+                    className="bg-mnt-panel border-mnt-line hover:border-mnt-brand/40 flex flex-col gap-3.5 rounded-[16px] border p-[18px] transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2.5">
+                      <span
+                        className={
+                          "grid size-10 place-items-center rounded-xl " +
+                          (active
+                            ? "bg-mnt-brand/12 text-mnt-brand"
+                            : "bg-mnt-panel-2 text-mnt-faint")
+                        }
+                      >
+                        <CircleDot className="size-5" strokeWidth={1.8} />
+                      </span>
+                      <span
+                        className={
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold capitalize " +
+                          (active
+                            ? "bg-mnt-green/12 text-mnt-green"
+                            : "bg-mnt-panel-2 text-mnt-faint")
+                        }
+                      >
+                        <span
+                          className={
+                            "size-1.5 rounded-full " +
+                            (active ? "bg-mnt-green" : "bg-mnt-faint")
+                          }
+                        />
+                        {c.status}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-mnt-ink text-[16px] font-bold">
+                        {c.title ?? "Circle"}
+                      </div>
+                      {untitled && (
+                        <div className="mt-1 text-[12px] text-amber-600 dark:text-amber-400">
+                          No title yet. Add one so mentees can find it.
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-mnt-brand flex items-center justify-end gap-1.5 text-[13px] font-bold">
+                      Open circle
+                      <ArrowRight className="size-3.5" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
 }
 
-function Tile({
+function Stat({
+  Icon,
+  tone,
   label,
   value,
-  tone,
 }: {
+  Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  tone: "brand" | "amber" | "green";
   label: string;
   value: number;
-  tone?: string;
 }) {
+  const square =
+    tone === "amber"
+      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+      : tone === "green"
+        ? "bg-mnt-green/12 text-mnt-green"
+        : "bg-mnt-brand/12 text-mnt-brand";
   return (
-    <div className="bg-mnt-panel border-mnt-line rounded-2xl border p-4">
-      <div className={lbl}>{label}</div>
-      <div
-        className={`font-display mt-2 text-[26px] font-extrabold ${tone ?? ""}`}
+    <div className="bg-mnt-panel border-mnt-line flex items-center gap-4 rounded-2xl border p-5">
+      <span
+        className={
+          "grid size-[46px] shrink-0 place-items-center rounded-[14px] " +
+          square
+        }
       >
-        {value}
+        <Icon className="size-[22px]" strokeWidth={1.8} />
+      </span>
+      <div>
+        <div className="text-mnt-ink-muted text-[13px] font-semibold">
+          {label}
+        </div>
+        <div className="text-mnt-ink text-[28px] font-extrabold tabular-nums">
+          {value}
+        </div>
       </div>
     </div>
   );
