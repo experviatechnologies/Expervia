@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import {
-  ArrowLeft,
-  GraduationCap,
-  MessageSquare,
-  Star,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, Check, GraduationCap, Star } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { PodMembershipButton } from "./pod-membership-button";
-import { PodRoleControl } from "./pod-role-control";
-import { NominateMentorButton } from "./nominate-mentor-button";
+import { PodRoster, type RosterItem } from "./pod-roster";
 
 export const metadata: Metadata = {
   title: "Pod",
@@ -60,7 +53,12 @@ export default async function PodDetailPage({
   // has no detail page of its own (yet). Unknown slugs 404.
   if (!pod || pod.is_main) notFound();
 
-  const [{ data: membershipRows }, { data: profile }] = await Promise.all([
+  const [
+    { data: membershipRows },
+    { data: profile },
+    { data: allPodRows },
+    { data: allMemberRows },
+  ] = await Promise.all([
     supabase
       .from("pod_memberships")
       .select("member_id, role_in_pod, joined_at")
@@ -70,7 +68,28 @@ export default async function PodDetailPage({
       .select("primary_specialization_pod_id")
       .eq("member_id", member.id)
       .maybeSingle(),
+    supabase
+      .from("pods")
+      .select("id, slug, name, is_main")
+      .eq("is_main", false)
+      .order("name"),
+    supabase.from("pod_memberships").select("pod_id, member_id"),
   ]);
+
+  // Pod picker: all specialist pods with their counts + whether the viewer is in.
+  const podTotal = new Map<string, number>();
+  const myPodIds = new Set<string>();
+  for (const m of allMemberRows ?? []) {
+    podTotal.set(m.pod_id, (podTotal.get(m.pod_id) ?? 0) + 1);
+    if (m.member_id === member.id) myPodIds.add(m.pod_id);
+  }
+  const pickList = (allPodRows ?? []).map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    count: podTotal.get(p.id) ?? 0,
+    joined: myPodIds.has(p.id),
+    current: p.id === pod.id,
+  }));
 
   const memberships = membershipRows ?? [];
   const memberIds = memberships.map((m) => m.member_id);
@@ -176,254 +195,293 @@ export default async function PodDetailPage({
     });
   }
 
-  return (
-    <div className="mx-auto flex w-full max-w-5xl gap-8 px-4 py-6 lg:px-8">
-      <main className="min-w-0 flex-1">
-        <Link
-          href="/pods"
-          className="text-eten-faint hover:text-eten-ink mb-4 inline-flex items-center gap-1.5 text-sm"
-        >
-          <ArrowLeft className="size-4" />
-          All pods
-        </Link>
+  const tileInitials = (name: string) =>
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
 
-        {/* Header */}
-        <header className="bg-eten-panel border-eten-line rounded-2xl border p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-eten-accent mb-1 font-mono text-sm">
-                #{pod.slug}
-              </div>
-              <h1 className="font-display text-eten-ink text-2xl font-bold">
-                {pod.name}
-              </h1>
-              <div className="text-eten-faint mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                <span className="inline-flex items-center gap-1.5">
-                  <Users className="size-4" />
-                  {roster.length} {roster.length === 1 ? "member" : "members"}
+  const rosterItems: RosterItem[] = roster.map((r) => ({
+    memberId: r.memberId,
+    name: r.name,
+    headline: r.headline,
+    jobTitle: r.jobTitle,
+    role: r.role,
+    visible: r.visible,
+    isMentor: Boolean(r.mentor?.isMentor),
+    nominationPending: Boolean(r.mentor?.pending),
+    canNominate:
+      isLeadHere &&
+      !!r.mentor &&
+      !r.mentor.isMentor &&
+      !r.mentor.pending &&
+      r.memberId !== member.id &&
+      (r.mentor.vLevel ?? 0) >= 2,
+  }));
+
+  return (
+    <div className="mx-auto w-full max-w-[1240px] px-4 py-8 md:px-8">
+      <div className="flex flex-wrap items-start gap-5">
+        {/* Pod picker */}
+        <aside className="max-w-full flex-[1_1_230px]">
+          <div className="bg-eten-panel border-eten-line flex flex-col gap-0.5 rounded-[16px] border p-2.5">
+            <div className="text-eten-ink px-2.5 py-2 text-[13px] font-extrabold">
+              Pods
+            </div>
+            {pickList.map((k) => (
+              <Link
+                key={k.slug}
+                href={`/pods/${k.slug}`}
+                aria-current={k.current ? "page" : undefined}
+                className={
+                  "flex min-h-12 items-center gap-2.5 rounded-[10px] px-2.5 py-1.5 transition-colors " +
+                  (k.current ? "bg-eten-accent-soft" : "hover:bg-eten-hover")
+                }
+              >
+                <span className="bg-eten-accent-soft text-eten-accent grid size-8 shrink-0 place-items-center rounded-[9px] text-[11px] font-extrabold">
+                  {tileInitials(k.name)}
                 </span>
-                {isPrimary && (
-                  <span className="text-eten-accent inline-flex items-center gap-1.5 font-medium">
-                    <Star className="size-4" />
-                    Your primary pod
+                <span className="min-w-0 flex-1">
+                  <span className="text-eten-ink block truncate text-[13px] font-bold">
+                    {k.name}
                   </span>
+                  <span className="text-eten-faint block text-[11px]">
+                    {k.count} members
+                  </span>
+                </span>
+                {k.joined && (
+                  <span
+                    aria-label="Joined"
+                    className="bg-eten-verified size-[7px] shrink-0 rounded-full"
+                  />
+                )}
+              </Link>
+            ))}
+          </div>
+        </aside>
+
+        {/* Main */}
+        <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-[18px]">
+          <Link
+            href="/pods"
+            className="text-eten-faint hover:text-eten-ink -mb-1 inline-flex items-center gap-1.5 text-sm"
+          >
+            <ArrowLeft className="size-4" />
+            All pods
+          </Link>
+
+          {/* Pod header */}
+          <section className="bg-eten-panel border-eten-line overflow-hidden rounded-[18px] border">
+            <div
+              className="relative h-[120px] overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(120deg, #35007F 0%, var(--color-eten-accent) 60%, #7530E6 130%)",
+              }}
+            >
+              <svg
+                width="300"
+                height="300"
+                viewBox="0 0 300 300"
+                aria-hidden="true"
+                className="absolute -top-[110px] -right-[60px] opacity-[0.16]"
+              >
+                <circle
+                  cx="150"
+                  cy="150"
+                  r="140"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx="150"
+                  cy="150"
+                  r="95"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx="150"
+                  cy="150"
+                  r="50"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+            <div className="flex flex-wrap items-end justify-between gap-4 px-6 pb-5">
+              <div className="flex min-w-0 flex-wrap items-end gap-4">
+                <span className="border-eten-panel bg-eten-accent-soft text-eten-accent grid size-[84px] shrink-0 -translate-y-9 place-items-center rounded-[22px] border-4 text-[26px] font-extrabold">
+                  {tileInitials(pod.name)}
+                </span>
+                <div className="min-w-0 pb-0.5">
+                  <h1 className="text-eten-ink text-[26px] font-extrabold tracking-[-0.02em]">
+                    {pod.name}
+                  </h1>
+                  <div className="text-eten-faint mt-0.5 text-[13px]">
+                    #{pod.slug} · {roster.length} members
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pb-1">
+                {roster.length > 0 && (
+                  <div className="flex" aria-hidden="true">
+                    {roster.slice(0, 5).map((r, i) => (
+                      <span
+                        key={r.memberId}
+                        className={
+                          "border-eten-panel bg-eten-accent-soft text-eten-accent grid size-8 place-items-center rounded-full border-2 text-[11px] font-bold " +
+                          (i ? "-ml-2" : "")
+                        }
+                      >
+                        {(r.name ?? "?").trim().charAt(0).toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {isPrimary ? (
+                  <span className="bg-eten-accent-soft text-eten-accent inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold">
+                    <Star className="size-3.5" />
+                    Primary pod
+                  </span>
+                ) : isMember ? (
+                  <span className="bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold">
+                    <Check className="size-3.5" strokeWidth={2.8} />
+                    Joined
+                  </span>
+                ) : (
+                  <PodMembershipButton podId={pod.id} isMember={isMember} />
                 )}
               </div>
             </div>
-
-            {isPrimary ? (
-              <span className="bg-eten-accent-soft inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[#cddcfb]">
-                <Star className="size-3.5" />
-                Primary
-              </span>
-            ) : (
-              <PodMembershipButton podId={pod.id} isMember={isMember} />
-            )}
-          </div>
-
-          {pod.description && (
-            <p className="text-eten-ink-muted mt-4 text-sm">
-              {pod.description}
-            </p>
-          )}
-        </header>
-
-        {/* Discussion placeholder — per-pod feed is a future enhancement. */}
-        <div className="border-eten-line text-eten-faint mt-5 flex items-center gap-3 rounded-2xl border border-dashed p-5 text-sm">
-          <MessageSquare className="size-5 shrink-0" />
-          <span>
-            This pod&apos;s discussion arrives soon. For now, share to it from
-            the feed composer.
-          </span>
-        </div>
-
-        {/* Mentorship Circles (lead view) */}
-        {isLeadHere && (
-          <section className="mt-6">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-eten-faint font-mono text-xs tracking-wider uppercase">
-                Mentorship Circles · {podCircles.length}
-              </h2>
-              <Link
-                href={`/pods/${pod.slug}/circles/new`}
-                className="text-eten-accent inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
-              >
-                <GraduationCap className="size-4" />
-                Create a Circle
-              </Link>
-            </div>
-            {podCircles.length === 0 ? (
-              <div className="border-eten-line text-eten-faint rounded-2xl border border-dashed p-5 text-sm">
-                No Circles yet. Create one with a Verified Mentor and mentees
-                from this pod.
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {podCircles.map((c) => (
-                  <li key={c.id}>
-                    <Link
-                      href={`/circles/${c.id}`}
-                      className="bg-eten-panel border-eten-line hover:border-eten-accent/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 transition-colors"
-                    >
-                      <span className="min-w-0">
-                        <span className="text-eten-ink block font-semibold">
-                          {c.title ?? "Mentorship Circle"}
-                        </span>
-                        <span className="text-eten-faint text-xs">
-                          Mentor: {c.mentorName} · {c.menteeCount} mentee
-                          {c.menteeCount === 1 ? "" : "s"}
-                          {(c.status === "active" ||
-                            c.status === "completed") &&
-                            ` · ${c.completedCount}/${c.menteeCount} graduated`}
-                        </span>
-                      </span>
-                      <span className="bg-eten-panel-hi text-eten-ink-muted shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize">
-                        {c.status}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            {pod.description && (
+              <p className="text-eten-ink-muted px-6 pb-5 text-[14px] leading-relaxed">
+                {pod.description}
+              </p>
             )}
           </section>
-        )}
 
-        {/* Roster */}
-        <section className="mt-6">
-          <h2 className="text-eten-faint mb-3 font-mono text-xs tracking-wider uppercase">
-            Members · {roster.length}
-          </h2>
+          {/* Pod leads */}
+          {leads.length > 0 && (
+            <section className="bg-eten-panel border-eten-line flex flex-col gap-3 rounded-[18px] border p-5">
+              <h2 className="text-eten-ink text-[15px] font-extrabold">
+                Pod leads and mentors
+              </h2>
+              <div className="flex flex-wrap gap-2.5">
+                {leads.map((l) =>
+                  l.visible ? (
+                    <Link
+                      key={l.memberId}
+                      href={`/members/${l.memberId}`}
+                      className="border-eten-line bg-eten-panel-hi hover:border-eten-accent/40 flex items-center gap-2.5 rounded-full border py-1.5 pr-3.5 pl-1.5 transition-colors"
+                    >
+                      <span className="bg-eten-accent-soft text-eten-accent grid size-9 shrink-0 place-items-center rounded-full text-[12px] font-bold">
+                        {(l.name ?? "?").trim().charAt(0).toUpperCase()}
+                      </span>
+                      <span className="text-left">
+                        <span className="text-eten-ink block text-[13px] font-bold">
+                          {l.name}
+                        </span>
+                        <span className="text-eten-accent block text-[11px] font-bold">
+                          {ROLE_LABEL[l.role]}
+                        </span>
+                      </span>
+                    </Link>
+                  ) : (
+                    <span
+                      key={l.memberId}
+                      className="border-eten-line bg-eten-panel-hi flex items-center gap-2.5 rounded-full border py-1.5 pr-3.5 pl-1.5"
+                    >
+                      <span className="bg-eten-accent-soft text-eten-accent grid size-9 shrink-0 place-items-center rounded-full text-[12px] font-bold">
+                        {(l.name ?? "?").trim().charAt(0).toUpperCase()}
+                      </span>
+                      <span className="text-left">
+                        <span className="text-eten-ink block text-[13px] font-bold">
+                          {l.name}
+                        </span>
+                        <span className="text-eten-accent block text-[11px] font-bold">
+                          {ROLE_LABEL[l.role]}
+                        </span>
+                      </span>
+                    </span>
+                  ),
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Mentorship Circles (lead view) */}
+          {isLeadHere && (
+            <section className="bg-eten-panel border-eten-line flex flex-col gap-3 rounded-[18px] border p-5">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-eten-ink text-[15px] font-extrabold">
+                  Mentorship Circles · {podCircles.length}
+                </h2>
+                <Link
+                  href={`/pods/${pod.slug}/circles/new`}
+                  className="text-eten-accent inline-flex items-center gap-1.5 text-[13px] font-semibold hover:underline"
+                >
+                  <GraduationCap className="size-4" />
+                  Create a Circle
+                </Link>
+              </div>
+              {podCircles.length === 0 ? (
+                <div className="border-eten-line text-eten-ink-muted rounded-xl border border-dashed p-5 text-sm">
+                  No Circles yet. Create one with a Verified Mentor and mentees
+                  from this pod.
+                </div>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {podCircles.map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        href={`/circles/${c.id}`}
+                        className="border-eten-line hover:border-eten-accent/40 bg-eten-panel-hi flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 transition-colors"
+                      >
+                        <span className="min-w-0">
+                          <span className="text-eten-ink block font-semibold">
+                            {c.title ?? "Mentorship Circle"}
+                          </span>
+                          <span className="text-eten-faint text-xs">
+                            Mentor: {c.mentorName} · {c.menteeCount} mentee
+                            {c.menteeCount === 1 ? "" : "s"}
+                            {(c.status === "active" ||
+                              c.status === "completed") &&
+                              ` · ${c.completedCount}/${c.menteeCount} graduated`}
+                          </span>
+                        </span>
+                        <span className="bg-eten-accent-soft text-eten-accent shrink-0 rounded-full px-2.5 py-1 text-xs font-bold capitalize">
+                          {c.status}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {/* Roster */}
           {roster.length === 0 ? (
-            <div className="bg-eten-panel border-eten-line text-eten-faint rounded-2xl border p-8 text-center text-sm">
+            <div className="bg-eten-panel border-eten-line text-eten-ink-muted rounded-[18px] border p-8 text-center text-sm">
               No members yet — be the first to join.
             </div>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {roster.map((r) => (
-                <li
-                  key={r.memberId}
-                  className="bg-eten-panel border-eten-line flex items-center gap-4 rounded-xl border p-4"
-                >
-                  {(() => {
-                    const inner = (
-                      <>
-                        <span className="from-eten-accent grid size-11 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br to-[#3257b8] font-bold text-white">
-                          {(r.name ?? "?").trim().charAt(0).toUpperCase()}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="text-eten-ink flex items-center gap-2 font-semibold">
-                            {r.name}
-                            {r.role !== "member" && (
-                              <span className="bg-eten-verified-soft text-eten-verified rounded px-1.5 py-0.5 font-mono text-[10px] tracking-wide uppercase">
-                                {ROLE_LABEL[r.role]}
-                              </span>
-                            )}
-                          </span>
-                          {(r.headline || r.jobTitle) && (
-                            <span className="text-eten-faint block truncate text-sm">
-                              {r.headline ?? r.jobTitle}
-                            </span>
-                          )}
-                        </span>
-                      </>
-                    );
-                    return r.visible ? (
-                      <Link
-                        href={`/members/${r.memberId}`}
-                        className="flex min-w-0 flex-1 items-center gap-4 transition-opacity hover:opacity-80"
-                      >
-                        {inner}
-                      </Link>
-                    ) : (
-                      <div className="flex min-w-0 flex-1 items-center gap-4">
-                        {inner}
-                      </div>
-                    );
-                  })()}
-                  {r.mentor?.isMentor && (
-                    <span className="bg-eten-verified-soft text-eten-verified inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
-                      <GraduationCap className="size-3.5" />
-                      Mentor
-                    </span>
-                  )}
-                  {isLeadHere &&
-                    r.mentor &&
-                    !r.mentor.isMentor &&
-                    r.memberId !== member.id &&
-                    (r.mentor.pending ? (
-                      <span className="text-eten-faint shrink-0 text-xs">
-                        Nomination pending
-                      </span>
-                    ) : r.mentor.vLevel >= 2 ? (
-                      <NominateMentorButton
-                        podId={pod.id}
-                        memberId={r.memberId}
-                      />
-                    ) : null)}
-                  {isOps && (
-                    <PodRoleControl
-                      podId={pod.id}
-                      memberId={r.memberId}
-                      role={r.role}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </main>
-
-      {/* About panel */}
-      <aside className="hidden w-72 shrink-0 xl:block">
-        <div className="bg-eten-panel border-eten-line sticky top-6 rounded-2xl border p-4">
-          <h3 className="text-eten-ink font-display mb-3 text-sm font-semibold">
-            About this pod
-          </h3>
-          <dl className="flex flex-col gap-3 text-sm">
-            <div className="flex items-center justify-between">
-              <dt className="text-eten-faint">Members</dt>
-              <dd className="text-eten-ink font-semibold tabular-nums">
-                {roster.length}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-eten-faint">Your status</dt>
-              <dd className="text-eten-ink font-medium">
-                {isPrimary
-                  ? "Primary pod"
-                  : myRole
-                    ? myRole === "member"
-                      ? "Member"
-                      : ROLE_LABEL[myRole]
-                    : "Not joined"}
-              </dd>
-            </div>
-          </dl>
-          {leads.length > 0 && (
-            <div className="border-eten-line-soft mt-4 border-t pt-4">
-              <p className="text-eten-faint mb-2 font-mono text-xs tracking-wider uppercase">
-                Leads
-              </p>
-              <div className="flex flex-col gap-2">
-                {leads.map((l) => (
-                  <div key={l.memberId} className="flex items-center gap-2.5">
-                    <span className="from-eten-accent grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br to-[#3257b8] text-xs font-bold text-white">
-                      {(l.name ?? "?").trim().charAt(0).toUpperCase()}
-                    </span>
-                    <span className="text-eten-ink min-w-0 flex-1 truncate text-[13px] font-medium">
-                      {l.name}
-                    </span>
-                    <span className="text-eten-verified font-mono text-[10px] tracking-wide uppercase">
-                      {ROLE_LABEL[l.role]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <PodRoster
+              roster={rosterItems}
+              podId={pod.id}
+              memberCount={roster.length}
+              isOps={isOps}
+            />
           )}
         </div>
-      </aside>
+      </div>
     </div>
   );
 }
