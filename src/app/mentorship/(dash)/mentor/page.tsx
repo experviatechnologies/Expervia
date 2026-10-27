@@ -212,6 +212,7 @@ export default async function MentorDashboardPage() {
     mentee_id: string;
     starts_at: string;
     duration_minutes: number;
+    guest_goal: string | null;
   };
   let bookingReqs: BookingRow[] = [];
   const bookingMenteeName = new Map<string, string>();
@@ -225,7 +226,7 @@ export default async function MentorDashboardPage() {
         .maybeSingle(),
       supabase
         .from("session_bookings")
-        .select("id, mentee_id, starts_at, duration_minutes")
+        .select("id, mentee_id, starts_at, duration_minutes, guest_goal")
         .eq("mentor_id", user.id)
         .eq("status", "pending")
         .order("starts_at"),
@@ -483,6 +484,14 @@ export default async function MentorDashboardPage() {
                           </div>
                         </div>
                       </div>
+                      {b.guest_goal && (
+                        <div className="bg-mnt-panel-2 text-mnt-ink-muted rounded-xl px-3 py-2.5 text-[13px] leading-relaxed">
+                          <span className="text-mnt-ink font-semibold">
+                            Wants help with:
+                          </span>{" "}
+                          {b.guest_goal}
+                        </div>
+                      )}
                       <BookingDecisionControl bookingId={b.id} />
                     </div>
                   ))

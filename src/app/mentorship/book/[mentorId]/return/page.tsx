@@ -2,6 +2,8 @@ import Link from "next/link";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { settleChargeByReference } from "@/lib/eten/payment-settlement";
+import { sendGuestBookingWelcome } from "@/lib/eten/guest-booking-email";
+import { requestOrigin } from "@/lib/eten/request-origin";
 
 export const metadata = { title: "Booking" };
 
@@ -30,7 +32,7 @@ export default async function GuestBookingReturnPage({
     const admin = getSupabaseAdmin();
     const { data: payment } = await admin
       .from("payments")
-      .select("id, purpose")
+      .select("id, purpose, booking_id")
       .eq("reference", reference)
       .maybeSingle();
 
@@ -45,6 +47,13 @@ export default async function GuestBookingReturnPage({
               : "failed";
       } catch {
         state = "pending";
+      }
+
+      // Payment settled and the booking is confirmed: send the guest their
+      // confirmation + account link once (the helper dedupes and never throws).
+      if (state === "success" && payment.booking_id) {
+        const origin = await requestOrigin();
+        await sendGuestBookingWelcome(origin, payment.booking_id);
       }
     }
   }

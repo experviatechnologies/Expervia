@@ -178,6 +178,7 @@ export function GuestBookingWidget({
         name: name.trim(),
         email: email.trim(),
         goal: goal.trim() || undefined,
+        tz,
       });
       if ("error" in res) {
         setError(res.error);

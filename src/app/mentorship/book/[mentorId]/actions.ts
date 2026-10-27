@@ -94,10 +94,12 @@ export async function createGuestBooking(input: {
   name: string;
   email: string;
   goal?: string;
+  tz?: string;
 }): Promise<GuestBookingResult> {
   const name = (input.name ?? "").trim();
   const email = (input.email ?? "").trim().toLowerCase();
   const goal = (input.goal ?? "").trim().slice(0, 1000) || null;
+  const tz = (input.tz ?? "").trim().slice(0, 64) || "UTC";
   const tier: SessionTier = (
     ["standard", "specialist", "expert"] as const
   ).includes(input.tier)
@@ -182,6 +184,8 @@ export async function createGuestBooking(input: {
       starts_at: new Date(startMs).toISOString(),
       duration_minutes: slot.durationMinutes || durationMinutes,
       session_type: tier,
+      guest_goal: goal,
+      guest_timezone: tz,
     })
     .select("id")
     .single();
@@ -232,9 +236,6 @@ export async function createGuestBooking(input: {
       mentorId: input.mentorId,
       menteeId,
       guest: true,
-      // Captured with the payment; surfacing it to the mentor needs a
-      // dedicated column (follow-up), so it isn't written to the booking yet.
-      goal: goal ?? "",
     },
   });
   if ("error" in init) {
