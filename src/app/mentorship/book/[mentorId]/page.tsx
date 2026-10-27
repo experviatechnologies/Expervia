@@ -129,7 +129,7 @@ export default async function GuestBookingPage({
     admin
       .from("mentor_pricing")
       .select(
-        "paid_sessions_enabled, currency, standard_amount, specialist_amount, expert_amount",
+        "paid_sessions_enabled, currency, standard_amount, specialist_amount, expert_amount, extension_enabled, extension_amount",
       )
       .eq("member_id", mentorId)
       .maybeSingle(),
@@ -184,6 +184,16 @@ export default async function GuestBookingPage({
     paidEnabled &&
     sessionTypes.length > 0 &&
     slotsResult.status !== "unavailable";
+
+  // Optional 30-minute extension (matches the platform extension length).
+  const extensionAmount = pricing?.extension_amount as
+    | number
+    | null
+    | undefined;
+  const extensionOption =
+    paidEnabled && pricing?.extension_enabled && extensionAmount
+      ? { amount: extensionAmount, minutes: 30 }
+      : null;
 
   // Reviewer names for real testimonials.
   const reviewMenteeIds = Array.from(
@@ -484,6 +494,7 @@ export default async function GuestBookingPage({
               currency={currency}
               types={sessionTypes}
               slots={slotsResult.slots.map((s) => s.start)}
+              extension={extensionOption}
             />
           ) : (
             <div className={card + " text-center"}>

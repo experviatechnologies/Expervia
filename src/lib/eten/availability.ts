@@ -400,3 +400,114 @@ export async function getMentorSlots(
     slots,
   };
 }
+
+/** Minutes-from-midnight shown by `tz` at an instant. */
+function localMinutesOfDay(tz: string, instant: Date): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hourCycle: "h23",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const parts = dtf.formatToParts(instant);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return get("hour") * 60 + get("minute");
+}
+
+/**
+ * Re-validate that a session of `totalMinutes` starting at `startMs` is
+ * genuinely bookable for this mentor right now. Unlike getMentorSlots (which
+ * only offers default-length slots), this checks an arbitrary length: it must
+ * sit inside a single availability window (so an extended session can't run
+ * past when the mentor is free) and stay clear of any booked session, using the
+ * same buffered busy set generateSlots uses. The UI is never trusted; this is
+ * the server-side guard for the extension add-on.
+ */
+export async function isSlotBookable(
+  mentorId: string,
+  startMs: number,
+  totalMinutes: number,
+  opts: { now?: Date } = {},
+): Promise<boolean> {
+  if (!Number.isFinite(startMs) || totalMinutes <= 0) return false;
+  const admin = getSupabaseAdmin();
+  const now = opts.now ?? new Date();
+
+  const { data: prefsRow } = await admin
+    .from("mentor_scheduling_prefs")
+    .select(
+      "timezone, default_session_minutes, min_notice_minutes, buffer_minutes, max_sessions_per_week, availability_status",
+    )
+    .eq("member_id", mentorId)
+    .maybeSingle();
+  if (!prefsRow) return false;
+  const prefs: Prefs = prefsRow;
+  if (prefs.availability_status === "unavailable") return false;
+  if (startMs < now.getTime() + prefs.min_notice_minutes * MS_PER_MIN) {
+    return false;
+  }
+
+  const tz = prefs.timezone;
+  const startDate = new Date(startMs);
+  const endMs = startMs + totalMinutes * MS_PER_MIN;
+  const { y, m, d } = localYmd(tz, startDate);
+  const dateStr = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+  const [{ data: blockRows }, { data: excRows }, { data: bookingRows }] =
+    await Promise.all([
+      admin
+        .from("mentor_availability")
+        .select("weekday, start_time, end_time")
+        .eq("mentor_id", mentorId),
+      admin
+        .from("mentor_availability_exceptions")
+        .select("exception_date, kind, start_time, end_time")
+        .eq("mentor_id", mentorId),
+      admin
+        .from("circle_sessions")
+        .select(
+          "starts_at, duration_minutes, mentorship_circles!inner(mentor_id)",
+        )
+        .eq("mentorship_circles.mentor_id", mentorId)
+        .not("starts_at", "is", null)
+        .gte(
+          "starts_at",
+          new Date(startMs - 24 * 60 * MS_PER_MIN).toISOString(),
+        )
+        .lte("starts_at", new Date(endMs + 24 * 60 * MS_PER_MIN).toISOString()),
+    ]);
+
+  const blocks: Block[] = (blockRows ?? []).map((b) => ({
+    weekday: b.weekday,
+    start_time: String(b.start_time),
+    end_time: String(b.end_time),
+  }));
+  const exceptions: Exc[] = (excRows ?? []).map((e) => ({
+    exception_date: e.exception_date,
+    kind: e.kind,
+    start_time: e.start_time ? String(e.start_time) : null,
+    end_time: e.end_time ? String(e.end_time) : null,
+  }));
+
+  const windows = windowsForDate(
+    weekdayOf(y, m, d),
+    dateStr,
+    blocks,
+    exceptions,
+  );
+  const startMin = localMinutesOfDay(tz, startDate);
+  const fits = windows.some(
+    (w) => startMin >= w.startMin && startMin + totalMinutes <= w.endMin,
+  );
+  if (!fits) return false;
+
+  const buffer = prefs.buffer_minutes * MS_PER_MIN;
+  const conflict = (bookingRows ?? []).some((r) => {
+    const s = Date.parse(String(r.starts_at));
+    if (Number.isNaN(s)) return false;
+    const e =
+      s + (r.duration_minutes ?? prefs.default_session_minutes) * MS_PER_MIN;
+    return startMs < e + buffer && endMs > s - buffer;
+  });
+  return !conflict;
+}

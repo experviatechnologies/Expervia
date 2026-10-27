@@ -78,12 +78,14 @@ export function GuestBookingWidget({
   currency,
   types,
   slots,
+  extension,
 }: {
   mentorId: string;
   mentorFirstName: string;
   currency: string;
   types: SessionTypeOption[];
   slots: string[]; // ISO UTC
+  extension?: { amount: number; minutes: number } | null;
 }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [tier, setTier] = useState<SessionTier>(types[0]?.id ?? "standard");
@@ -99,6 +101,7 @@ export function GuestBookingWidget({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [goal, setGoal] = useState("");
+  const [ext, setExt] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -145,6 +148,9 @@ export function GuestBookingWidget({
   const daySlots = selectedDay ? (byDay.get(selectedDay)?.slots ?? []) : [];
 
   const selType = types.find((t) => t.id === tier) ?? types[0];
+  const canExtend = Boolean(extension && extension.amount > 0);
+  const total =
+    (selType?.amount ?? 0) + (ext && extension ? extension.amount : 0);
   const selSlot = slot ? partsInZone(slot, tz) : null;
   const zoneShort = tz.split("/").pop()?.replace(/_/g, " ") ?? tz;
   const whenLabel = selSlot
@@ -179,6 +185,7 @@ export function GuestBookingWidget({
         email: email.trim(),
         goal: goal.trim() || undefined,
         tz,
+        extension: canExtend ? ext : undefined,
       });
       if ("error" in res) {
         setError(res.error);
@@ -426,6 +433,27 @@ export function GuestBookingWidget({
                 onChange={(e) => setGoal(e.target.value)}
               />
             </label>
+            {canExtend && extension && (
+              <label className="border-mnt-line flex cursor-pointer items-center gap-3 rounded-xl border p-3">
+                <input
+                  type="checkbox"
+                  checked={ext}
+                  onChange={(e) => setExt(e.target.checked)}
+                  className="accent-mnt-brand size-[18px]"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="text-mnt-ink block text-[13px] font-bold">
+                    Add a {extension.minutes} minute extension
+                  </span>
+                  <span className="text-mnt-ink-muted block text-[12px]">
+                    More time for questions
+                  </span>
+                </span>
+                <span className="text-mnt-ink text-[14px] font-extrabold">
+                  +{money(extension.amount, currency)}
+                </span>
+              </label>
+            )}
             {error && <ErrorNote>{error}</ErrorNote>}
             <div className="flex gap-2.5">
               <button type="button" className={ghostBtn} onClick={() => go(2)}>
@@ -455,16 +483,34 @@ export function GuestBookingWidget({
         {/* Step 4: review + pay */}
         {step === 4 && selType && (
           <>
-            <div className="border-mnt-line flex flex-col gap-2.5 rounded-[14px] border p-3.5">
+            <div className="border-mnt-line flex flex-col gap-2 rounded-[14px] border p-3.5">
               <div className="text-mnt-ink text-[14px] font-bold">
                 {selType.title} with {mentorFirstName}
               </div>
               <div className="text-mnt-ink-muted text-[12px]">{whenLabel}</div>
-              <div className="border-mnt-line mt-1 flex items-center justify-between border-t pt-2.5 text-[15px] font-extrabold">
-                <span className="text-mnt-ink">Total</span>
-                <span className="text-mnt-ink">
-                  {money(selType.amount, currency)}
-                </span>
+              <div className="border-mnt-line mt-1 flex flex-col gap-1.5 border-t pt-2.5 text-[13px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-mnt-ink-muted">
+                    {selType.title} ({selType.mins} min)
+                  </span>
+                  <span className="text-mnt-ink">
+                    {money(selType.amount, currency)}
+                  </span>
+                </div>
+                {ext && extension && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-mnt-ink-muted">
+                      Extension ({extension.minutes} min)
+                    </span>
+                    <span className="text-mnt-ink">
+                      {money(extension.amount, currency)}
+                    </span>
+                  </div>
+                )}
+                <div className="border-mnt-line mt-0.5 flex items-center justify-between border-t pt-2 text-[15px] font-extrabold">
+                  <span className="text-mnt-ink">Total</span>
+                  <span className="text-mnt-ink">{money(total, currency)}</span>
+                </div>
               </div>
             </div>
             <p className="text-mnt-ink-muted text-[12px] leading-relaxed">
@@ -489,7 +535,7 @@ export function GuestBookingWidget({
               >
                 {pending
                   ? "Starting checkout…"
-                  : `Pay ${money(selType.amount, currency)}`}
+                  : `Pay ${money(total, currency)}`}
               </button>
             </div>
           </>

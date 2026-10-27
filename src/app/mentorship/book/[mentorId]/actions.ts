@@ -2,7 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getMentorSlots } from "@/lib/eten/availability";
+import { getMentorSlots, isSlotBookable } from "@/lib/eten/availability";
 import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
 import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
 import { requestOrigin } from "@/lib/eten/request-origin";
@@ -14,6 +14,9 @@ export type GuestBookingResult =
 export type SessionTier = "standard" | "specialist" | "expert";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Platform-wide extension length, matching the in-session extension. */
+const EXTENSION_MINUTES = 30;
 
 const TIER_COLUMN: Record<SessionTier, string> = {
   standard: "standard_amount",
@@ -95,6 +98,7 @@ export async function createGuestBooking(input: {
   email: string;
   goal?: string;
   tz?: string;
+  extension?: boolean;
 }): Promise<GuestBookingResult> {
   const name = (input.name ?? "").trim();
   const email = (input.email ?? "").trim().toLowerCase();
@@ -132,20 +136,27 @@ export async function createGuestBooking(input: {
   const { data: pricing } = await admin
     .from("mentor_pricing")
     .select(
-      "paid_sessions_enabled, currency, standard_amount, specialist_amount, expert_amount",
+      "paid_sessions_enabled, currency, standard_amount, specialist_amount, expert_amount, extension_enabled, extension_amount",
     )
     .eq("member_id", input.mentorId)
     .maybeSingle();
   if (!pricing?.paid_sessions_enabled) {
     return { error: "This mentor isn't taking paid sessions right now." };
   }
-  const amount = pricing[TIER_COLUMN[tier] as keyof typeof pricing] as
+  const tierAmount = pricing[TIER_COLUMN[tier] as keyof typeof pricing] as
     | number
     | null;
-  if (!amount || amount <= 0) {
+  if (!tierAmount || tierAmount <= 0) {
     return { error: "That session type isn't available. Please pick another." };
   }
   const currency = pricing.currency;
+
+  // Optional extension: only when the mentor offers it with a price.
+  const wantExtension = Boolean(input.extension);
+  const extensionAmount = pricing.extension_amount as number | null;
+  if (wantExtension && (!pricing.extension_enabled || !extensionAmount)) {
+    return { error: "This mentor isn't offering an extension." };
+  }
 
   // Re-generate slots and confirm the requested time is still open.
   const { slots, durationMinutes } = await getMentorSlots(input.mentorId, {
@@ -154,6 +165,22 @@ export async function createGuestBooking(input: {
   const slot = slots.find((s) => Date.parse(s.start) === startMs);
   if (!slot) {
     return { error: "That time is no longer available. Please pick another." };
+  }
+
+  const baseMinutes = slot.durationMinutes || durationMinutes;
+  const totalMinutes = baseMinutes + (wantExtension ? EXTENSION_MINUTES : 0);
+  const amount = tierAmount + (wantExtension ? extensionAmount! : 0);
+
+  // An extended session runs longer than a standard slot, so re-validate that
+  // the full block still fits the mentor's availability and hits no booking.
+  if (
+    wantExtension &&
+    !(await isSlotBookable(input.mentorId, startMs, totalMinutes))
+  ) {
+    return {
+      error:
+        "This time can't fit an extended session. Pick another time, or book without the extension.",
+    };
   }
 
   const member = await resolveGuestMember(admin, email, name);
@@ -182,7 +209,7 @@ export async function createGuestBooking(input: {
       mentor_id: input.mentorId,
       mentee_id: menteeId,
       starts_at: new Date(startMs).toISOString(),
-      duration_minutes: slot.durationMinutes || durationMinutes,
+      duration_minutes: totalMinutes,
       session_type: tier,
       guest_goal: goal,
       guest_timezone: tz,
