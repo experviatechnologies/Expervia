@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { GlobalSearch } from "@/components/shared/global-search";
+import { adminSearch } from "./search-actions";
 
 type NavItem = {
   label: string;
@@ -288,6 +290,11 @@ export function AdminShell({
             </span>
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            <GlobalSearch
+              search={adminSearch}
+              placeholder="Search members, pods…"
+              className="hidden w-[220px] sm:block lg:w-[280px]"
+            />
             <ThemeToggle className="border-eten-line text-eten-ink-muted hover:text-eten-ink grid size-10 place-items-center rounded-xl border transition-colors" />
           </div>
         </header>
