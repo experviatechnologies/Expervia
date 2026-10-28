@@ -93,12 +93,12 @@ function firstName(name: string): string {
 
 const card = "bg-mnt-panel border-mnt-line rounded-[20px] border p-6";
 
-export default async function GuestBookingPage({
-  params,
-}: {
-  params: Promise<{ mentorId: string }>;
-}) {
-  const { mentorId } = await params;
+/**
+ * The whole public booking page, by mentor id. Rendered both at
+ * /mentorship/book/[mentorId] and at /m/[handle] (which resolves the handle to
+ * an id first), so a mentor's custom link and their id link show the same page.
+ */
+export async function BookingView({ mentorId }: { mentorId: string }) {
   const admin = getSupabaseAdmin();
 
   const { data: mentor } = await admin
@@ -589,4 +589,13 @@ export default async function GuestBookingPage({
       </footer>
     </div>
   );
+}
+
+export default async function GuestBookingPage({
+  params,
+}: {
+  params: Promise<{ mentorId: string }>;
+}) {
+  const { mentorId } = await params;
+  return <BookingView mentorId={mentorId} />;
 }
