@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { Landmark, Clock, CircleCheck } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { summarizeEarnings } from "@/lib/eten/earnings";
 import { PayoutAccountForm, type PayoutAccount } from "./payout-account-form";
+import { EarningsHistory } from "./earnings-history";
 
 export const metadata = { title: "Earnings" };
 
@@ -19,16 +21,6 @@ function money(minor: number, currency: string): string {
     sym + (minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })
   );
 }
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-const lbl =
-  "text-mnt-faint font-mono text-[10.5px] tracking-[0.13em] uppercase";
 
 export default async function MentorEarningsPage() {
   const member = await getCurrentMember();
@@ -46,7 +38,9 @@ export default async function MentorEarningsPage() {
   if (!isVerifiedMentor) {
     return (
       <div className="mx-auto max-w-[820px] px-6 py-8">
-        <h1 className="font-display text-2xl font-extrabold">Earnings</h1>
+        <h1 className="font-display text-mnt-ink text-2xl font-extrabold">
+          Earnings
+        </h1>
         <p className="text-mnt-ink-muted mt-2 text-[14px] leading-relaxed">
           Only verified mentors have earnings. Once you&apos;re verified and
           taking paid sessions, your balance, payout account and history appear
@@ -81,8 +75,9 @@ export default async function MentorEarningsPage() {
     ]);
 
   const earnings = earningRows ?? [];
-  const now = new Date().getTime();
-  const summary = summarizeEarnings(earnings, now);
+  const nowMs = new Date().getTime();
+  const summary = summarizeEarnings(earnings, nowMs);
+  const cur = summary.currency;
 
   const account: PayoutAccount = accountRow
     ? {
@@ -95,126 +90,148 @@ export default async function MentorEarningsPage() {
       }
     : null;
 
-  const cur = summary.currency;
-  const stats = [
+  const tiles = [
     {
       label: "Available",
       value: summary.availableMinor,
-      tone: "text-mnt-green",
+      hint: "Ready for the next payout",
+      Icon: Landmark,
+      wrap: "bg-mnt-green/10",
+      fg: "text-mnt-green",
     },
-    { label: "Pending", value: summary.pendingMinor, tone: "text-mnt-amber" },
-    { label: "Paid out", value: summary.paidMinor, tone: "text-mnt-ink" },
     {
-      label: "Total earned",
-      value: summary.totalEarnedMinor,
-      tone: "text-mnt-brand",
+      label: "Pending",
+      value: summary.pendingMinor,
+      hint: "Clearing the settlement hold",
+      Icon: Clock,
+      wrap: "bg-amber-500/10",
+      fg: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      label: "Paid out",
+      value: summary.paidMinor,
+      hint: "Sent to your bank",
+      Icon: CircleCheck,
+      wrap: "bg-mnt-brand/10",
+      fg: "text-mnt-brand",
     },
   ];
 
-  return (
-    <div className="mx-auto max-w-[820px] px-6 py-8">
-      <header>
-        <h1 className="font-display text-2xl font-extrabold">Earnings</h1>
-        <p className="text-mnt-ink-muted mt-1 text-[14px] leading-relaxed">
-          Your earnings from paid sessions and extensions. Earnings clear a
-          short hold after each session, then become available for payout.
-        </p>
-      </header>
+  const historyEarnings = earnings.map((e) => ({
+    id: e.id,
+    amountMinor: e.net_amount,
+    currency: e.currency,
+    status: e.status,
+    availableAtMs: Date.parse(e.available_at),
+    dateIso: e.created_at,
+  }));
+  const historyPayouts = (payoutRows ?? []).map((p) => ({
+    id: p.id,
+    amountMinor: p.amount,
+    currency: p.currency,
+    status: p.status,
+    method: p.method ?? "transfer",
+    dateIso: p.paid_at ?? p.created_at,
+  }));
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="bg-mnt-panel border-mnt-line rounded-2xl border p-4"
-          >
-            <div className={lbl}>{s.label}</div>
-            <div
-              className={`font-display mt-1.5 text-[20px] font-extrabold tabular-nums ${s.tone}`}
-            >
-              {money(s.value, cur)}
+  return (
+    <div className="px-6 py-9 md:px-8">
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-6">
+        <header className="max-w-[680px]">
+          <h1 className="font-display text-mnt-ink text-[30px] font-extrabold tracking-[-0.02em]">
+            Earnings
+          </h1>
+          <p className="text-mnt-ink-muted mt-1.5 text-[15px] leading-relaxed">
+            What you&apos;ve earned from paid sessions and extensions. Earnings
+            clear a short hold after each session, then become available for
+            payout.
+          </p>
+        </header>
+
+        {/* Balance overview */}
+        <section className="bg-mnt-panel border-mnt-line flex flex-col gap-5 rounded-[18px] border p-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="text-mnt-ink-muted text-[13px] font-semibold">
+                Total earned
+              </div>
+              <div className="text-mnt-ink text-[40px] font-extrabold tracking-[-0.02em] tabular-nums">
+                {money(summary.totalEarnedMinor, cur)}
+              </div>
+            </div>
+            <div className="text-mnt-ink-muted flex flex-wrap gap-3 text-[13px] font-medium">
+              <span className="flex items-center gap-1.5">
+                <span className="bg-mnt-brand size-2.5 rounded" /> Paid out
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="bg-mnt-green size-2.5 rounded" /> Available
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded bg-amber-500" /> Pending
+              </span>
             </div>
           </div>
-        ))}
-      </div>
 
-      <div className="mt-6">
-        <PayoutAccountForm account={account} />
-      </div>
-
-      {/* Earnings history */}
-      <div className="bg-mnt-panel border-mnt-line mt-6 rounded-2xl border p-5">
-        <div className="text-mnt-ink text-[14px] font-bold">
-          Earnings history
-        </div>
-        {earnings.length === 0 ? (
-          <p className="text-mnt-faint mt-3 text-[13px]">
-            No earnings yet. Paid sessions and extensions will show here.
-          </p>
-        ) : (
-          <div className="mt-3 flex flex-col gap-2">
-            {earnings.map((e) => {
-              const state =
-                e.status === "paid"
-                  ? { text: "Paid out", cls: "text-mnt-ink-muted" }
-                  : e.status === "reversed"
-                    ? { text: "Reversed", cls: "text-destructive" }
-                    : Date.parse(e.available_at) <= now
-                      ? { text: "Available", cls: "text-mnt-green" }
-                      : { text: "Pending", cls: "text-mnt-amber" };
-              return (
+          {/* Stacked bar */}
+          {summary.totalEarnedMinor > 0 ? (
+            <div
+              className="flex h-3.5 gap-1"
+              role="img"
+              aria-label={`Of ${money(summary.totalEarnedMinor, cur)} earned, ${money(summary.paidMinor, cur)} paid out, ${money(summary.availableMinor, cur)} available, ${money(summary.pendingMinor, cur)} pending`}
+            >
+              {summary.paidMinor > 0 && (
                 <div
-                  key={e.id}
-                  className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5"
-                >
-                  <span className="text-[13.5px]">
-                    <span className="font-semibold tabular-nums">
-                      {money(e.net_amount, e.currency)}
-                    </span>
-                    <span className="text-mnt-faint">
-                      {" "}
-                      · {fmtDate(e.created_at)}
-                    </span>
-                  </span>
-                  <span
-                    className={`font-mono text-[11px] tracking-wide uppercase ${state.cls}`}
-                  >
-                    {state.text}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  className="bg-mnt-brand rounded-full"
+                  style={{ flexGrow: summary.paidMinor }}
+                />
+              )}
+              {summary.availableMinor > 0 && (
+                <div
+                  className="bg-mnt-green rounded-full"
+                  style={{ flexGrow: summary.availableMinor }}
+                />
+              )}
+              {summary.pendingMinor > 0 && (
+                <div
+                  className="rounded-full bg-amber-500"
+                  style={{ flexGrow: summary.pendingMinor }}
+                />
+              )}
+            </div>
+          ) : (
+            <div className="bg-mnt-panel-2 h-3.5 rounded-full" />
+          )}
 
-      {/* Payout history */}
-      <div className="bg-mnt-panel border-mnt-line mt-6 rounded-2xl border p-5">
-        <div className="text-mnt-ink text-[14px] font-bold">Payout history</div>
-        {(payoutRows ?? []).length === 0 ? (
-          <p className="text-mnt-faint mt-3 text-[13px]">No payouts yet.</p>
-        ) : (
-          <div className="mt-3 flex flex-col gap-2">
-            {(payoutRows ?? []).map((p) => (
-              <div
-                key={p.id}
-                className="bg-mnt-panel-2 border-mnt-line flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5"
-              >
-                <span className="text-[13.5px]">
-                  <span className="font-semibold tabular-nums">
-                    {money(p.amount, p.currency)}
+          <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3">
+            {tiles.map((t) => (
+              <div key={t.label} className="bg-mnt-panel-2 rounded-2xl p-4">
+                <div
+                  className={`flex items-center gap-2 text-[13px] font-semibold ${t.fg}`}
+                >
+                  <span
+                    className={`grid size-6 place-items-center rounded-lg ${t.wrap}`}
+                  >
+                    <t.Icon className="size-4" strokeWidth={2} />
                   </span>
-                  <span className="text-mnt-faint">
-                    {" "}
-                    · {fmtDate(p.paid_at ?? p.created_at)} · {p.method}
-                  </span>
-                </span>
-                <span className="text-mnt-green font-mono text-[11px] tracking-wide uppercase">
-                  {p.status}
-                </span>
+                  {t.label}
+                </div>
+                <div className="text-mnt-ink mt-1 text-[26px] font-extrabold tabular-nums">
+                  {money(t.value, cur)}
+                </div>
+                <div className="text-mnt-ink-muted text-[12px]">{t.hint}</div>
               </div>
             ))}
           </div>
-        )}
+        </section>
+
+        <div className="flex flex-wrap items-start gap-5">
+          <EarningsHistory
+            earnings={historyEarnings}
+            payouts={historyPayouts}
+            nowMs={nowMs}
+          />
+          <PayoutAccountForm account={account} />
+        </div>
       </div>
     </div>
   );
