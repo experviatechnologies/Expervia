@@ -14,6 +14,7 @@ export type MentorCard = {
   ratingAvg: number;
   ratingCount: number;
   reqStatus: "pending" | "accepted" | "declined" | null;
+  paidEnabled: boolean;
 };
 
 const COVERS = [
@@ -258,11 +259,19 @@ export function MentorsBrowser({
                     initialStatus={m.reqStatus}
                     canRequest={isValidated}
                   />
+                  {m.paidEnabled && (
+                    <Link
+                      href={`/mentorship/book/${m.id}`}
+                      className="bg-mnt-brand text-mnt-on-brand flex h-10 w-full items-center justify-center rounded-full text-sm font-bold transition hover:brightness-110"
+                    >
+                      Book a session
+                    </Link>
+                  )}
                   <Link
                     href={`/mentorship/mentors/${m.id}`}
                     className="border-mnt-brand text-mnt-brand hover:bg-mnt-brand/5 flex h-10 w-full items-center justify-center rounded-full border text-sm font-bold transition-colors"
                   >
-                    View &amp; book a session
+                    View profile
                   </Link>
                 </div>
               </div>

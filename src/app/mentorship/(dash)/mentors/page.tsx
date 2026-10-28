@@ -84,6 +84,23 @@ export default async function MentorsPage() {
     ratingsByMentor.set(r.mentor_id, arr);
   }
 
+  // Which mentors take paid sessions (so the card's "Book a session" link only
+  // shows when the public booking page would actually offer a booking).
+  const { data: pricingRows } = mentors.length
+    ? await admin
+        .from("mentor_pricing")
+        .select("member_id, paid_sessions_enabled, standard_amount")
+        .in(
+          "member_id",
+          mentors.map((m) => m.member_id),
+        )
+    : { data: [] };
+  const paidMentors = new Set(
+    (pricingRows ?? [])
+      .filter((p) => p.paid_sessions_enabled && p.standard_amount)
+      .map((p) => p.member_id),
+  );
+
   const reqByMentor = new Map<string, "pending" | "accepted" | "declined">();
   for (const r of reqRows ?? []) {
     if (!reqByMentor.has(r.mentor_id) && r.status !== "withdrawn") {
@@ -110,6 +127,7 @@ export default async function MentorsPage() {
       ratingAvg: rs.count > 0 ? rs.avg : 0,
       ratingCount: rs.count,
       reqStatus: reqByMentor.get(m.member_id) ?? null,
+      paidEnabled: paidMentors.has(m.member_id),
     };
   });
 
