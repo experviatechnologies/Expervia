@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Briefcase, MapPin, ShieldCheck, Star } from "lucide-react";
+import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getMentorSlots } from "@/lib/eten/availability";
 import { getFxRate } from "@/lib/eten/fx";
-import { summarizeRatings } from "@/lib/eten/ratings";
+import { summarizeRatings, canRateMentor } from "@/lib/eten/ratings";
+import { RatingForm } from "../../(dash)/mentors/[id]/rating-form";
 import {
   GuestBookingWidget,
   type SessionTypeOption,
@@ -217,12 +219,23 @@ export default async function GuestBookingPage({
   );
   const reviews = (ratingRows ?? [])
     .filter((r) => r.review)
-    .slice(0, 3)
+    .slice(0, 8)
     .map((r) => ({
       quote: r.review as string,
       name: reviewerName.get(r.mentee_id) ?? "A mentee",
       rating: r.rating,
     }));
+
+  // Auth-aware: a signed-in mentee who has been mentored by this mentor can
+  // leave a rating here (ported from the mentor profile). Guests never see it.
+  const me = await getCurrentMember();
+  const myRating = me
+    ? ((ratingRows ?? []).find((r) => r.mentee_id === me.id) ?? null)
+    : null;
+  const canRate =
+    me && me.id !== mentorId
+      ? await canRateMentor(admin, me.id, mentorId)
+      : false;
 
   const stats = [
     {
@@ -380,51 +393,66 @@ export default async function GuestBookingPage({
             </div>
           </section>
 
-          {/* Reviews */}
-          {reviews.length > 0 && (
+          {/* Ratings & reviews */}
+          {(reviews.length > 0 || canRate) && (
             <section className={card + " flex flex-col gap-3.5"}>
               <div className="flex flex-wrap items-center justify-between gap-2.5">
                 <h2 className="text-mnt-ink text-[18px] font-extrabold">
-                  What mentees say
+                  Ratings &amp; reviews
                 </h2>
                 {ratings.count > 0 && (
                   <span className="text-mnt-ink inline-flex items-center gap-1.5 text-[14px] font-bold">
                     <Star className="fill-mnt-amber text-mnt-amber size-4" />
-                    {ratings.avg.toFixed(1)} · {ratings.count} reviews
+                    {ratings.avg.toFixed(1)} · {ratings.count} review
+                    {ratings.count > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
-              <div className="grid [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] gap-3">
-                {reviews.map((r, i) => (
-                  <figure
-                    key={i}
-                    className="border-mnt-line m-0 flex flex-col gap-2.5 rounded-[14px] border p-4"
-                  >
-                    <span
-                      className="inline-flex gap-0.5"
-                      aria-label={`${r.rating} out of 5`}
+              {canRate && (
+                <div className="border-mnt-line rounded-[14px] border p-4">
+                  <div className="text-mnt-ink mb-2 text-[14px] font-bold">
+                    {myRating ? "Your review" : "Leave a review"}
+                  </div>
+                  <RatingForm
+                    mentorId={mentorId}
+                    initialRating={myRating?.rating ?? null}
+                    initialReview={myRating?.review ?? null}
+                  />
+                </div>
+              )}
+              {reviews.length > 0 && (
+                <div className="grid [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] gap-3">
+                  {reviews.map((r, i) => (
+                    <figure
+                      key={i}
+                      className="border-mnt-line m-0 flex flex-col gap-2.5 rounded-[14px] border p-4"
                     >
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <Star
-                          key={n}
-                          className={
-                            "size-3.5 " +
-                            (n <= r.rating
-                              ? "fill-mnt-amber text-mnt-amber"
-                              : "text-mnt-faint")
-                          }
-                        />
-                      ))}
-                    </span>
-                    <blockquote className="text-mnt-ink m-0 text-[14px] leading-relaxed">
-                      {r.quote}
-                    </blockquote>
-                    <figcaption className="text-mnt-ink-muted mt-auto text-[12px] font-semibold">
-                      {r.name}
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
+                      <span
+                        className="inline-flex gap-0.5"
+                        aria-label={`${r.rating} out of 5`}
+                      >
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Star
+                            key={n}
+                            className={
+                              "size-3.5 " +
+                              (n <= r.rating
+                                ? "fill-mnt-amber text-mnt-amber"
+                                : "text-mnt-faint")
+                            }
+                          />
+                        ))}
+                      </span>
+                      <blockquote className="text-mnt-ink m-0 text-[14px] leading-relaxed">
+                        {r.quote}
+                      </blockquote>
+                      <figcaption className="text-mnt-ink-muted mt-auto text-[12px] font-semibold">
+                        {r.name}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
