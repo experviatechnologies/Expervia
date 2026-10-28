@@ -167,7 +167,7 @@ export default async function GuestBookingPage({
   const currency = pricing?.currency ?? "NGN";
   const defaultMinutes = slotsResult.durationMinutes;
 
-  const sessionTypes: SessionTypeOption[] = paidEnabled
+  const paidTiers: SessionTypeOption[] = paidEnabled
     ? SESSION_TIERS.flatMap((tier) => {
         const amount = pricing?.[tier.column] as number | null | undefined;
         if (!amount || amount <= 0) return [];
@@ -183,26 +183,41 @@ export default async function GuestBookingPage({
       })
     : [];
 
-  const canBook =
-    paidEnabled &&
-    sessionTypes.length > 0 &&
-    slotsResult.status !== "unavailable";
+  // A mentor with paid tiers takes paid sessions; otherwise the booking is a
+  // free request the mentor confirms, offered as a single session type.
+  const isPaidMentor = paidTiers.length > 0;
+  const sessionTypes: SessionTypeOption[] = isPaidMentor
+    ? paidTiers
+    : [
+        {
+          id: "standard",
+          title: "Mentoring session",
+          text: `A 1:1 session with ${fName}. ${fName} confirms your request before it's booked.`,
+          mins: defaultMinutes,
+          amount: 0,
+        },
+      ];
 
-  // Optional 30-minute extension (matches the platform extension length).
+  // Bookable whenever the mentor is open (free or paid). Only a mentor who has
+  // marked themselves unavailable is not bookable.
+  const canBook = slotsResult.status !== "unavailable";
+
+  // Optional 30-minute extension (paid mentors only).
   const extensionAmount = pricing?.extension_amount as
     | number
     | null
     | undefined;
   const extensionOption =
-    paidEnabled && pricing?.extension_enabled && extensionAmount
+    isPaidMentor && pricing?.extension_enabled && extensionAmount
       ? { amount: extensionAmount, minutes: 30 }
       : null;
 
   // Live FX so an international guest can pay (and see prices) in USD. Null when
-  // the mentor already prices in USD or the rate is unavailable: the widget then
-  // only offers the mentor's own currency.
+  // the mentor already prices in USD, isn't paid, or the rate is unavailable.
   const usdRate =
-    canBook && currency !== "USD" ? await getFxRate(currency, "USD") : null;
+    isPaidMentor && canBook && currency !== "USD"
+      ? await getFxRate(currency, "USD")
+      : null;
 
   // Reviewer names for real testimonials.
   const reviewMenteeIds = Array.from(
@@ -291,8 +306,9 @@ export default async function GuestBookingPage({
             Book a 1:1 session with {name}
           </h1>
           <p className="max-w-[620px] text-[16px] leading-relaxed text-[#e4dbfc]">
-            {name} is a verified ETEN mentor in {areaLabel}. Pick a session,
-            grab a time in your own zone, and pay securely, no account needed to
+            {name} is a verified ETEN mentor in {areaLabel}. Pick a session and
+            grab a time in your own zone
+            {isPaidMentor ? ", and pay securely" : ""}, no account needed to
             start.
           </p>
         </div>
@@ -531,16 +547,16 @@ export default async function GuestBookingPage({
               slots={slotsResult.slots.map((s) => s.start)}
               extension={extensionOption}
               usdRate={usdRate}
+              paid={isPaidMentor}
             />
           ) : (
             <div className={card + " text-center"}>
               <h2 className="text-mnt-ink text-[18px] font-extrabold">
-                Not taking paid bookings yet
+                Not accepting bookings right now
               </h2>
               <p className="text-mnt-ink-muted mt-2 text-[14px] leading-relaxed">
-                {fName} isn&apos;t accepting paid sessions through a public link
-                right now. Sign in to request mentorship, or browse other
-                verified mentors.
+                {fName} isn&apos;t open for bookings at the moment. Browse other
+                verified mentors, or check back soon.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2.5">
                 <Link

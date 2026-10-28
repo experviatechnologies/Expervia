@@ -263,7 +263,7 @@ export function MentorsBrowser({
                     href={`/mentorship/book/${m.id}`}
                     className="bg-mnt-brand text-mnt-on-brand flex h-10 w-full items-center justify-center rounded-full text-sm font-bold transition hover:brightness-110"
                   >
-                    {m.paidEnabled ? "Book a session" : "View mentor"}
+                    Book a session
                   </Link>
                 </div>
               </div>

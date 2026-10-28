@@ -85,6 +85,7 @@ export function GuestBookingWidget({
   slots,
   extension,
   usdRate,
+  paid = true,
 }: {
   mentorId: string;
   mentorFirstName: string;
@@ -93,6 +94,7 @@ export function GuestBookingWidget({
   slots: string[]; // ISO UTC
   extension?: { amount: number; minutes: number } | null;
   usdRate?: number | null;
+  paid?: boolean;
 }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [tier, setTier] = useState<SessionTier>(types[0]?.id ?? "standard");
@@ -113,6 +115,7 @@ export function GuestBookingWidget({
   const [hp, setHp] = useState("");
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
 
   const zones = useMemo(() => {
@@ -165,11 +168,13 @@ export function GuestBookingWidget({
   // Prices are stored in the mentor's base currency; when the guest picks USD we
   // show the live-converted amount. The server re-converts authoritatively, so
   // this display figure is never trusted for the actual charge.
-  const canUsd = Boolean(usdRate && usdRate > 0);
+  const canUsd = paid && Boolean(usdRate && usdRate > 0);
   const show = (baseMinor: number) =>
-    cur === "USD" && usdRate
-      ? money(Math.round(baseMinor * usdRate), "USD")
-      : money(baseMinor, currency);
+    !paid
+      ? "Free"
+      : cur === "USD" && usdRate
+        ? money(Math.round(baseMinor * usdRate), "USD")
+        : money(baseMinor, currency);
 
   const selSlot = slot ? partsInZone(slot, tz) : null;
   const zoneShort = tz.split("/").pop()?.replace(/_/g, " ") ?? tz;
@@ -218,7 +223,12 @@ export function GuestBookingWidget({
         setError(res.error);
         return;
       }
-      window.location.href = res.authorizationUrl;
+      if ("authorizationUrl" in res) {
+        window.location.href = res.authorizationUrl;
+        return;
+      }
+      // Free booking: no payment, show the inline confirmation.
+      setDone(true);
     });
   }
 
@@ -226,15 +236,16 @@ export function GuestBookingWidget({
     1: "Book a session",
     2: "Pick a time",
     3: "Your details",
-    4: "Review and pay",
+    4: paid ? "Review and pay" : "Review and request",
   } as const;
+  const headerTitle = done ? "Request sent" : cardTitles[step];
 
   return (
     <div className="bg-mnt-panel border-mnt-line overflow-hidden rounded-[20px] border shadow-[0_16px_40px_rgba(17,2,99,0.1)]">
       <div className="border-mnt-line flex flex-col gap-3 border-b p-5">
         <div className="flex items-center justify-between gap-2.5">
           <h2 className="text-mnt-ink text-[18px] font-extrabold">
-            {cardTitles[step]}
+            {headerTitle}
           </h2>
           {canUsd && (
             <div
@@ -264,17 +275,19 @@ export function GuestBookingWidget({
             </div>
           )}
         </div>
-        <div className="flex gap-1.5" aria-label={`Step ${step} of 4`}>
-          {[1, 2, 3, 4].map((n) => (
-            <span
-              key={n}
-              className={
-                "h-1 flex-1 rounded-full " +
-                (n <= step ? "bg-mnt-brand" : "bg-mnt-panel-2")
-              }
-            />
-          ))}
-        </div>
+        {!done && (
+          <div className="flex gap-1.5" aria-label={`Step ${step} of 4`}>
+            {[1, 2, 3, 4].map((n) => (
+              <span
+                key={n}
+                className={
+                  "h-1 flex-1 rounded-full " +
+                  (n <= step ? "bg-mnt-brand" : "bg-mnt-panel-2")
+                }
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3.5 p-5">
@@ -301,8 +314,25 @@ export function GuestBookingWidget({
           />
         </div>
 
+        {/* Free-booking confirmation */}
+        {done && (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <span className="bg-mnt-green/12 text-mnt-green grid size-14 place-items-center rounded-full">
+              <Check className="size-7" strokeWidth={2.4} />
+            </span>
+            <div className="text-mnt-ink text-[18px] font-extrabold">
+              Request sent
+            </div>
+            <p className="text-mnt-ink-muted max-w-[320px] text-[13.5px] leading-relaxed">
+              {mentorFirstName} will confirm your session. We&apos;ve set up
+              your ETEN account and emailed {email || "you"}; you&apos;ll get
+              the video link once it&apos;s confirmed.
+            </p>
+          </div>
+        )}
+
         {/* Step 1: session type */}
-        {step === 1 && (
+        {!done && step === 1 && (
           <>
             <div
               role="radiogroup"
@@ -358,7 +388,7 @@ export function GuestBookingWidget({
         )}
 
         {/* Step 2: date + time */}
-        {step === 2 && (
+        {!done && step === 2 && (
           <>
             <label className="flex flex-col gap-1.5">
               <span className="text-mnt-ink-muted text-[13px] font-semibold">
@@ -469,7 +499,7 @@ export function GuestBookingWidget({
         )}
 
         {/* Step 3: details */}
-        {step === 3 && (
+        {!done && step === 3 && (
           <>
             <div className="bg-mnt-panel-2 text-mnt-ink flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px]">
               <CalendarDays className="text-mnt-brand size-4 shrink-0" />
@@ -553,14 +583,14 @@ export function GuestBookingWidget({
                   go(4);
                 }}
               >
-                Review and pay
+                {paid ? "Review and pay" : "Review and request"}
               </button>
             </div>
           </>
         )}
 
         {/* Step 4: review + pay */}
-        {step === 4 && selType && (
+        {!done && step === 4 && selType && (
           <>
             <div className="border-mnt-line flex flex-col gap-2 rounded-[14px] border p-3.5">
               <div className="text-mnt-ink text-[14px] font-bold">
@@ -591,8 +621,9 @@ export function GuestBookingWidget({
               </div>
             </div>
             <p className="text-mnt-ink-muted text-[12px] leading-relaxed">
-              Payment is held securely by ETEN and released to the mentor after
-              the session. You can reschedule for free up to 24 hours before.
+              {paid
+                ? "Payment is held securely by ETEN and released to the mentor after the session. You can reschedule for free up to 24 hours before."
+                : `This session is free. ${mentorFirstName} confirms your request before it's booked. You can reschedule up to 24 hours before.`}
             </p>
             {TURNSTILE_ENABLED && (
               <TurnstileWidget onToken={setCaptcha} theme="auto" />
@@ -613,7 +644,13 @@ export function GuestBookingWidget({
                 onClick={submit}
                 disabled={pending}
               >
-                {pending ? "Starting checkout…" : `Pay ${show(total)}`}
+                {pending
+                  ? paid
+                    ? "Starting checkout…"
+                    : "Sending…"
+                  : paid
+                    ? `Pay ${show(total)}`
+                    : "Request session"}
               </button>
             </div>
           </>
@@ -622,7 +659,9 @@ export function GuestBookingWidget({
 
       <div className="bg-mnt-panel-2 border-mnt-line text-mnt-ink-muted flex items-center gap-2 border-t px-5 py-3 text-[12px]">
         <Check className="text-mnt-green size-3.5" strokeWidth={3} />
-        Secure payment through ETEN · Verified by the ETEN Readiness Panel
+        {paid
+          ? "Secure payment through ETEN · Verified by the ETEN Readiness Panel"
+          : "Free session · Verified by the ETEN Readiness Panel"}
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
 import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
 import { requestOrigin } from "@/lib/eten/request-origin";
 import { convertMinor } from "@/lib/eten/fx";
+import { notify } from "@/lib/eten/notifications";
+import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
 import {
   isDisposableEmail,
   clientIp,
@@ -17,6 +19,7 @@ import { verifyTurnstile } from "@/lib/eten/turnstile";
 
 export type GuestBookingResult =
   | { ok: true; authorizationUrl: string }
+  | { ok: true; free: true }
   | { error: string };
 
 export type SessionTier = "standard" | "specialist" | "expert";
@@ -146,9 +149,6 @@ export async function createGuestBooking(input: {
   if (isDisposableEmail(email)) {
     return { error: "Please use a permanent email address." };
   }
-  if (!isPaystackConfigured()) {
-    return { error: "Payments aren't available right now." };
-  }
 
   // Bot check (Cloudflare Turnstile). No-op until TURNSTILE_SECRET_KEY is set.
   if (!(await verifyTurnstile(input.turnstileToken, ip))) {
@@ -179,22 +179,23 @@ export async function createGuestBooking(input: {
     )
     .eq("member_id", input.mentorId)
     .maybeSingle();
-  if (!pricing?.paid_sessions_enabled) {
-    return { error: "This mentor isn't taking paid sessions right now." };
-  }
-  const tierAmount = pricing[TIER_COLUMN[tier] as keyof typeof pricing] as
-    | number
-    | null;
-  if (!tierAmount || tierAmount <= 0) {
-    return { error: "That session type isn't available. Please pick another." };
-  }
-  const currency = pricing.currency;
+  // Paid when the mentor has paid sessions on AND the chosen tier has a price.
+  // Otherwise this is a free booking request the mentor confirms.
+  const paidEnabled = Boolean(pricing?.paid_sessions_enabled);
+  const tierAmount = paidEnabled
+    ? (pricing![TIER_COLUMN[tier] as keyof typeof pricing] as number | null)
+    : null;
+  const isPaid = paidEnabled && !!tierAmount && tierAmount > 0;
+  const currency = pricing?.currency ?? "NGN";
 
-  // Optional extension: only when the mentor offers it with a price.
-  const wantExtension = Boolean(input.extension);
-  const extensionAmount = pricing.extension_amount as number | null;
-  if (wantExtension && (!pricing.extension_enabled || !extensionAmount)) {
+  // Extension is a paid add-on only; ignored for free mentors.
+  const extensionAmount = pricing?.extension_amount as number | null;
+  const wantExtension = isPaid && Boolean(input.extension);
+  if (wantExtension && (!pricing!.extension_enabled || !extensionAmount)) {
     return { error: "This mentor isn't offering an extension." };
+  }
+  if (isPaid && !isPaystackConfigured()) {
+    return { error: "Payments aren't available right now." };
   }
 
   // Re-generate slots and confirm the requested time is still open.
@@ -208,7 +209,6 @@ export async function createGuestBooking(input: {
 
   const baseMinutes = slot.durationMinutes || durationMinutes;
   const totalMinutes = baseMinutes + (wantExtension ? EXTENSION_MINUTES : 0);
-  const amount = tierAmount + (wantExtension ? extensionAmount! : 0);
 
   // An extended session runs longer than a standard slot, so re-validate that
   // the full block still fits the mentor's availability and hits no booking.
@@ -221,43 +221,6 @@ export async function createGuestBooking(input: {
         "This time can't fit an extended session. Pick another time, or book without the extension.",
     };
   }
-
-  // Server-authoritative pricing. The mentor is always settled in their base
-  // currency; an international guest may pay in USD at the live FX rate, with
-  // ETEN absorbing any FX spread. The commission split is computed in both the
-  // base currency (the settlement truth) and the charge currency (the payment
-  // row + Paystack). The frontend never computes money.
-  const { commissionPercent } = await getMonetizationSettings();
-  const baseSplit = computeSplit(amount, commissionPercent);
-
-  const CHARGE_CURRENCIES = ["NGN", "USD", "GHS", "KES", "ZAR"];
-  const requested = (input.chargeCurrency ?? currency).toUpperCase();
-  const chargeCurrency = CHARGE_CURRENCIES.includes(requested)
-    ? requested
-    : currency;
-
-  let chargeAmount = amount;
-  let settlement: {
-    settlement_currency: string;
-    settlement_mentor_amount: number;
-    settlement_platform_fee: number;
-  } | null = null;
-  if (chargeCurrency !== currency) {
-    const converted = await convertMinor(amount, currency, chargeCurrency);
-    if (converted == null || converted <= 0) {
-      return {
-        error: `Paying in ${chargeCurrency} isn't available right now. Please pay in ${currency}.`,
-      };
-    }
-    chargeAmount = converted;
-    // Settle the mentor in their base currency, locked at this FX rate.
-    settlement = {
-      settlement_currency: currency,
-      settlement_mentor_amount: baseSplit.mentorAmount,
-      settlement_platform_fee: baseSplit.platformFee,
-    };
-  }
-  const chargeSplit = computeSplit(chargeAmount, commissionPercent);
 
   const member = await resolveGuestMember(admin, email, name);
   if ("error" in member) return { error: member.error };
@@ -298,6 +261,73 @@ export async function createGuestBooking(input: {
     }
     return { error: "Couldn't start that booking. Please try again." };
   }
+
+  const whenUtc =
+    new Date(startMs).toLocaleString("en-GB", {
+      weekday: "long",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "UTC",
+    }) + " UTC";
+
+  // --- Free booking request: no payment; the mentor confirms it, as in the
+  // authenticated free flow. Notify + email the mentor, then return. ---
+  if (!isPaid) {
+    await notify({
+      recipientId: input.mentorId,
+      actorId: menteeId,
+      type: "mentorship",
+      targetType: "booking_requested",
+      targetId: booking.id,
+    });
+    await sendMentorshipEmail(
+      input.mentorId,
+      "New session booking request",
+      "A mentee requested a session time",
+      `${name} requested a free session with you for ${whenUtc}. Open your dashboard to accept or decline.`,
+    );
+    return { ok: true, free: true };
+  }
+
+  // --- Paid booking: server-authoritative commission split + Paystack
+  // checkout. The mentor is always settled in their base currency; an
+  // international guest may pay in USD at the live FX rate, with ETEN absorbing
+  // any FX spread. The frontend never computes money. ---
+  const amount = tierAmount! + (wantExtension ? extensionAmount! : 0);
+  const { commissionPercent } = await getMonetizationSettings();
+  const baseSplit = computeSplit(amount, commissionPercent);
+
+  const CHARGE_CURRENCIES = ["NGN", "USD", "GHS", "KES", "ZAR"];
+  const requested = (input.chargeCurrency ?? currency).toUpperCase();
+  const chargeCurrency = CHARGE_CURRENCIES.includes(requested)
+    ? requested
+    : currency;
+
+  let chargeAmount = amount;
+  let settlement: {
+    settlement_currency: string;
+    settlement_mentor_amount: number;
+    settlement_platform_fee: number;
+  } | null = null;
+  if (chargeCurrency !== currency) {
+    const converted = await convertMinor(amount, currency, chargeCurrency);
+    if (converted == null || converted <= 0) {
+      await admin.from("session_bookings").delete().eq("id", booking.id);
+      return {
+        error: `Paying in ${chargeCurrency} isn't available right now. Please pay in ${currency}.`,
+      };
+    }
+    chargeAmount = converted;
+    // Settle the mentor in their base currency, locked at this FX rate.
+    settlement = {
+      settlement_currency: currency,
+      settlement_mentor_amount: baseSplit.mentorAmount,
+      settlement_platform_fee: baseSplit.platformFee,
+    };
+  }
+  const chargeSplit = computeSplit(chargeAmount, commissionPercent);
 
   const reference = `ETEN-SESS-${Date.now()}-${randomUUID().slice(0, 8)}`;
 
