@@ -16,6 +16,8 @@ import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { timeAgo } from "@/lib/time";
 import { auditLabel, auditTone } from "@/lib/eten/audit-labels";
+import { toCsv } from "@/lib/csv";
+import { DownloadCsvButton } from "@/components/shared/download-csv-button";
 import { getOverviewMetrics } from "./metrics";
 
 export const metadata: Metadata = {
@@ -152,9 +154,21 @@ export default async function AdminOverviewPage() {
           sub="New self-serve sign-ups (bars) vs total members (line) · last 8 months"
         >
           <GrowthChart data={growth} />
-          <p className="text-eten-faint mt-2 text-xs">
-            Bulk-migrated legacy members are excluded from the bars.
-          </p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-eten-faint text-xs">
+              Bulk-migrated legacy members are excluded from the bars.
+            </p>
+            {growth.length > 0 && (
+              <DownloadCsvButton
+                csv={toCsv(
+                  ["Month", "New sign-ups", "Total members"],
+                  growth.map((g) => [g.label, g.added, g.cumulative]),
+                )}
+                filename="eten-member-growth.csv"
+                className="border-eten-line text-eten-ink-muted hover:text-eten-ink hover:bg-eten-panel-hi inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-[12.5px] font-semibold transition-colors"
+              />
+            )}
+          </div>
         </Card>
 
         <Card
