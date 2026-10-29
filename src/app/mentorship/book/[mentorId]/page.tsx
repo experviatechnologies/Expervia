@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { getMentorSlots } from "@/lib/eten/availability";
 import { getFxRate } from "@/lib/eten/fx";
 import { requestOrigin } from "@/lib/eten/request-origin";
+import { mentorBookingUrl } from "@/lib/eten/booking-url";
 import { summarizeRatings, canRateMentor } from "@/lib/eten/ratings";
 import { RatingForm } from "../../(dash)/mentors/[id]/rating-form";
 import { ShareLink } from "@/components/shared/share-link";
@@ -111,9 +112,7 @@ export async function BookingView({ mentorId }: { mentorId: string }) {
   if (!mentor || mentor.mentor_status === "candidate") notFound();
 
   const origin = await requestOrigin();
-  const shareUrl = mentor.handle
-    ? `${origin}/m/${mentor.handle}`
-    : `${origin}/mentorship/book/${mentorId}`;
+  const shareUrl = mentorBookingUrl(origin, mentor.handle, mentorId);
 
   const [
     { data: profile },

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Check, Link2 } from "lucide-react";
 import { ShareLink } from "@/components/shared/share-link";
+import { mentorBookingUrl } from "@/lib/eten/booking-url";
 import { saveMentorHandle } from "./handle-actions";
 
 export function BookingLinkCard({
@@ -22,9 +23,7 @@ export function BookingLinkCard({
   const [saved, setSaved] = useState(false);
 
   const host = origin.replace(/^https?:\/\//, "");
-  const url = handle
-    ? `${origin}/m/${handle}`
-    : `${origin}/mentorship/book/${mentorId}`;
+  const url = mentorBookingUrl(origin, handle || null, mentorId);
 
   function save() {
     setError(null);
