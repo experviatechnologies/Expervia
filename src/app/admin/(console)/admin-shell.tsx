@@ -23,6 +23,8 @@ import {
   Menu,
   X,
   ChevronRight,
+  Bell,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -295,6 +297,22 @@ export function AdminShell({
               placeholder="Search members, pods…"
               className="hidden w-[220px] sm:block lg:w-[280px]"
             />
+            <Link
+              href="/admin/audit"
+              aria-label="Activity log"
+              title="Activity log"
+              className="border-eten-line text-eten-ink-muted hover:text-eten-ink grid size-10 place-items-center rounded-xl border transition-colors"
+            >
+              <Bell className="size-[18px]" strokeWidth={1.8} />
+            </Link>
+            <a
+              href="mailto:info@experviatechnologies.com?subject=ETEN%20admin%20support"
+              aria-label="Help"
+              title="Help"
+              className="border-eten-line text-eten-ink-muted hover:text-eten-ink grid size-10 place-items-center rounded-xl border transition-colors"
+            >
+              <LifeBuoy className="size-[18px]" strokeWidth={1.8} />
+            </a>
             <ThemeToggle className="border-eten-line text-eten-ink-muted hover:text-eten-ink grid size-10 place-items-center rounded-xl border transition-colors" />
           </div>
         </header>

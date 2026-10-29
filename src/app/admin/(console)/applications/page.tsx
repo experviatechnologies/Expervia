@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { ExternalLink, FileDown, Inbox, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  FileDown,
+  Inbox,
+  Search,
+} from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getSupabaseAdmin, APPLICATIONS_TABLE } from "@/lib/supabase";
+import { ExportCsvButton } from "@/components/shared/export-csv-button";
+import { exportApplicationsCsv } from "./actions";
+
+const PAGE_SIZE = 25;
 
 export const metadata: Metadata = {
   title: "Community Applications",
@@ -53,7 +64,7 @@ function initials(name: string) {
 export default async function ApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ vendor?: string; q?: string }>;
+  searchParams: Promise<{ vendor?: string; q?: string; page?: string }>;
 }) {
   // Defence-in-depth: the proxy already guards /admin, but every protected
   // page verifies the session itself so data can never leak via a matcher gap.
@@ -62,16 +73,19 @@ export default async function ApplicationsPage({
     redirect("/admin/login");
   }
 
-  const { vendor, q } = await searchParams;
+  const { vendor, q, page: pageParam } = await searchParams;
   const activeVendor =
     vendor === "huawei" || vendor === "microsoft" ? vendor : "all";
   const search = (q ?? "").trim();
+  const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
+  const from = (page - 1) * PAGE_SIZE;
 
   // Session verified above — now read with the service_role client.
   let query = getSupabaseAdmin()
     .from(APPLICATIONS_TABLE)
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, from + PAGE_SIZE - 1);
 
   if (activeVendor !== "all") {
     query = query.eq("vendor", activeVendor);
@@ -83,13 +97,23 @@ export default async function ApplicationsPage({
     );
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   const rows = (data ?? []) as ApplicationRow[];
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const hrefFor = (v: string) => {
     const p = new URLSearchParams();
     if (v !== "all") p.set("vendor", v);
     if (search) p.set("q", search);
+    const qs = p.toString();
+    return qs ? `?${qs}` : "/admin/applications";
+  };
+  const pageHref = (pg: number) => {
+    const p = new URLSearchParams();
+    if (activeVendor !== "all") p.set("vendor", activeVendor);
+    if (search) p.set("q", search);
+    if (pg > 1) p.set("page", String(pg));
     const qs = p.toString();
     return qs ? `?${qs}` : "/admin/applications";
   };
@@ -103,8 +127,8 @@ export default async function ApplicationsPage({
             Community applications
           </h1>
           <p className="text-eten-ink-muted mt-1.5 text-[15px]">
-            <b className="text-eten-ink">{rows.length}</b> application
-            {rows.length === 1 ? "" : "s"}
+            <b className="text-eten-ink">{total}</b> application
+            {total === 1 ? "" : "s"}
             {activeVendor !== "all" ? ` · ${activeVendor}` : ""} · signed in as{" "}
             {manager.email}
           </p>
@@ -166,6 +190,13 @@ export default async function ApplicationsPage({
               Clear
             </a>
           )}
+
+          <ExportCsvButton
+            action={exportApplicationsCsv}
+            args={{ vendor: activeVendor, q: search }}
+            filename="eten-applications.csv"
+            className="border-eten-line text-eten-ink-muted hover:text-eten-ink hover:bg-eten-panel-hi ml-auto inline-flex h-11 items-center gap-2 rounded-xl border px-3.5 text-[13px] font-semibold transition-colors disabled:opacity-60"
+          />
         </div>
 
         {/* Table */}
@@ -273,13 +304,46 @@ export default async function ApplicationsPage({
           </div>
         )}
 
-        {rows.length > 0 && (
-          <div className="text-eten-ink-muted flex items-center justify-between px-5 py-3.5 text-[13px]">
+        {total > 0 && (
+          <div className="text-eten-ink-muted flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 text-[13px]">
             <span>
-              Showing <b className="text-eten-ink">{rows.length}</b> application
-              {rows.length === 1 ? "" : "s"}
+              Showing{" "}
+              <b className="text-eten-ink">
+                {from + 1}–{from + rows.length}
+              </b>{" "}
+              of <b className="text-eten-ink">{total}</b>
             </span>
-            <span className="text-eten-faint">Newest first</span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                {page > 1 ? (
+                  <a
+                    href={pageHref(page - 1)}
+                    className="border-eten-line text-eten-ink hover:bg-eten-panel-hi inline-flex h-9 items-center gap-1 rounded-lg border px-3 font-semibold"
+                  >
+                    <ChevronLeft className="size-4" /> Previous
+                  </a>
+                ) : (
+                  <span className="border-eten-line text-eten-faint inline-flex h-9 cursor-default items-center gap-1 rounded-lg border px-3 font-semibold opacity-60">
+                    <ChevronLeft className="size-4" /> Previous
+                  </span>
+                )}
+                <span className="px-1.5">
+                  Page <b className="text-eten-ink">{page}</b> of {totalPages}
+                </span>
+                {page < totalPages ? (
+                  <a
+                    href={pageHref(page + 1)}
+                    className="border-eten-line text-eten-ink hover:bg-eten-panel-hi inline-flex h-9 items-center gap-1 rounded-lg border px-3 font-semibold"
+                  >
+                    Next <ChevronRight className="size-4" />
+                  </a>
+                ) : (
+                  <span className="border-eten-line text-eten-faint inline-flex h-9 cursor-default items-center gap-1 rounded-lg border px-3 font-semibold opacity-60">
+                    Next <ChevronRight className="size-4" />
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </section>
