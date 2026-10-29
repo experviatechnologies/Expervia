@@ -86,8 +86,8 @@ export function BookingLinkCard({
             />
           </div>
           <p className="text-mnt-ink-muted text-[12px]">
-            Lowercase letters, numbers and hyphens. Leave empty to remove your
-            custom link.
+            Lowercase letters, numbers, hyphens and underscores. Leave empty to
+            remove your custom link.
           </p>
           {error && (
             <div

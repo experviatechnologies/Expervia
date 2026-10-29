@@ -18,7 +18,7 @@ alter table public.mentor_profiles
   drop constraint if exists mentor_profiles_handle_format;
 alter table public.mentor_profiles
   add constraint mentor_profiles_handle_format
-    check (handle is null or handle ~ '^[a-z0-9][a-z0-9-]{1,30}$');
+    check (handle is null or handle ~ '^[a-z0-9][a-z0-9_-]{1,30}$');
 
 create unique index if not exists mentor_profiles_handle_unique
   on public.mentor_profiles (lower(handle))

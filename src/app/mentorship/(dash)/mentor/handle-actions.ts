@@ -6,7 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 
 export type HandleResult = { ok: true; handle: string } | { error: string };
 
-const HANDLE_RE = /^[a-z0-9][a-z0-9-]{1,30}$/;
+const HANDLE_RE = /^[a-z0-9][a-z0-9_-]{1,30}$/;
 
 // Paths we don't want a handle to shadow or be confused with.
 const RESERVED = new Set([
@@ -67,7 +67,7 @@ export async function saveMentorHandle(raw: string): Promise<HandleResult> {
   if (!HANDLE_RE.test(handle)) {
     return {
       error:
-        "Use 2–31 characters: lowercase letters, numbers and hyphens, starting with a letter or number.",
+        "Use 2–31 characters: lowercase letters, numbers, hyphens and underscores, starting with a letter or number.",
     };
   }
   if (RESERVED.has(handle)) {
