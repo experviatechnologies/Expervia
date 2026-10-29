@@ -1,10 +1,14 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { toCsv, downloadCsv } from "@/lib/csv";
 import {
   BadgeCheck,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock,
+  Download,
   FileText,
   Layers,
   Loader2,
@@ -14,6 +18,8 @@ import {
   XCircle,
   type LucideIcon,
 } from "lucide-react";
+
+const PAGE_SIZE = 20;
 import { setVerificationStatus } from "./actions";
 
 export type CertRow = {
@@ -113,6 +119,7 @@ function StatusChip({ status }: { status: CertRow["status"] }) {
 export function CertificationsReview({ certs }: { certs: CertRow[] }) {
   const [filter, setFilter] = useState<Filter>("unverified");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -140,6 +147,35 @@ export function CertificationsReview({ certs }: { certs: CertRow[] }) {
       );
   }, [certs, filter, query]);
 
+  const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const from = (safePage - 1) * PAGE_SIZE;
+  const pageRows = shown.slice(from, from + PAGE_SIZE);
+
+  function exportCsv() {
+    downloadCsv(
+      "eten-certifications.csv",
+      toCsv(
+        [
+          "Member",
+          "Email",
+          "Certification",
+          "Issuer",
+          "Credential ID",
+          "Status",
+        ],
+        shown.map((c) => [
+          c.memberName ?? "",
+          c.memberEmail ?? "",
+          c.name,
+          c.issuer ?? "",
+          c.credentialId ?? "",
+          c.status,
+        ]),
+      ),
+    );
+  }
+
   function act(certId: string, status: CertRow["status"]) {
     setError(null);
     setBusyId(certId);
@@ -162,7 +198,10 @@ export function CertificationsReview({ certs }: { certs: CertRow[] }) {
               type="button"
               role="tab"
               aria-selected={on}
-              onClick={() => setFilter(key)}
+              onClick={() => {
+                setFilter(key);
+                setPage(1);
+              }}
               className={
                 "bg-eten-panel flex items-center gap-3.5 rounded-2xl p-4 text-left transition-shadow " +
                 (on
@@ -205,11 +244,22 @@ export function CertificationsReview({ certs }: { certs: CertRow[] }) {
             <input
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search member, certification or issuer"
               className="text-eten-ink min-w-0 flex-1 border-0 bg-transparent text-sm outline-none placeholder:text-current"
             />
           </label>
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={shown.length === 0}
+            className="border-eten-line text-eten-ink-muted hover:text-eten-ink hover:bg-eten-panel-hi ml-auto inline-flex h-11 items-center gap-2 rounded-xl border px-3.5 text-[13px] font-semibold transition-colors disabled:opacity-60"
+          >
+            <Download className="size-4" strokeWidth={1.8} /> Export CSV
+          </button>
         </div>
 
         {shown.length === 0 ? (
@@ -239,7 +289,7 @@ export function CertificationsReview({ certs }: { certs: CertRow[] }) {
                 </tr>
               </thead>
               <tbody>
-                {shown.map((c) => {
+                {pageRows.map((c) => {
                   const isBusy = pending && busyId === c.id;
                   return (
                     <tr
@@ -364,12 +414,41 @@ export function CertificationsReview({ certs }: { certs: CertRow[] }) {
           </div>
         )}
 
-        <div className="text-eten-ink-muted flex items-center justify-between px-5 py-3.5 text-[13px]">
-          <span>
-            Showing <b className="text-eten-ink">{shown.length}</b> of{" "}
-            {counts[filter]}
-          </span>
-        </div>
+        {shown.length > 0 && (
+          <div className="text-eten-ink-muted flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 text-[13px]">
+            <span>
+              Showing{" "}
+              <b className="text-eten-ink">
+                {from + 1}–{from + pageRows.length}
+              </b>{" "}
+              of <b className="text-eten-ink">{shown.length}</b>
+            </span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPage(safePage - 1)}
+                  disabled={safePage <= 1}
+                  className="border-eten-line text-eten-ink hover:bg-eten-panel-hi inline-flex h-9 items-center gap-1 rounded-lg border px-3 font-semibold disabled:opacity-50"
+                >
+                  <ChevronLeft className="size-4" /> Previous
+                </button>
+                <span className="px-1.5">
+                  Page <b className="text-eten-ink">{safePage}</b> of{" "}
+                  {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage(safePage + 1)}
+                  disabled={safePage >= totalPages}
+                  className="border-eten-line text-eten-ink hover:bg-eten-panel-hi inline-flex h-9 items-center gap-1 rounded-lg border px-3 font-semibold disabled:opacity-50"
+                >
+                  Next <ChevronRight className="size-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );

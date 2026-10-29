@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Search, Star } from "lucide-react";
+import { ArrowRight, Download, Search, Star } from "lucide-react";
+import { toCsv, downloadCsv } from "@/lib/csv";
 
 export type PodCard = {
   slug: string;
@@ -80,9 +81,26 @@ export function PodsBrowser({ pods }: { pods: PodCard[] }) {
             );
           })}
         </div>
-        <div className="text-eten-ink-muted ml-auto text-[13px]">
-          Showing <b className="text-eten-ink">{shown.length}</b> of{" "}
-          {pods.length} pods
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-eten-ink-muted text-[13px]">
+            Showing <b className="text-eten-ink">{shown.length}</b> of{" "}
+            {pods.length} pods
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              downloadCsv(
+                "eten-pods.csv",
+                toCsv(
+                  ["Pod", "Tag", "Members", "Primary", "% primary"],
+                  shown.map((p) => [p.name, p.slug, p.count, p.primary, p.pct]),
+                ),
+              )
+            }
+            className="border-eten-line text-eten-ink-muted hover:text-eten-ink hover:bg-eten-panel-hi inline-flex h-11 items-center gap-2 rounded-xl border px-3.5 text-[13px] font-semibold transition-colors"
+          >
+            <Download className="size-4" strokeWidth={1.8} /> Export CSV
+          </button>
         </div>
       </div>
 
