@@ -5,6 +5,8 @@ import { ArrowLeft, Check, GraduationCap, Star } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { toCsv } from "@/lib/csv";
+import { DownloadCsvButton } from "@/components/shared/download-csv-button";
 import { PodMembershipButton } from "./pod-membership-button";
 import { PodRoster, type RosterItem } from "./pod-roster";
 
@@ -131,6 +133,8 @@ export default async function PodDetailPage({
   // service_role since members.v_level isn't peer-readable by RLS — gated on
   // the viewer actually leading this pod.
   const isLeadHere = myRole === "lead" || myRole === "co_lead";
+  // Pod leads can download their roster (built below, in the lead-gated block).
+  let membersCsv = "";
   let podCircles: {
     id: string;
     title: string | null;
@@ -193,6 +197,45 @@ export default async function PodDetailPage({
         completedCount: mems.filter((m) => m.status === "completed").length,
       };
     });
+
+    // Roster export for the pod lead: names, emails (service_role), roles,
+    // job titles, V-levels and join dates.
+    const emailById = new Map<string, string>();
+    await Promise.all(
+      memberIds.map(async (id) => {
+        const { data: u } = await admin.auth.admin.getUserById(id);
+        const em = u?.user?.email;
+        if (em) emailById.set(id, em);
+      }),
+    );
+    const joinedById = new Map(
+      memberships.map((m) => [m.member_id, m.joined_at as string]),
+    );
+    const roleLabel: Record<string, string> = {
+      lead: "Lead",
+      co_lead: "Co-lead",
+      member: "Member",
+    };
+    membersCsv = toCsv(
+      ["Name", "Email", "Role", "Job title", "V-level", "Joined"],
+      roster.map((r) => {
+        const j = joinedById.get(r.memberId);
+        return [
+          r.name,
+          emailById.get(r.memberId) ?? "",
+          roleLabel[r.role] ?? r.role,
+          r.jobTitle ?? "",
+          r.mentor?.vLevel ?? "",
+          j
+            ? new Date(j).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "",
+        ];
+      }),
+    );
   }
 
   const tileInitials = (name: string) =>
@@ -417,6 +460,25 @@ export default async function PodDetailPage({
           )}
 
           {/* Mentorship Circles (lead view) */}
+          {isLeadHere && (
+            <section className="bg-eten-panel border-eten-line flex flex-wrap items-center justify-between gap-3 rounded-[18px] border p-5">
+              <div className="min-w-0">
+                <h2 className="text-eten-ink text-[15px] font-extrabold">
+                  Pod members · {roster.length}
+                </h2>
+                <p className="text-eten-ink-muted mt-0.5 text-[13px]">
+                  Download your roster with names, emails and roles.
+                </p>
+              </div>
+              <DownloadCsvButton
+                csv={membersCsv}
+                filename={`${pod.slug}-members.csv`}
+                label="Download members"
+                className="border-eten-line text-eten-ink-muted hover:text-eten-ink hover:bg-eten-panel-hi inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-[13px] font-semibold transition-colors"
+              />
+            </section>
+          )}
+
           {isLeadHere && (
             <section className="bg-eten-panel border-eten-line flex flex-col gap-3 rounded-[18px] border p-5">
               <div className="flex items-center justify-between gap-3">
