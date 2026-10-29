@@ -16,13 +16,15 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         { source: "/", has, destination: "/mentorship" },
         {
-          // Everything except assets, api, and the shared app routes that the
+          // Everything except: static assets in /public (any path with a file
+          // extension, e.g. /expervia-logo.png, /favicon.ico — the `.*\..*`
+          // branch, so they're served from the root, not 404'd at
+          // /mentorship/...), _next/ and api/, and the shared app routes the
           // mentorship product hands off to: /auth (email confirmation, password
-          // recovery) and /onboarding (validation / "Continue to ETEN"). Those
-          // must stay unrewritten so they don't 404 at /mentorship/... on the
-          // subdomain; the already-prefixed /mentorship path is excluded too.
+          // recovery) and /onboarding (validation / "Continue to ETEN"). The
+          // already-prefixed /mentorship path is excluded too.
           source:
-            "/:path((?!mentorship$|mentorship/|_next/|api/|auth/|onboarding$|onboarding/).*)",
+            "/:path((?!mentorship$|mentorship/|_next/|api/|auth/|onboarding$|onboarding/|.*\\..*).*)",
           has,
           destination: "/mentorship/:path",
         },
