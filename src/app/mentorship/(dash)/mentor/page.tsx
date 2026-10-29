@@ -12,6 +12,8 @@ import {
   Users,
 } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { requestOrigin } from "@/lib/eten/request-origin";
+import { BookingLinkCard } from "./booking-link-card";
 import { ApplyMentorControl } from "./apply-control";
 import { RequestDecisionControl } from "./request-decision-control";
 import { BookingDecisionControl } from "./booking-decision-control";
@@ -56,10 +58,11 @@ export default async function MentorDashboardPage() {
 
   const { data: mp } = await supabase
     .from("mentor_profiles")
-    .select("mentor_status, capability_area_id, verified_at")
+    .select("mentor_status, capability_area_id, verified_at, handle")
     .eq("member_id", user.id)
     .maybeSingle();
   const verified = mp?.mentor_status === "verified";
+  const bookingOrigin = verified ? await requestOrigin() : "";
 
   // Not verified: is there an application under review, and what areas can they
   // apply in?
@@ -297,6 +300,14 @@ export default async function MentorDashboardPage() {
             </div>
           )}
         </div>
+
+        {verified && (
+          <BookingLinkCard
+            mentorId={user.id}
+            initialHandle={mp?.handle ?? null}
+            origin={bookingOrigin}
+          />
+        )}
 
         {!verified && (
           <div className="border-mnt-amber/30 rounded-2xl border p-4 [background:linear-gradient(120deg,rgba(245,177,61,0.10),rgba(245,177,61,0.03))]">

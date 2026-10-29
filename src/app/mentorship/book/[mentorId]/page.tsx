@@ -5,8 +5,10 @@ import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getMentorSlots } from "@/lib/eten/availability";
 import { getFxRate } from "@/lib/eten/fx";
+import { requestOrigin } from "@/lib/eten/request-origin";
 import { summarizeRatings, canRateMentor } from "@/lib/eten/ratings";
 import { RatingForm } from "../../(dash)/mentors/[id]/rating-form";
+import { ShareLink } from "@/components/shared/share-link";
 import {
   GuestBookingWidget,
   type SessionTypeOption,
@@ -103,10 +105,15 @@ export async function BookingView({ mentorId }: { mentorId: string }) {
 
   const { data: mentor } = await admin
     .from("mentor_profiles")
-    .select("member_id, mentor_status, capability_area_id")
+    .select("member_id, mentor_status, capability_area_id, handle")
     .eq("member_id", mentorId)
     .maybeSingle();
   if (!mentor || mentor.mentor_status === "candidate") notFound();
+
+  const origin = await requestOrigin();
+  const shareUrl = mentor.handle
+    ? `${origin}/m/${mentor.handle}`
+    : `${origin}/mentorship/book/${mentorId}`;
 
   const [
     { data: profile },
@@ -298,19 +305,26 @@ export async function BookingView({ mentorId }: { mentorId: string }) {
 
       {/* Hero */}
       <section className="relative overflow-hidden [background:linear-gradient(120deg,#110263_0%,#35007F_50%,#7530E6_100%)]">
-        <div className="relative mx-auto flex max-w-[1200px] flex-col gap-2.5 px-6 pt-10 pb-24 text-white">
-          <span className="w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[12px] font-bold tracking-[0.06em] text-[#d9ccfb] uppercase">
-            Book from anywhere · times shown in your zone
-          </span>
-          <h1 className="max-w-[640px] text-[32px] leading-[1.15] font-extrabold tracking-[-0.02em] md:text-[36px]">
-            Book a 1:1 session with {name}
-          </h1>
-          <p className="max-w-[620px] text-[16px] leading-relaxed text-[#e4dbfc]">
-            {name} is a verified ETEN mentor in {areaLabel}. Pick a session and
-            grab a time in your own zone
-            {isPaidMentor ? ", and pay securely" : ""}, no account needed to
-            start.
-          </p>
+        <div className="relative mx-auto flex max-w-[1200px] flex-wrap items-start justify-between gap-6 px-6 pt-10 pb-24 text-white">
+          <div className="flex flex-col gap-2.5">
+            <span className="w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[12px] font-bold tracking-[0.06em] text-[#d9ccfb] uppercase">
+              Book from anywhere · times shown in your zone
+            </span>
+            <h1 className="max-w-[640px] text-[32px] leading-[1.15] font-extrabold tracking-[-0.02em] md:text-[36px]">
+              Book a 1:1 session with {name}
+            </h1>
+            <p className="max-w-[620px] text-[16px] leading-relaxed text-[#e4dbfc]">
+              {name} is a verified ETEN mentor in {areaLabel}. Pick a session
+              and grab a time in your own zone
+              {isPaidMentor ? ", and pay securely" : ""}, no account needed to
+              start.
+            </p>
+          </div>
+          <ShareLink
+            url={shareUrl}
+            variant="hero"
+            message={`Book a session with ${name} on ETEN:`}
+          />
         </div>
       </section>
 
