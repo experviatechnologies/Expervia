@@ -13,6 +13,8 @@ import {
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { toCsv } from "@/lib/csv";
+import { DownloadCsvButton } from "@/components/shared/download-csv-button";
 import { PayoutControl } from "./payout-control";
 import { VerifyControl } from "./verify-control";
 
@@ -150,6 +152,30 @@ export default async function AdminPayoutsPage() {
       nameById.set(p.member_id, p.full_name ?? "A mentor");
   }
 
+  const balancesCsv = toCsv(
+    [
+      "Mentor",
+      "Available",
+      "Pending",
+      "Currency",
+      "Bank",
+      "Account name",
+      "Verified",
+    ],
+    rows.map((r) => {
+      const acct = accountById.get(r.id);
+      return [
+        nameById.get(r.id) ?? "A mentor",
+        (r.available / 100).toFixed(2),
+        (r.pending / 100).toFixed(2),
+        r.currency,
+        acct?.bankName ?? "",
+        acct?.accountName ?? "",
+        acct ? (acct.verified ? "Yes" : "No") : "",
+      ];
+    }),
+  );
+
   const cur = rows[0]?.currency ?? payoutRows?.[0]?.currency ?? "NGN";
   const totalAvailable = rows.reduce((s, r) => s + r.available, 0);
   const totalPending = rows.reduce((s, r) => s + r.pending, 0);
@@ -167,13 +193,22 @@ export default async function AdminPayoutsPage() {
             Track what each mentor has earned and record payouts.
           </p>
         </div>
-        <Link
-          href="/admin/mentorship"
-          className="border-eten-line text-eten-ink hover:bg-eten-hover inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors"
-        >
-          <ArrowLeft className="size-4" strokeWidth={2} />
-          Back to Mentorship
-        </Link>
+        <div className="flex shrink-0 items-center gap-2.5">
+          {rows.length > 0 && (
+            <DownloadCsvButton
+              csv={balancesCsv}
+              filename="eten-mentor-payouts.csv"
+              className="border-eten-line text-eten-ink-muted hover:text-eten-ink hover:bg-eten-hover inline-flex h-11 items-center gap-2 rounded-xl border px-3.5 text-[13px] font-semibold transition-colors"
+            />
+          )}
+          <Link
+            href="/admin/mentorship"
+            className="border-eten-line text-eten-ink hover:bg-eten-hover inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors"
+          >
+            <ArrowLeft className="size-4" strokeWidth={2} />
+            Back to Mentorship
+          </Link>
+        </div>
       </header>
 
       {/* How payouts work */}
