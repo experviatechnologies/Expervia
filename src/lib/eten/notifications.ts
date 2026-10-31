@@ -7,7 +7,8 @@ export type NotificationType =
   | "reaction"
   | "message"
   | "pod_activity"
-  | "mentorship";
+  | "mentorship"
+  | "presales";
 
 /**
  * Insert an in-app notification. Notifications are server-written (no member

@@ -4,6 +4,7 @@ import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { timeAgo } from "@/lib/time";
 import { mentorshipNotifText } from "@/lib/eten/mentorship-notifications";
+import { presalesNotifHref, presalesNotifText } from "@/lib/tracker/events";
 import { NotificationsList, type NotifItem } from "./notifications-list";
 
 export const metadata: Metadata = {
@@ -17,7 +18,8 @@ type NotificationType =
   | "reaction"
   | "message"
   | "pod_activity"
-  | "mentorship";
+  | "mentorship"
+  | "presales";
 
 type Described = {
   who: string;
@@ -79,6 +81,15 @@ function describe(
         iconKey: "mentorship",
         tag: "Mentorship",
         tone: "accent",
+      };
+    case "presales":
+      return {
+        who: "",
+        what: presalesNotifText(targetType, actor),
+        href: presalesNotifHref(),
+        iconKey: "presales",
+        tag: "Presales",
+        tone: "blue",
       };
     default:
       return {

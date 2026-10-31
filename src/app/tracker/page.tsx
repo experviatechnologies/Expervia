@@ -85,6 +85,19 @@ export default async function TrackerHome() {
             ))}
           </ul>
         )}
+        {session.roles.includes("admin") && (
+          <p className="text-eten-ink-muted mt-3 text-[13.5px]">
+            To give someone the Sales Manager or Management role, open their
+            profile in{" "}
+            <Link
+              href="/admin/members"
+              className="text-eten-accent font-semibold underline"
+            >
+              Admin &gt; Members
+            </Link>{" "}
+            and use Presales tracker roles.
+          </p>
+        )}
         {session.ledPodIds.length > 0 && data && (
           <p className="text-eten-ink-muted mt-3 text-[13.5px]">
             You lead:{" "}

@@ -16,6 +16,7 @@ import {
 } from "@/lib/eten/evidence-types";
 import { recordRecognition } from "@/lib/eten/recognition";
 import { BADGE_BY_KEY } from "@/lib/eten/recognition-types";
+import { auditTracker, notifyPresales } from "@/lib/tracker/server/events";
 
 type MemberStatus = "active" | "suspended" | "deactivated";
 type ActionResult = { ok: true } | { error: string };
@@ -393,5 +394,88 @@ export async function setMentorshipIntent(input: {
   revalidatePath(`/admin/members/${input.memberId}`);
   revalidatePath("/admin/members");
   revalidatePath("/admin/mentorship");
+  return { ok: true };
+}
+
+/**
+ * Grant or remove a presales tracker staff role (Sales Manager, Management).
+ * Ops-only, re-verified here. Every change needs a written reason and is
+ * audit-logged (PRD section 5: privileged changes require a reason). The
+ * member is notified when a role is granted. System Administrator stays the
+ * operations role; Pod Leaders come from pod leadership, not from here.
+ */
+export async function setStaffRole(input: {
+  memberId: string;
+  role: "sales_manager" | "management";
+  grant: boolean;
+  reason: string;
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to manage roles." };
+  }
+  if (input.role !== "sales_manager" && input.role !== "management") {
+    return { error: "Invalid role." };
+  }
+  const reason = input.reason?.trim() ?? "";
+  if (reason.length < 3) {
+    return { error: "Please give a reason for this change." };
+  }
+
+  const me = await getCurrentMember();
+  const admin = getSupabaseAdmin();
+
+  const { data: target } = await admin
+    .from("members")
+    .select("id, status")
+    .eq("id", input.memberId)
+    .maybeSingle();
+  if (!target) return { error: "Member not found." };
+  if (input.grant && target.status !== "active") {
+    return { error: "Only active members can be given a tracker role." };
+  }
+
+  const { error } = input.grant
+    ? await admin.from("member_roles").upsert(
+        {
+          member_id: input.memberId,
+          role: input.role,
+          granted_by: me?.id ?? null,
+        },
+        { onConflict: "member_id,role", ignoreDuplicates: true },
+      )
+    : await admin
+        .from("member_roles")
+        .delete()
+        .eq("member_id", input.memberId)
+        .eq("role", input.role);
+  if (error) {
+    // 42P01 = undefined table: migration 46 has not been run yet.
+    return {
+      error:
+        error.code === "42P01"
+          ? "The tracker database is not set up yet (run migration 46)."
+          : "Couldn't update the role. Please try again.",
+    };
+  }
+
+  if (me) {
+    await auditTracker({
+      actorId: me.id,
+      action: input.grant ? "role_granted" : "role_revoked",
+      targetType: "member",
+      targetId: input.memberId,
+      reason,
+      metadata: { role: input.role },
+    });
+    if (input.grant) {
+      await notifyPresales({
+        recipients: [input.memberId],
+        actorId: me.id,
+        event: "role_granted",
+      });
+    }
+  }
+
+  revalidatePath(`/admin/members/${input.memberId}`);
   return { ok: true };
 }

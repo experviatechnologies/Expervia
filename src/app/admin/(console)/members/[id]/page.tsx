@@ -18,6 +18,7 @@ import { MemberStatusControl } from "../member-status-control";
 import { DeleteMemberControl } from "../delete-member-control";
 import { MemberVLevelControl } from "../member-vlevel-control";
 import { MentorshipIntentControl } from "../mentorship-intent-control";
+import { StaffRolesControl } from "../staff-roles-control";
 import { AddEvidence } from "../add-evidence";
 import { AwardRecognition } from "../award-recognition";
 import { vLevelLabel } from "@/lib/eten/v-levels";
@@ -81,6 +82,7 @@ export default async function AdminMemberDetailPage({
     { data: verificationRows },
     { data: evidenceRows },
     { data: recognitionRows },
+    { data: staffRoleRows },
   ] = await Promise.all([
     admin
       .from("profiles")
@@ -122,6 +124,8 @@ export default async function AdminMemberDetailPage({
       .select("kind, badge_key, points, label, created_at")
       .eq("member_id", id)
       .order("created_at", { ascending: false }),
+    // Presales tracker staff roles (migration 46; empty if not yet run).
+    admin.from("member_roles").select("role").eq("member_id", id),
   ]);
 
   type VRow = {
@@ -307,6 +311,27 @@ export default async function AdminMemberDetailPage({
           <MentorshipIntentControl
             memberId={member.id}
             intent={member.mentorship_intent === "mentor" ? "mentor" : "mentee"}
+          />
+        </div>
+        <div className="border-eten-line-soft mt-4 flex flex-wrap items-start justify-between gap-3 border-t pt-4">
+          <div className="max-w-[420px]">
+            <dt className="text-eten-faint font-mono text-[11px] tracking-wider uppercase">
+              Presales tracker roles
+            </dt>
+            <dd className="text-eten-ink-muted mt-1 text-xs">
+              Sales Managers create requests and select engineers; Management
+              sees reports. Pod Leaders come from pod leadership and admins from
+              the Operations role. Each change needs a reason.
+            </dd>
+          </div>
+          <StaffRolesControl
+            memberId={member.id}
+            roles={((staffRoleRows ?? []) as { role: string }[])
+              .map((r) => r.role)
+              .filter(
+                (r): r is "sales_manager" | "management" =>
+                  r === "sales_manager" || r === "management",
+              )}
           />
         </div>
       </Section>

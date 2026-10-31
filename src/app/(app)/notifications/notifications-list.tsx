@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
+  BriefcaseBusiness,
   CheckCheck,
   GraduationCap,
   MessageSquare,
@@ -24,6 +25,7 @@ export type NotifItem = {
     | "message"
     | "mention"
     | "mentorship"
+    | "presales"
     | "pod";
   tag: string;
   tone: "accent" | "verified" | "blue" | "amber";
@@ -38,6 +40,7 @@ const ICONS: Record<NotifItem["iconKey"], LucideIcon> = {
   message: MessageSquare,
   mention: Sparkles,
   mentorship: GraduationCap,
+  presales: BriefcaseBusiness,
   pod: Bell,
 };
 
@@ -48,12 +51,19 @@ const TONE: Record<NotifItem["tone"], string> = {
   amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
 };
 
-type Filter = "all" | "unread" | "mentorship" | "posts" | "messages";
+type Filter =
+  | "all"
+  | "unread"
+  | "mentorship"
+  | "presales"
+  | "posts"
+  | "messages";
 
 const MATCH: Record<Filter, (n: NotifItem) => boolean> = {
   all: () => true,
   unread: (n) => !n.isRead,
   mentorship: (n) => n.iconKey === "mentorship",
+  presales: (n) => n.iconKey === "presales",
   posts: (n) =>
     n.iconKey === "comment" ||
     n.iconKey === "reaction" ||
@@ -66,6 +76,7 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "unread", label: "Unread" },
   { key: "mentorship", label: "Mentorship" },
+  { key: "presales", label: "Presales" },
   { key: "posts", label: "Posts" },
   { key: "messages", label: "Messages" },
 ];
