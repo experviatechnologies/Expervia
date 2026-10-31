@@ -21,6 +21,7 @@ export const PRESALES_EVENTS = [
   "cancelled", // Participants
   "outcome_needed", // Meeting owner: record outcome and actions
   "role_granted", // Member: given a Sales or Management role
+  "pod_leader_assigned", // Member: made Lead or backup leader of a pod
 ] as const;
 
 export type PresalesEvent = (typeof PRESALES_EVENTS)[number];
@@ -55,6 +56,8 @@ export function presalesNotifText(event: string | null, actor: string): string {
       return `${actor} cancelled a presales meeting`;
     case "outcome_needed":
       return "Record the outcome of your presales meeting";
+    case "pod_leader_assigned":
+      return `${actor} made you a leader of your pod for presales nominations`;
     case "role_granted":
       return `${actor} gave you access to the presales tracker`;
     default:

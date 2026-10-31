@@ -13,6 +13,8 @@ export type PodCard = {
   count: number;
   primary: number;
   pct: number;
+  /** A Pod Leader receives presales nomination requests. */
+  hasLeader: boolean;
 };
 
 type Sort = "members" | "primary" | "az";
@@ -164,7 +166,13 @@ export function PodsBrowser({ pods }: { pods: PodCard[] }) {
               </div>
 
               <div className="border-eten-line-soft flex items-center justify-between border-t pt-3.5 text-[13px]">
-                <span className="text-eten-faint">{pod.pct}% primary</span>
+                {pod.hasLeader ? (
+                  <span className="text-eten-faint">{pod.pct}% primary</span>
+                ) : (
+                  <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[12px] font-semibold text-amber-700">
+                    No Pod Leader
+                  </span>
+                )}
                 <span className="text-eten-accent flex items-center gap-1.5 font-bold">
                   View roster
                   <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />

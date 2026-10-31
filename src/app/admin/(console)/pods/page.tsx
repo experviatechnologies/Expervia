@@ -19,17 +19,39 @@ export default async function AdminPodsPage() {
 
   const admin = getSupabaseAdmin();
 
-  const [{ data: podRows }, { data: membershipRows }, { data: profileRows }] =
-    await Promise.all([
+  // PostgREST returns at most 1,000 rows per request; memberships and profiles
+  // exceed that, so page through them or the per-pod tallies come up short.
+  async function fetchAll<T>(
+    build: (from: number, to: number) => PromiseLike<{ data: T[] | null }>,
+  ): Promise<T[]> {
+    const out: T[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data } = await build(from, from + 999);
+      out.push(...(data ?? []));
+      if (!data || data.length < 1000) return out;
+    }
+  }
+
+  const [{ data: podRows }, membershipRows, profileRows] = await Promise.all([
+    admin
+      .from("pods")
+      .select("id, slug, name, description, is_main")
+      .order("name"),
+    fetchAll((a, b) =>
       admin
-        .from("pods")
-        .select("id, slug, name, description, is_main")
-        .order("name"),
-      admin.from("pod_memberships").select("pod_id, member_id, role_in_pod"),
+        .from("pod_memberships")
+        .select("pod_id, member_id, role_in_pod")
+        .order("id")
+        .range(a, b),
+    ),
+    fetchAll((a, b) =>
       admin
         .from("profiles")
-        .select("member_id, full_name, primary_specialization_pod_id"),
-    ]);
+        .select("member_id, full_name, primary_specialization_pod_id")
+        .order("member_id")
+        .range(a, b),
+    ),
+  ]);
 
   const primaryByMember = new Map<string, string | null>();
   const nameByMember = new Map<string, string>();
@@ -41,6 +63,7 @@ export default async function AdminPodsPage() {
   // Per-pod tallies + specialist multi-pod membership.
   const total = new Map<string, number>();
   const leads = new Map<string, number>();
+  const podsWithLeader = new Set<string>();
   const primaryCount = new Map<string, number>();
   const specialistPodsByMember = new Map<string, Set<string>>();
 
@@ -51,6 +74,7 @@ export default async function AdminPodsPage() {
     if (m.role_in_pod === "lead" || m.role_in_pod === "co_lead") {
       leads.set(m.pod_id, (leads.get(m.pod_id) ?? 0) + 1);
     }
+    if (m.role_in_pod === "lead") podsWithLeader.add(m.pod_id);
     if (primaryByMember.get(m.member_id) === m.pod_id) {
       primaryCount.set(m.pod_id, (primaryCount.get(m.pod_id) ?? 0) + 1);
     }
@@ -99,6 +123,7 @@ export default async function AdminPodsPage() {
       count,
       primary,
       pct: count > 0 ? Math.round((primary / count) * 100) : 0,
+      hasLeader: podsWithLeader.has(pod.id),
     };
   });
 

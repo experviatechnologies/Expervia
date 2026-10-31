@@ -5,6 +5,7 @@ import { ArrowLeft, Star, Users } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { PodLeadershipControl } from "../pod-leadership-control";
 
 export const metadata: Metadata = {
   title: "Pod",
@@ -47,14 +48,26 @@ export default async function AdminPodDetailPage({
     .eq("pod_id", pod.id);
 
   const memberIds = (membershipRows ?? []).map((m) => m.member_id);
-  const { data: profileRows } = memberIds.length
-    ? await admin
-        .from("profiles")
-        .select(
-          "member_id, full_name, headline, job_title, primary_specialization_pod_id",
-        )
-        .in("member_id", memberIds)
-    : { data: [] };
+  const [{ data: profileRows }, { data: statusRows }] = memberIds.length
+    ? await Promise.all([
+        admin
+          .from("profiles")
+          .select(
+            "member_id, full_name, headline, job_title, primary_specialization_pod_id",
+          )
+          .in("member_id", memberIds),
+        admin
+          .from("members")
+          .select("id, status, claimed_at")
+          .in("id", memberIds),
+      ])
+    : [{ data: [] }, { data: [] }];
+  // Only active, activated members can lead a pod.
+  const eligible = new Set(
+    (statusRows ?? [])
+      .filter((m) => m.status === "active" && m.claimed_at)
+      .map((m) => m.id),
+  );
 
   const profileById = new Map((profileRows ?? []).map((p) => [p.member_id, p]));
 
@@ -76,6 +89,17 @@ export default async function AdminPodDetailPage({
     );
 
   const leadCount = roster.filter((r) => r.role !== "member").length;
+  const person = (r: (typeof roster)[number]) => ({
+    id: r.memberId,
+    name: r.name,
+    headline: r.headline,
+  });
+  const lead = roster.find((r) => r.role === "lead");
+  const coLead = roster.find((r) => r.role === "co_lead");
+  const candidates = roster
+    .filter((r) => eligible.has(r.memberId))
+    .map(person)
+    .sort((a, b) => a.name.localeCompare(b.name));
   const primaryCount = roster.filter((r) => r.isPrimary).length;
 
   return (
@@ -113,6 +137,25 @@ export default async function AdminPodDetailPage({
           </span>
         </div>
       </header>
+
+      {!pod.is_main && (
+        <section className="bg-eten-panel border-eten-line mb-4 rounded-2xl border p-5 sm:p-6">
+          <h2 className="text-eten-ink text-sm font-bold">Pod leadership</h2>
+          <p className="text-eten-ink-muted mt-1 mb-4 text-xs">
+            The Pod Leader receives presales nomination requests for this pod in
+            the ETEN Availability Tracker. Every change needs a reason and is
+            recorded in the audit log.
+          </p>
+          <PodLeadershipControl
+            podId={pod.id}
+            current={{
+              lead: lead ? person(lead) : undefined,
+              co_lead: coLead ? person(coLead) : undefined,
+            }}
+            candidates={candidates}
+          />
+        </section>
+      )}
 
       <div className="bg-eten-panel border-eten-line overflow-hidden rounded-2xl border">
         <div className="overflow-x-auto">
