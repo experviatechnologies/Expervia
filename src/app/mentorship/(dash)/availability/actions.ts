@@ -298,6 +298,10 @@ export async function addAvailabilityException(input: {
       kind: input.kind,
       start_time: startTime,
       end_time: endTime,
+      // A block (leave, travel) is about the person, so it also applies to
+      // presales; extra time stays mentoring-only (migration 46).
+      purposes:
+        input.kind === "blocked" ? ["mentoring", "presales"] : ["mentoring"],
     });
   if (error) return { error: "Couldn't save that exception. Try again." };
 

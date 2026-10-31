@@ -68,6 +68,11 @@ export async function proxy(request: NextRequest) {
   );
   const isMemberAuthPage =
     path === "/signin" || path === "/join" || path === "/forgot-password";
+  // The real presales tracker (the /tracker/demo stakeholder demo stays public).
+  const isTrackerArea =
+    (path === "/tracker" || path.startsWith("/tracker/")) &&
+    !path.startsWith("/tracker/demo") &&
+    path !== "/tracker/login";
 
   const redirectTo = (pathname: string) => {
     const url = request.nextUrl.clone();
@@ -94,6 +99,14 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  // --- /tracker — any signed-in member; roles are checked per page/action ----
+  if (isTrackerArea && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/signin";
+    url.search = `?next=${encodeURIComponent(path)}`;
+    return NextResponse.redirect(url);
+  }
+
   // --- /dashboard — any signed-in member -------------------------------------
   if (isMemberArea && !user) {
     return redirectTo("/signin");
@@ -101,7 +114,7 @@ export async function proxy(request: NextRequest) {
 
   // --- /signin, /join — send signed-in members onward ------------------------
   if (isMemberAuthPage && user) {
-    return redirectTo("/dashboard");
+    return redirectTo(safeNext(request.nextUrl.searchParams.get("next")));
   }
 
   return response;
@@ -134,5 +147,17 @@ export const config = {
     "/forgot-password",
     "/reset-password",
     "/suspended",
+    "/tracker",
+    "/tracker/:path((?!demo|login).*)",
   ],
 };
+
+/** Only same-site paths are honoured as a post-sign-in destination. */
+function safeNext(next: string | null): string {
+  return next &&
+    next.startsWith("/") &&
+    !next.startsWith("//") &&
+    !next.startsWith("/\\")
+    ? next
+    : "/dashboard";
+}

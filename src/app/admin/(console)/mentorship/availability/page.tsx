@@ -33,7 +33,10 @@ export default async function AdminAvailabilityPage() {
         .select(
           "member_id, timezone, availability_status, default_session_minutes, max_sessions_per_week",
         ),
-      admin.from("mentor_availability").select("mentor_id"),
+      admin
+        .from("mentor_availability")
+        .select("mentor_id")
+        .contains("purposes", ["mentoring"]),
     ]);
 
   const prefs = prefsRows ?? [];

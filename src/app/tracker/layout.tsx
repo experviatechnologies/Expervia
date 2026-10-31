@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { TrackerProvider } from "@/lib/tracker/store";
-import { ToastProvider } from "@/components/tracker/ui";
 
 /**
- * ETEN Availability & Presales Coordination Tracker (Phase 1: frontend demo).
- * Everything under /tracker runs on fictional demo data held in the visitor's
- * browser, so the pages are kept out of search results.
+ * ETEN Availability & Presales Coordination Tracker.
+ *
+ * /tracker       the real tracker, behind the ETEN sign-in (gated in proxy.ts
+ *                and again per page via getTrackerSession()).
+ * /tracker/demo  the stakeholder demo on fictional, in-browser data.
+ * Neither is meant for search engines.
  */
 export const metadata: Metadata = {
   title: {
@@ -24,9 +25,7 @@ export default function TrackerLayout({
 }) {
   return (
     <div data-app-surface className="bg-eten-canvas text-eten-ink min-h-screen">
-      <TrackerProvider>
-        <ToastProvider>{children}</ToastProvider>
-      </TrackerProvider>
+      {children}
     </div>
   );
 }

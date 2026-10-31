@@ -35,7 +35,7 @@ import type { Member } from "@/lib/tracker/types";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Avatar, Btn } from "./ui";
 
-export const BASE = "/tracker";
+export const BASE = "/tracker/demo";
 
 type NavItem = {
   href: string;
@@ -114,15 +114,11 @@ export function navKeys(me: Member): Key[] {
 
 /** Whether the current path is a section this persona may open. */
 function allowed(me: Member, pathname: string) {
-  const section = pathname.slice(BASE.length + 1).split("/")[0] as Key;
+  const parts = pathname.slice(BASE.length + 1).split("/");
+  const section = parts[0] as Key;
   if (!section) return true;
   // Request detail pages do their own per-request access check.
-  if (
-    section === "requests" &&
-    pathname.split("/").length > 3 &&
-    !pathname.endsWith("/new")
-  )
-    return true;
+  if (section === "requests" && parts[1] && parts[1] !== "new") return true;
   return navKeys(me).includes(section);
 }
 

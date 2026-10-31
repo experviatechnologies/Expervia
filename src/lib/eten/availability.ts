@@ -356,11 +356,15 @@ export async function getMentorSlots(
       admin
         .from("mentor_availability")
         .select("weekday, start_time, end_time")
-        .eq("mentor_id", mentorId),
+        .eq("mentor_id", mentorId)
+        // One schedule per person (migration 46): only mentoring windows here.
+        .contains("purposes", ["mentoring"])
+        .eq("is_active", true),
       admin
         .from("mentor_availability_exceptions")
         .select("exception_date, kind, start_time, end_time")
-        .eq("mentor_id", mentorId),
+        .eq("mentor_id", mentorId)
+        .contains("purposes", ["mentoring"]),
       admin
         .from("circle_sessions")
         .select(
@@ -458,11 +462,15 @@ export async function isSlotBookable(
       admin
         .from("mentor_availability")
         .select("weekday, start_time, end_time")
-        .eq("mentor_id", mentorId),
+        .eq("mentor_id", mentorId)
+        // One schedule per person (migration 46): only mentoring windows here.
+        .contains("purposes", ["mentoring"])
+        .eq("is_active", true),
       admin
         .from("mentor_availability_exceptions")
         .select("exception_date, kind, start_time, end_time")
-        .eq("mentor_id", mentorId),
+        .eq("mentor_id", mentorId)
+        .contains("purposes", ["mentoring"]),
       admin
         .from("circle_sessions")
         .select(

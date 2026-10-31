@@ -12,7 +12,7 @@ const inputClass =
 
 const labelClass = "text-label-sm text-on-surface-variant";
 
-export function SignInForm() {
+export function SignInForm({ next = "/dashboard" }: { next?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<"password" | "magic">("password");
   const [email, setEmail] = useState("");
@@ -38,7 +38,7 @@ export function SignInForm() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(next);
     router.refresh();
   }
 
@@ -57,7 +57,7 @@ export function SignInForm() {
       options: {
         // Don't create an account from the sign-in page — existing members only.
         shouldCreateUser: false,
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(next)}`,
       },
     });
 

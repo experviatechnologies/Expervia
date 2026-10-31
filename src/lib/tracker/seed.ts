@@ -1566,7 +1566,7 @@ export function createSeed(nowMs = Date.now()): TrackerData {
     title: "Weekly availability review",
     body: "Check your weekly availability is still correct.",
     action: "Review your schedule.",
-    href: "/tracker/availability",
+    href: "/tracker/demo/availability",
     critical: false,
   });
 
@@ -1668,21 +1668,21 @@ export function createSeed(nowMs = Date.now()): TrackerData {
     at: ago(20),
     title: "Weekly presales summary",
     body: "8 active requests, 2 confirmed meetings in the next two weeks.",
-    href: "/tracker/reports",
+    href: "/tracker/demo/reports",
     critical: false,
   });
   notify(kemiOjo.id, {
     at: ago(6),
     title: "Integration failure: calendar sync",
     body: "Creating a calendar event for Hauwa Danjuma failed (authorisation expired).",
-    href: "/tracker/settings?tab=health",
+    href: "/tracker/demo/settings?tab=health",
     critical: true,
   });
   notify(kemiOjo.id, {
     at: ago(30),
     title: "Import completed",
     body: "12 members imported, 2 skipped as duplicates.",
-    href: "/tracker/settings?tab=import",
+    href: "/tracker/demo/settings?tab=import",
     critical: false,
     read: true,
   });

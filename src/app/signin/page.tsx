@@ -10,9 +10,17 @@ export const metadata: Metadata = {
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
+  // Only same-site paths (e.g. /tracker); anything else falls back.
+  const safeNext =
+    next &&
+    next.startsWith("/") &&
+    !next.startsWith("//") &&
+    !next.startsWith("/\\")
+      ? next
+      : "/dashboard";
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-16">
@@ -35,7 +43,7 @@ export default async function SignInPage({
           </p>
         )}
 
-        <SignInForm />
+        <SignInForm next={safeNext} />
 
         <p className="mt-6 text-center text-sm">
           <Link

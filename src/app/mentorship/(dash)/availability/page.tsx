@@ -50,12 +50,14 @@ export default async function MentorshipAvailabilityPage() {
       .from("mentor_availability")
       .select("id, weekday, start_time, end_time")
       .eq("mentor_id", member.id)
+      .contains("purposes", ["mentoring"])
       .order("weekday")
       .order("start_time"),
     admin
       .from("mentor_availability_exceptions")
       .select("id, exception_date, kind, start_time, end_time")
       .eq("mentor_id", member.id)
+      .contains("purposes", ["mentoring"])
       .order("exception_date"),
     admin
       .from("mentor_pricing")
