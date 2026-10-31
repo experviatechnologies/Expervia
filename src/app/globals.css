@@ -67,6 +67,20 @@
   --color-eten-verified: var(--eten-verified);
   --color-eten-verified-soft: var(--eten-verified-soft);
 
+  /* Presales tracker extras: status tones + the deep purple rail. */
+  --color-trk-rail: var(--trk-rail);
+  --color-trk-rail-ink: var(--trk-rail-ink);
+  --color-trk-rail-muted: var(--trk-rail-muted);
+  --color-trk-rail-active: var(--trk-rail-active);
+  --color-trk-warn: var(--trk-warn);
+  --color-trk-warn-soft: var(--trk-warn-soft);
+  --color-trk-danger: var(--trk-danger);
+  --color-trk-danger-soft: var(--trk-danger-soft);
+  --color-trk-info: var(--trk-info);
+  --color-trk-info-soft: var(--trk-info-soft);
+  --color-trk-banner: var(--trk-banner);
+  --color-trk-banner-ink: var(--trk-banner-ink);
+
   --color-mnt-bg: var(--mnt-bg);
   --color-mnt-panel: var(--mnt-panel);
   --color-mnt-panel-2: var(--mnt-panel-2);
@@ -323,6 +337,19 @@
   --eten-verified: #11703a;
   --eten-verified-soft: #e7f6ec;
 
+  --trk-rail: #170a7a;
+  --trk-rail-ink: #ffffff;
+  --trk-rail-muted: #c9c2f2;
+  --trk-rail-active: rgba(255, 255, 255, 0.13);
+  --trk-warn: #8a4b00;
+  --trk-warn-soft: #fff4e0;
+  --trk-danger: #b42318;
+  --trk-danger-soft: #fdecea;
+  --trk-info: #1d5fa8;
+  --trk-info-soft: #e8f1fc;
+  --trk-banner: #fdf2c6;
+  --trk-banner-ink: #4a3500;
+
   --mnt-bg: #f7f6fb;
   --mnt-panel: #ffffff;
   --mnt-panel-2: #fbfafe;
@@ -355,6 +382,19 @@
   --eten-accent-soft: #16233d;
   --eten-verified: #3ec98a;
   --eten-verified-soft: #10241c;
+
+  --trk-rail: #0a0f19;
+  --trk-rail-ink: #eaf0f8;
+  --trk-rail-muted: #8e9bb0;
+  --trk-rail-active: rgba(79, 134, 236, 0.16);
+  --trk-warn: #f5b13d;
+  --trk-warn-soft: #2a2110;
+  --trk-danger: #f2796f;
+  --trk-danger-soft: #2c1517;
+  --trk-info: #7fb0f5;
+  --trk-info-soft: #13233a;
+  --trk-banner: #2a2410;
+  --trk-banner-ink: #f2dd9a;
 
   --mnt-bg: #0b0e13;
   --mnt-panel: #141922;
