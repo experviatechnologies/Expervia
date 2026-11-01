@@ -68,10 +68,13 @@ export function LiveHome() {
             {(
               [
                 [true, "Sign-in, roles and access rules"],
-                [true, "My availability (view)"],
+                [
+                  true,
+                  "My availability: weekly hours, date exceptions and meeting preferences",
+                ],
                 [
                   false,
-                  "Saving availability, the ETEN directory and settings (Phase 4)",
+                  "The ETEN directory, settings and dashboards (Phase 4)",
                 ],
                 [
                   false,

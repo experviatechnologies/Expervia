@@ -16,6 +16,13 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { TrackerContext, type TrackerContextValue } from "@/lib/tracker/store";
 import { isSales, podsLedBy } from "@/lib/tracker/selectors";
 import type { TrackerData } from "@/lib/tracker/types";
+import {
+  deleteAvailabilityException,
+  markAvailabilityReviewed,
+  saveAvailabilityException,
+  saveMeetingPreferences,
+  saveWeeklyAvailability,
+} from "@/app/tracker/(live)/availability/actions";
 import { useToast } from "./ui";
 
 export function LiveTrackerProvider({
@@ -44,6 +51,15 @@ export function LiveTrackerProvider({
     const me = data.members.find((m) => m.id === meId) ?? null;
     const notYet = () =>
       toast("This part of the tracker goes live in a later step.");
+    /** Run a server action, report a failure, then reload the live data. */
+    const run = (action: Promise<{ ok: true } | { error: string }>) => {
+      void action
+        .then((res) => {
+          if ("error" in res) toast(res.error);
+        })
+        .catch(() => toast("Something went wrong. Please try again."))
+        .finally(() => router.refresh());
+    };
     return {
       ready: now > 0,
       now,
@@ -62,12 +78,24 @@ export function LiveTrackerProvider({
       },
       reset: () => {},
       // Availability (step 4.2)
-      saveWeekly: notYet,
-      markReviewed: notYet,
-      saveException: notYet,
-      deleteException: notYet,
-      // Profile and calendar (step 4.4)
-      saveProfile: notYet,
+      saveWeekly: (windows) => run(saveWeeklyAvailability(windows)),
+      markReviewed: () => run(markAvailabilityReviewed()),
+      saveException: (ex) => run(saveAvailabilityException(ex)),
+      deleteException: (exceptionId) =>
+        run(deleteAvailabilityException(exceptionId)),
+      // Meeting preferences save now; the rest of the profile in step 4.4.
+      saveProfile: (patch) =>
+        patch.formats
+          ? run(
+              saveMeetingPreferences({
+                formats: patch.formats,
+                cities: patch.cities,
+                willingToTravel: patch.willingToTravel,
+                travelNotes: patch.travelNotes,
+                timezone: patch.timezone,
+              }),
+            )
+          : notYet(),
       setCalendar: notYet,
       // Workflow (Phase 5)
       saveRequest: () => {

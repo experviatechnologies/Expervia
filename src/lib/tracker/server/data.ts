@@ -364,7 +364,9 @@ export async function loadMembers(
           (prof.location ? [String(prof.location).split(",")[0].trim()] : []),
         willingToTravel: (ps?.willing_to_travel as boolean) ?? false,
         travelNotes: (ps?.travel_notes as string) ?? "",
-        timezone: tzBy.get(id) ?? DEFAULT_TZ,
+        // Mentors' shared schedule zone first, then the presales profile.
+        timezone:
+          tzBy.get(id) ?? (ps?.timezone as string | undefined) ?? DEFAULT_TZ,
         // Calendar connections arrive with the OAuth integration (Phase 8).
         calendar: "none",
         reviewedAt: (ps?.availability_reviewed_at as string) ?? null,

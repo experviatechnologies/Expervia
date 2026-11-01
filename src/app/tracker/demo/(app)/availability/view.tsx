@@ -93,6 +93,15 @@ export function AvailabilityView() {
   const [draft, setDraft] = useState<WeeklyWindow[]>(() =>
     structuredClone(me.weekly),
   );
+  // When saved data comes back (live: after the server round trip), start
+  // the editor from it again. Adjusting state during render is the React
+  // pattern for resetting state when a prop changes.
+  const savedKey = JSON.stringify(me.weekly);
+  const [seenKey, setSeenKey] = useState(savedKey);
+  if (seenKey !== savedKey) {
+    setSeenKey(savedKey);
+    setDraft(structuredClone(me.weekly));
+  }
   const [copyFrom, setCopyFrom] = useState<Weekday | null>(null);
   const [editing, setEditing] = useState<AvailabilityException | null>(null);
 
