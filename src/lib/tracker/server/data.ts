@@ -176,7 +176,10 @@ export async function loadReference(admin: Admin = getSupabaseAdmin()) {
 
 // ------------------------------------------------------------------ people
 
-export async function loadMembers(admin: Admin): Promise<Member[]> {
+export async function loadMembers(
+  admin: Admin,
+  opts: { contacts?: boolean } = {},
+): Promise<Member[]> {
   const [
     members,
     profiles,
@@ -272,7 +275,13 @@ export async function loadMembers(admin: Admin): Promise<Member[]> {
         .order("member_id")
         .range(a, b),
     ),
-    listAuthUsers(admin),
+    // Emails and last sign-in come from Supabase Auth: the slowest read, so
+    // only fetched for viewers who may see other people's contact details.
+    opts.contacts === false
+      ? Promise.resolve(
+          new Map<string, { email: string; lastSignIn: string | null }>(),
+        )
+      : listAuthUsers(admin),
   ]);
 
   const group = <T extends Row>(rows: T[], key: string) => {
@@ -633,7 +642,9 @@ export async function loadTrackerData(
   // Independent loads run in parallel (each is a few PostgREST round trips).
   const [ref, members, work, audit] = await Promise.all([
     loadReference(admin),
-    loadMembers(admin),
+    loadMembers(admin, {
+      contacts: isStaff(session) || session.ledPodIds.length > 0,
+    }),
     loadRequests(admin, session),
     session.roles.includes("admin")
       ? admin
@@ -684,6 +695,15 @@ export function redactForViewer(
   data: TrackerData,
   session: TrackerSession,
 ): TrackerData {
+  // The viewer's own email comes from their session (the auth list is
+  // skipped for viewers who may not see other people's contacts).
+  const own = session.member.email ?? "";
+  data = {
+    ...data,
+    members: data.members.map((m) =>
+      m.id === session.member.id && !m.email ? { ...m, email: own } : m,
+    ),
+  };
   if (isStaff(session)) return data;
   const led = new Set(session.ledPodIds);
   const me = session.member.id;
