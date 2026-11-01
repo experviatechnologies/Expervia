@@ -283,14 +283,18 @@ function inviteEmailHtml(fullName: string | null, claimUrl: string): string {
 /**
  * Provision one account (invite) and email the claim link. Enriches the profile
  * with what we already know. Assumes the caller filtered out existing accounts.
+ * With `send: false` the account is created but no email goes out; the person
+ * then shows under Pending claims, where ops can send the invite later.
+ * Returns the new member id.
  */
-async function provisionAndInvite(
+export async function provisionAndInvite(
   admin: SupabaseClient,
   resend: Resend,
   siteOrigin: string,
   fromEmail: string,
   candidate: Candidate,
-): Promise<void> {
+  opts: { send?: boolean } = {},
+): Promise<string> {
   // Create the auth user + generate the invite token (does NOT send email).
   const { data, error } = await admin.auth.admin.generateLink({
     type: "invite",
@@ -323,13 +327,16 @@ async function provisionAndInvite(
     })
     .eq("member_id", data.user.id);
 
-  const { error: mailError } = await resend.emails.send({
-    from: fromEmail,
-    to: candidate.email,
-    subject: "Your ETEN account is ready — claim it",
-    html: inviteEmailHtml(candidate.fullName, claimUrl),
-  });
-  if (mailError) throw new Error(mailError.message);
+  if (opts.send !== false) {
+    const { error: mailError } = await resend.emails.send({
+      from: fromEmail,
+      to: candidate.email,
+      subject: "Your ETEN account is ready — claim it",
+      html: inviteEmailHtml(candidate.fullName, claimUrl),
+    });
+    if (mailError) throw new Error(mailError.message);
+  }
+  return data.user.id;
 }
 
 export async function runMigration(

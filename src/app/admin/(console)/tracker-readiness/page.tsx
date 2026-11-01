@@ -337,6 +337,12 @@ export default async function TrackerReadinessPage() {
           >
             Open the tracker <ExternalLink className="size-3.5" />
           </Link>
+          <Link
+            href="/admin/tracker-readiness/import"
+            className="border-eten-line text-eten-ink hover:bg-eten-hover inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold"
+          >
+            Import roster
+          </Link>
           <DownloadCsvButton
             csv={csv}
             filename="tracker-readiness-follow-ups.csv"
