@@ -965,6 +965,20 @@ export function useBase() {
   return useTracker().base;
 }
 
+/**
+ * Link builder that only returns a URL when that tracker page is switched on
+ * (always, in the demo), so screens can drop links to pages not live yet.
+ */
+export function usePage() {
+  const { base, enabledPages } = useTracker();
+  return (path: string): string | undefined => {
+    const section = path.split(/[/?#]/)[0];
+    return !enabledPages || enabledPages.includes(section)
+      ? `${base}/${path}`
+      : undefined;
+  };
+}
+
 /** For pages under the signed-in shell, where `me` and `data` are guaranteed. */
 export function useSession() {
   const ctx = useTracker();

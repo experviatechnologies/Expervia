@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Plus, ArrowRight } from "lucide-react";
-import { useSession, useBase } from "@/lib/tracker/store";
+import { useSession, useBase, usePage } from "@/lib/tracker/store";
 import {
   has,
   isSales,
@@ -57,7 +57,7 @@ import {
 } from "@/components/tracker/bits";
 
 export function DashboardView() {
-  const BASE = useBase();
+  const page = usePage();
   const { me } = useSession();
   const first = me.name.split(" ")[0];
   const engineer = me.roles.includes("member");
@@ -67,8 +67,8 @@ export function DashboardView() {
         title={`Welcome back, ${first}`}
         description="Your presales coordination at a glance."
         actions={
-          has(me, "sales_manager") ? (
-            <Btn href={`${BASE}/requests/new`} variant="primary">
+          has(me, "sales_manager") && page("requests/new") ? (
+            <Btn href={page("requests/new")} variant="primary">
               <Plus className="size-4" /> New presales request
             </Btn>
           ) : undefined
@@ -88,6 +88,7 @@ export function DashboardView() {
 // ------------------------------------------------------------------ sales
 
 function SalesSection() {
+  const page = usePage();
   const BASE = useBase();
   const requestHref = useRequestHref();
   const { data, me, now } = useSession();
@@ -121,13 +122,13 @@ function SalesSection() {
     (r) => r.status === "confirmed" && new Date(r.endUtc).getTime() < now,
   );
   const gaps = coverageGaps(data);
-  const q = (stage: string) => `${BASE}/requests?stage=${stage}`;
+  const q = (stage: string) => page(`requests?stage=${stage}`);
 
   return (
     <section>
       <SectionLabel>Presales pipeline</SectionLabel>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
-        <Stat label="Open requests" value={p.open} href={`${BASE}/requests`} />
+        <Stat label="Open requests" value={p.open} href={page("requests")} />
         <Stat
           label="Awaiting nominations"
           value={p.awaitingNominations}
@@ -273,12 +274,14 @@ function SalesSection() {
           <Card
             title="Confirmed meetings, next two weeks"
             action={
-              <Link
-                href={`${BASE}/meetings`}
-                className="text-eten-accent text-[13.5px] font-semibold"
-              >
-                All meetings
-              </Link>
+              page("meetings") && (
+                <Link
+                  href={page("meetings")!}
+                  className="text-eten-accent text-[13.5px] font-semibold"
+                >
+                  All meetings
+                </Link>
+              )
             }
             bodyClassName=""
           >
@@ -385,6 +388,7 @@ function OutcomesCard({ outcomes }: { outcomes: PresalesRequest[] }) {
 // ------------------------------------------------------------------ pod leader
 
 function PodLeaderSection() {
+  const page = usePage();
   const BASE = useBase();
   const requestHref = useRequestHref();
   const { data, me } = useSession();
@@ -423,12 +427,14 @@ function PodLeaderSection() {
           <Card
             title="Requests awaiting your nominations"
             action={
-              <Link
-                href={`${BASE}/nominations`}
-                className="text-eten-accent text-[13.5px] font-semibold"
-              >
-                Nominations inbox
-              </Link>
+              page("nominations") && (
+                <Link
+                  href={page("nominations")!}
+                  className="text-eten-accent text-[13.5px] font-semibold"
+                >
+                  Nominations inbox
+                </Link>
+              )
             }
             bodyClassName=""
           >
@@ -618,6 +624,7 @@ function Meter({ label, n, d }: { label: string; n: number; d: number }) {
 // ------------------------------------------------------------------ member
 
 function MemberSection({ me }: { me: Member }) {
+  const page = usePage();
   const BASE = useBase();
   const requestHref = useRequestHref();
   const { data, now } = useSession();
@@ -697,7 +704,7 @@ function MemberSection({ me }: { me: Member }) {
         <Stat
           label="Upcoming meetings"
           value={upcoming.length}
-          href={`${BASE}/meetings?tab=upcoming`}
+          href={page("meetings?tab=upcoming")}
         />
       </div>
 
@@ -831,9 +838,9 @@ function MemberSection({ me }: { me: Member }) {
 // ------------------------------------------------------------------ management
 
 function ManagementSection() {
-  const BASE = useBase();
-  const { data } = useSession();
-  const { metrics, byPod } = computeMetrics(data);
+  const page = usePage();
+  const { data, live, now } = useSession();
+  const { metrics, byPod } = computeMetrics(data, {}, now);
   const pick = [
     "active",
     "completion",
@@ -854,7 +861,9 @@ function ManagementSection() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <SectionLabel>ETEN operational overview</SectionLabel>
         <span className="text-eten-faint mb-3 text-[12.5px]">
-          Calculated from demo data, not real Expervia metrics
+          {live
+            ? "Calculated from live ETEN data recorded in the tracker"
+            : "Calculated from demo data, not real Expervia metrics"}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -866,15 +875,17 @@ function ManagementSection() {
               label={m.label}
               value={m.value}
               sub={m.sub}
-              href={`${BASE}/reports#${m.key}`}
+              href={page(`reports#${m.key}`)}
             />
           ))}
       </div>
-      <div className="mt-4">
-        <Btn href={`${BASE}/reports`}>
-          Open full reports <ArrowRight className="size-4" />
-        </Btn>
-      </div>
+      {page("reports") && (
+        <div className="mt-4">
+          <Btn href={page("reports")}>
+            Open full reports <ArrowRight className="size-4" />
+          </Btn>
+        </div>
+      )}
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
         <Card title="Presales pipeline" description="Active requests by stage.">
           <BarList
@@ -906,6 +917,7 @@ function ManagementSection() {
 // ------------------------------------------------------------------ admin
 
 function AdminSection() {
+  const { live } = useSession();
   const BASE = useBase();
   const { data } = useSession();
   const L = lookup(data);
@@ -922,7 +934,14 @@ function AdminSection() {
   const stale = engineers(data).filter(
     (m) => !isFresh(m, data.policies),
   ).length;
-  const s = (tab: string) => `${BASE}/settings?tab=${tab}`;
+  // Live: administration lives in the admin console.
+  const ADMIN: Record<string, string> = {
+    users: "/admin/members",
+    health: "/admin/tracker-readiness",
+    audit: "/admin/audit",
+  };
+  const s = (tab: string) =>
+    live ? ADMIN[tab] : `${BASE}/settings?tab=${tab}`;
   return (
     <section>
       <SectionLabel>Administration</SectionLabel>

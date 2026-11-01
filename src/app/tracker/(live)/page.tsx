@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { LiveHome } from "./home";
-
-export const metadata: Metadata = { title: "Tracker" };
+import { redirect } from "next/navigation";
 
 export default function TrackerHome() {
-  return <LiveHome />;
+  redirect("/tracker/dashboard");
 }
