@@ -26,6 +26,7 @@ import {
   Bell,
   LifeBuoy,
   type LucideIcon,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -68,6 +69,11 @@ const GROUPS: NavGroup[] = [
         Icon: CalendarCheck,
       },
       { label: "Mentorship", href: "/admin/mentorship", Icon: Sparkles },
+      {
+        label: "Tracker Readiness",
+        href: "/admin/tracker-readiness",
+        Icon: BriefcaseBusiness,
+      },
     ],
   },
   {

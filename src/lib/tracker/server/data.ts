@@ -42,7 +42,10 @@ import { isStaff, type TrackerSession } from "./session";
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 type Row = Record<string, unknown>;
 
-/** Page through a PostgREST select (1,000-row server cap). */
+/**
+ * Page through a PostgREST select (1,000-row server cap). Every caller orders
+ * by a unique key so rows can't be skipped or repeated between pages.
+ */
 async function fetchAll<T extends Row>(
   build: (
     from: number,
@@ -184,12 +187,14 @@ export async function loadMembers(
       admin
         .from("members")
         .select("id, status, role, claimed_at, membership_id")
+        .order("id")
         .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
       admin
         .from("profiles")
         .select("member_id, full_name, bio, years_experience, location")
+        .order("member_id")
         .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
@@ -200,22 +205,38 @@ export async function loadMembers(
         )
         .eq("pods.is_main", false)
         .order("joined_at")
+        .order("id")
         .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
-      admin.from("member_roles").select("member_id, role").range(a, b),
+      admin
+        .from("member_roles")
+        .select("member_id, role")
+        .order("member_id")
+        .order("role")
+        .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
-      admin.from("presales_profiles").select("*").range(a, b),
+      admin
+        .from("presales_profiles")
+        .select("*")
+        .order("member_id")
+        .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
       admin
         .from("member_skills")
         .select("member_id, skill_id, level")
+        .order("member_id")
+        .order("skill_id")
         .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
-      admin.from("certifications").select("member_id, name").range(a, b),
+      admin
+        .from("certifications")
+        .select("member_id, name")
+        .order("id")
+        .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
       admin
@@ -224,6 +245,7 @@ export async function loadMembers(
           "id, mentor_id, weekday, start_time, end_time, formats, is_active",
         )
         .contains("purposes", ["presales"])
+        .order("id")
         .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
@@ -233,12 +255,14 @@ export async function loadMembers(
           "id, mentor_id, exception_date, kind, start_time, end_time, reason, note",
         )
         .contains("purposes", ["presales"])
+        .order("id")
         .range(a, b),
     ),
     fetchAll<Row>((a, b) =>
       admin
         .from("mentor_scheduling_prefs")
         .select("member_id, timezone")
+        .order("member_id")
         .range(a, b),
     ),
     listAuthUsers(admin),
@@ -385,34 +409,51 @@ export async function loadRequests(admin: Admin, session: TrackerSession) {
           .from("presales_requests")
           .select("*")
           .order("starts_at")
+          .order("id")
           .range(a, b),
       ),
       fetchAll<Row>((a, b) =>
         admin
           .from("presales_request_skills")
           .select("request_id, skill_id")
+          .order("request_id")
+          .order("skill_id")
           .range(a, b),
       ),
       fetchAll<Row>((a, b) =>
-        admin.from("presales_request_pods").select("*").range(a, b),
+        admin
+          .from("presales_request_pods")
+          .select("*")
+          .order("request_id")
+          .order("pod_id")
+          .range(a, b),
       ),
       fetchAll<Row>((a, b) =>
-        admin.from("presales_nominations").select("*").range(a, b),
+        admin.from("presales_nominations").select("*").order("id").range(a, b),
       ),
       fetchAll<Row>((a, b) =>
-        admin.from("presales_assignments").select("*").range(a, b),
+        admin.from("presales_assignments").select("*").order("id").range(a, b),
       ),
       fetchAll<Row>((a, b) =>
-        admin.from("presales_outcomes").select("*").range(a, b),
+        admin
+          .from("presales_outcomes")
+          .select("*")
+          .order("request_id")
+          .range(a, b),
       ),
       fetchAll<Row>((a, b) =>
-        admin.from("presales_outcome_actions").select("*").range(a, b),
+        admin
+          .from("presales_outcome_actions")
+          .select("*")
+          .order("id")
+          .range(a, b),
       ),
       fetchAll<Row>((a, b) =>
         admin
           .from("presales_activity")
           .select("request_id, actor_id, message, created_at")
           .order("created_at")
+          .order("id")
           .range(a, b),
       ),
     ]);
@@ -427,6 +468,7 @@ export async function loadRequests(admin: Admin, session: TrackerSession) {
         .from("pod_memberships")
         .select("member_id")
         .in("pod_id", session.ledPodIds)
+        .order("id")
         .range(a, b),
     );
     for (const r of rows) ledMembers.add(r.member_id as string);
