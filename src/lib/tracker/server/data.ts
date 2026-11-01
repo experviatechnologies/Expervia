@@ -409,6 +409,7 @@ export async function loadMembers(
           }),
         ),
         busy: [],
+        optedIn: (ps?.opted_in as boolean | undefined) ?? true,
         prefs: { weeklyReminder: true, meetingReminders: true, digest: false },
       };
     });

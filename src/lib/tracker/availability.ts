@@ -130,6 +130,14 @@ export function evaluateMember(
       warnings,
     };
   }
+  if (member.optedIn === false) {
+    return {
+      state: "inactive",
+      calendar: "not_connected",
+      blockers: ["Has stepped back from presales."],
+      warnings,
+    };
+  }
 
   // Declared availability, in the member's own zone.
   const tz = member.timezone;

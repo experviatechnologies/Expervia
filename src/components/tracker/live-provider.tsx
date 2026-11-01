@@ -23,6 +23,7 @@ import {
   saveMeetingPreferences,
   saveWeeklyAvailability,
 } from "@/app/tracker/(live)/availability/actions";
+import { saveExpertiseProfile } from "@/app/tracker/(live)/settings/actions";
 import { useToast } from "./ui";
 
 export function LiveTrackerProvider({
@@ -83,7 +84,7 @@ export function LiveTrackerProvider({
       saveException: (ex) => run(saveAvailabilityException(ex)),
       deleteException: (exceptionId) =>
         run(deleteAvailabilityException(exceptionId)),
-      // Meeting preferences save now; the rest of the profile in step 4.4.
+      // Meeting preferences (availability page) or the expertise profile.
       saveProfile: (patch) =>
         patch.formats
           ? run(
@@ -95,7 +96,19 @@ export function LiveTrackerProvider({
                 timezone: patch.timezone,
               }),
             )
-          : notYet(),
+          : run(
+              saveExpertiseProfile({
+                phone: patch.phone,
+                timezone: patch.timezone,
+                bio: patch.bio,
+                seniority: patch.seniority,
+                years: patch.years,
+                skills: patch.skills,
+                specialisations: patch.specialisations,
+                industries: patch.industries,
+                optedIn: patch.optedIn,
+              }),
+            ),
       setCalendar: notYet,
       // Workflow (Phase 5)
       saveRequest: () => {

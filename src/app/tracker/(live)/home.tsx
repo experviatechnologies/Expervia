@@ -72,7 +72,7 @@ export function LiveHome() {
                   true,
                   "My availability: weekly hours, date exceptions and meeting preferences",
                 ],
-                [false, "Settings and dashboards (Phase 4)"],
+                [false, "Your dashboard (Phase 4)"],
                 [
                   false,
                   "Requests, nominations, selection and invitations (Phase 5)",

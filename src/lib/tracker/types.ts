@@ -117,6 +117,8 @@ export type Member = {
     meetingReminders: boolean;
     digest: boolean;
   };
+  /** Takes part in presales (opted in). Undefined means yes (demo data). */
+  optedIn?: boolean;
 };
 
 export type AccessLevel = "standard" | "confidential" | "restricted";

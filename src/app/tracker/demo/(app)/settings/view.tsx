@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 /**
  * Settings. Everyone: profile and expertise, calendar connection and
  * notification preferences. System Administrators also get users and roles,
@@ -67,14 +68,16 @@ type Tab =
   | "audit";
 
 export function SettingsView({ initialTab }: { initialTab: string }) {
-  const { me } = useSession();
-  const admin = has(me, "admin");
+  const { me, live } = useSession();
+  // On the live tracker, administration stays in the admin console and
+  // notification preferences on the ETEN settings page.
+  const admin = has(me, "admin") && !live;
   const tabs: { id: Tab; label: string }[] = [
     { id: "profile", label: "Profile" },
     ...(me.roles.includes("member")
       ? [{ id: "calendar" as Tab, label: "Calendar" }]
       : []),
-    { id: "notifications", label: "Notifications" },
+    ...(live ? [] : [{ id: "notifications" as Tab, label: "Notifications" }]),
     ...(admin
       ? ([
           { id: "users", label: "Users" },
@@ -106,6 +109,24 @@ export function SettingsView({ initialTab }: { initialTab: string }) {
         value={tab}
         onChange={setTab}
       />
+      {live && has(me, "admin") && (
+        <div className="mb-5">
+          <Notice tone="info" title="Administration is in the admin console">
+            Users, pods, skills and tracker roles are managed in{" "}
+            <Link
+              href="/admin/tracker-readiness"
+              className="font-semibold underline"
+            >
+              Admin &gt; Tracker Readiness
+            </Link>{" "}
+            and{" "}
+            <Link href="/admin/members" className="font-semibold underline">
+              Admin &gt; Members
+            </Link>
+            .
+          </Notice>
+        </div>
+      )}
       {tab === "profile" && <ProfileTab />}
       {tab === "calendar" && <CalendarTab />}
       {tab === "notifications" && <NotificationsTab />}
@@ -144,6 +165,7 @@ function ProfileTab() {
     specialisations: me.specialisations.join(", "),
     certifications: me.certifications.join(", "),
     industries: me.industries.join(", "),
+    optedIn: me.optedIn !== false,
   }));
   const [addingSkill, setAddingSkill] = useState("");
   return (
@@ -194,10 +216,27 @@ function ProfileTab() {
               specialisations: splitList(p.specialisations),
               certifications: splitList(p.certifications),
               industries: splitList(p.industries),
+              optedIn: p.optedIn,
             });
             toast("Profile saved.");
           }}
         >
+          {engineer && (
+            <div className="border-eten-line bg-eten-panel-hi rounded-xl border p-3 sm:col-span-2">
+              <Toggle
+                checked={p.optedIn}
+                onChange={(v) => setP({ ...p, optedIn: v })}
+              >
+                <span className="font-semibold">
+                  Take part in presales meetings
+                </span>
+                <span className="text-eten-faint block text-[13px]">
+                  Switch off to step back. Pod Leaders and Sales won&apos;t be
+                  able to nominate or select you until you switch it on again.
+                </span>
+              </Toggle>
+            </div>
+          )}
           <Field label="Phone">
             {(id) => (
               <input
@@ -273,34 +312,56 @@ function ProfileTab() {
                   />
                 )}
               </Field>
-              <div className="sm:col-span-2">
-                <p className="mb-1.5 text-[13px] font-semibold">
-                  Additional pods
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {data.pods
-                    .filter((x) => x.id !== me.podId)
-                    .map((x) => (
-                      <ChipToggle
-                        key={x.id}
-                        on={p.extraPodIds.includes(x.id)}
-                        onClick={() =>
-                          setP({
-                            ...p,
-                            extraPodIds: p.extraPodIds.includes(x.id)
-                              ? p.extraPodIds.filter((y) => y !== x.id)
-                              : [...p.extraPodIds, x.id],
-                          })
-                        }
-                      >
-                        {x.name}
-                      </ChipToggle>
-                    ))}
+              {t.live ? (
+                <div className="sm:col-span-2">
+                  <p className="mb-1.5 text-[13px] font-semibold">Your pods</p>
+                  <p className="text-[14px]">
+                    {[me.podId, ...me.extraPodIds]
+                      .map((id) => L.pod(id)?.name)
+                      .filter(Boolean)
+                      .join(", ") || "None"}
+                  </p>
+                  <p className="text-eten-faint mt-1 text-[12.5px]">
+                    Join or leave pods on the{" "}
+                    <Link
+                      href="/pods"
+                      className="text-eten-accent font-semibold underline"
+                    >
+                      ETEN Pods page
+                    </Link>
+                    .
+                  </p>
                 </div>
-                <p className="text-eten-faint mt-1 text-[12.5px]">
-                  Pods you can also support, besides your primary pod.
-                </p>
-              </div>
+              ) : (
+                <div className="sm:col-span-2">
+                  <p className="mb-1.5 text-[13px] font-semibold">
+                    Additional pods
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.pods
+                      .filter((x) => x.id !== me.podId)
+                      .map((x) => (
+                        <ChipToggle
+                          key={x.id}
+                          on={p.extraPodIds.includes(x.id)}
+                          onClick={() =>
+                            setP({
+                              ...p,
+                              extraPodIds: p.extraPodIds.includes(x.id)
+                                ? p.extraPodIds.filter((y) => y !== x.id)
+                                : [...p.extraPodIds, x.id],
+                            })
+                          }
+                        >
+                          {x.name}
+                        </ChipToggle>
+                      ))}
+                  </div>
+                  <p className="text-eten-faint mt-1 text-[12.5px]">
+                    Pods you can also support, besides your primary pod.
+                  </p>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <p className="mb-1.5 text-[13px] font-semibold">Skills</p>
                 <p className="text-eten-faint mb-2 text-[12.5px]">
@@ -401,18 +462,39 @@ function ProfileTab() {
                   />
                 )}
               </Field>
-              <Field label="Certifications" hint="Separate with commas.">
-                {(id) => (
-                  <input
-                    id={id}
-                    value={p.certifications}
-                    onChange={(e) =>
-                      setP({ ...p, certifications: e.target.value })
-                    }
-                    className={inputClass}
-                  />
-                )}
-              </Field>
+              {t.live ? (
+                <div>
+                  <p className="mb-1.5 text-[13px] font-semibold">
+                    Certifications
+                  </p>
+                  <p className="text-[14px]">
+                    {me.certifications.join(", ") || "None yet"}
+                  </p>
+                  <p className="text-eten-faint mt-1 text-[12.5px]">
+                    Add and verify them on{" "}
+                    <Link
+                      href="/profile/certifications"
+                      className="text-eten-accent font-semibold underline"
+                    >
+                      your ETEN profile
+                    </Link>
+                    .
+                  </p>
+                </div>
+              ) : (
+                <Field label="Certifications" hint="Separate with commas.">
+                  {(id) => (
+                    <input
+                      id={id}
+                      value={p.certifications}
+                      onChange={(e) =>
+                        setP({ ...p, certifications: e.target.value })
+                      }
+                      className={inputClass}
+                    />
+                  )}
+                </Field>
+              )}
               <Field
                 label="Industries"
                 className="sm:col-span-2"
@@ -446,6 +528,31 @@ function CalendarTab() {
   const t = useSession();
   const { me, data } = t;
   const toast = useToast();
+  if (t.live) {
+    return (
+      <Card title="Calendar" className="max-w-[760px]">
+        <Pill>Not connected</Pill>
+        <p className="text-eten-ink-muted mt-3 text-[14px]">
+          Connecting Microsoft Outlook or Google Calendar is coming in a later
+          release. Until then, Sales and Pod Leaders see your declared
+          availability only, so keep your weekly hours and date exceptions up to
+          date on{" "}
+          <Link
+            href="/tracker/availability"
+            className="text-eten-accent font-semibold underline"
+          >
+            My availability
+          </Link>
+          .
+        </p>
+        <p className="text-eten-faint mt-3 text-[13px]">
+          When it arrives, only whether you are free or busy is read. Titles,
+          attendees and descriptions of your other events are never read or
+          shown to anyone.
+        </p>
+      </Card>
+    );
+  }
   const s = CALENDAR_STATUS[me.calendar];
   const provider =
     me.calendarProvider === "google"
