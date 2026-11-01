@@ -5,7 +5,7 @@
  * format, location and experience; Sales and Pod Leaders can also check who is
  * free for a specific meeting window using the availability rules.
  */
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CalendarSearch, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSession } from "@/lib/tracker/store";
 import { engineers, has, isSales, lookup } from "@/lib/tracker/selectors";
@@ -61,10 +61,25 @@ export function DirectoryView({
   initialPod: string;
   initialRecord: string;
 }) {
-  const { data, me } = useSession();
+  const { data, me, ledPods } = useSession();
   const L = lookup(data);
   const privileged =
     isSales(me) || has(me, "pod_leader") || has(me, "management");
+  // PRD section 5: Sales and Management see everyone's availability; a Pod
+  // Leader sees it for the pods they lead. Others' rows say so rather than
+  // looking unavailable.
+  const staff = isSales(me) || has(me, "management");
+  const seesDetails = useCallback(
+    (m: Member) => {
+      const ledIds = new Set(ledPods.map((p) => p.id));
+      return (
+        staff ||
+        m.id === me.id ||
+        [m.podId, ...m.extraPodIds].some((p) => ledIds.has(p))
+      );
+    },
+    [staff, me.id, ledPods],
+  );
 
   const [q, setQ] = useState(initialQuery);
   const [pod, setPod] = useState(initialPod);
@@ -121,6 +136,7 @@ export function DirectoryView({
       )
         return false;
       if (m.years < minYears) return false;
+      if (record && !seesDetails(m)) return false;
       if (record === "fresh" && !isFresh(m, data.policies)) return false;
       if (record === "stale" && isFresh(m, data.policies)) return false;
       if (needle) {
@@ -133,7 +149,11 @@ export function DirectoryView({
           .toLowerCase();
         if (!hay.includes(needle)) return false;
       }
-      if (evals && onlyAvailable && evals.get(m.id)?.state !== "available")
+      if (
+        evals &&
+        onlyAvailable &&
+        (!seesDetails(m) || evals.get(m.id)?.state !== "available")
+      )
         return false;
       return true;
     });
@@ -157,9 +177,10 @@ export function DirectoryView({
         unavailable: 3,
         inactive: 4,
       };
-      list.sort(
-        (a, b) => rank[evals.get(a.id)!.state] - rank[evals.get(b.id)!.state],
-      );
+      // Rows the viewer can't see availability for go last.
+      const score = (m: Member) =>
+        seesDetails(m) ? rank[evals.get(m.id)!.state] : 5;
+      list.sort((a, b) => score(a) - score(b));
     }
     return list;
   }, [
@@ -175,6 +196,7 @@ export function DirectoryView({
     evals,
     onlyAvailable,
     L,
+    seesDetails,
   ]);
 
   const pages = Math.max(1, Math.ceil(rows.length / PAGE));
@@ -517,7 +539,11 @@ export function DirectoryView({
                   </td>
                   {privileged && (
                     <td className={td}>
-                      {evals ? (
+                      {!seesDetails(m) ? (
+                        <span className="text-eten-faint text-[13px]">
+                          Not visible to you
+                        </span>
+                      ) : evals ? (
                         <AvailabilityVerdict ev={evals.get(m.id)!} compact />
                       ) : (
                         <span className="text-[13px]">
@@ -568,8 +594,12 @@ export function DirectoryView({
 
       <ProfileDialog
         member={profile}
-        privileged={privileged}
-        evaluation={profile && evals ? evals.get(profile.id) : undefined}
+        privileged={privileged && Boolean(profile && seesDetails(profile))}
+        evaluation={
+          profile && evals && seesDetails(profile)
+            ? evals.get(profile.id)
+            : undefined
+        }
         onClose={() => setProfile(null)}
       />
     </>

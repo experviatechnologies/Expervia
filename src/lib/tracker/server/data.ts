@@ -203,7 +203,9 @@ export async function loadMembers(
     fetchAll<Row>((a, b) =>
       admin
         .from("profiles")
-        .select("member_id, full_name, bio, years_experience, location")
+        .select(
+          "member_id, full_name, bio, years_experience, location, primary_specialization_pod_id",
+        )
         .order("member_id")
         .range(a, b),
     ),
@@ -319,6 +321,11 @@ export async function loadMembers(
       const ps = presalesBy.get(id);
       const myPods = podsBy.get(id) ?? [];
       const user = users.get(id);
+      const chosen = prof.primary_specialization_pod_id as string | undefined;
+      const primaryPod =
+        chosen && myPods.some((p) => p.pod_id === chosen)
+          ? chosen
+          : ((myPods[0]?.pod_id as string) ?? "");
       const roles: Role[] = [];
       if (myPods.length) roles.push("member");
       if (leads.has(id)) roles.push("pod_leader");
@@ -338,8 +345,12 @@ export async function loadMembers(
         phone: (ps?.phone as string) ?? undefined,
         roles,
         status,
-        podId: (myPods[0]?.pod_id as string) ?? "",
-        extraPodIds: myPods.slice(1).map((p) => p.pod_id as string),
+        // Primary pod = the one chosen on their profile when they belong to
+        // it, otherwise the first pod they joined.
+        podId: primaryPod,
+        extraPodIds: myPods
+          .map((p) => p.pod_id as string)
+          .filter((p) => p !== primaryPod),
         seniority:
           (ps?.seniority as Seniority) ??
           (years >= 12

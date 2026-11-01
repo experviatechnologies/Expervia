@@ -72,10 +72,7 @@ export function LiveHome() {
                   true,
                   "My availability: weekly hours, date exceptions and meeting preferences",
                 ],
-                [
-                  false,
-                  "The ETEN directory, settings and dashboards (Phase 4)",
-                ],
+                [false, "Settings and dashboards (Phase 4)"],
                 [
                   false,
                   "Requests, nominations, selection and invitations (Phase 5)",
