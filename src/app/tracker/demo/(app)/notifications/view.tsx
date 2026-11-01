@@ -18,9 +18,10 @@ import {
   Tabs,
   useToast,
 } from "@/components/tracker/ui";
-import { DueBadge, requestHref } from "@/components/tracker/bits";
+import { DueBadge, useRequestHref } from "@/components/tracker/bits";
 
 export function NotificationsView() {
+  const requestHref = useRequestHref();
   const t = useSession();
   const { data, me } = t;
   const toast = useToast();

@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/tracker/store";
+import { useBase, useSession } from "@/lib/tracker/store";
 import {
   FORMAT_LABEL,
   PARTICIPANT_STATUS,
@@ -27,10 +27,13 @@ import type {
   RequestStatus,
 } from "@/lib/tracker/types";
 import { Btn, Dialog, Field, Pill, inputClass, useToast } from "./ui";
-import { BASE } from "./shell";
 
-export const requestHref = (id: string, tab?: string) =>
-  `${BASE}/requests/${id}${tab ? `?tab=${tab}` : ""}`;
+/** Link to a request inside the current tracker (demo or live). */
+export function useRequestHref() {
+  const base = useBase();
+  return (id: string, tab?: string) =>
+    `${base}/requests/${id}${tab ? `?tab=${tab}` : ""}`;
+}
 
 export function StatusPill({ status }: { status: RequestStatus }) {
   const s = REQUEST_STATUS[status];
@@ -57,6 +60,7 @@ export function DueBadge({
 }
 
 export function RefLink({ req }: { req: PresalesRequest }) {
+  const requestHref = useRequestHref();
   return (
     <Link
       href={requestHref(req.id)}

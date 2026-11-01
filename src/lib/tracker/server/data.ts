@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { DEFAULT_TZ } from "@/lib/tracker/time";
 import type {
@@ -53,14 +54,23 @@ async function fetchAll<T extends Row>(
   ) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
   pageSize = 1000,
 ): Promise<T[]> {
-  const out: T[] = [];
-  for (let from = 0; ; from += pageSize) {
-    const { data, error } = await build(from, from + pageSize - 1);
+  const page = async (n: number) => {
+    const { data, error } = await build(
+      n * pageSize,
+      n * pageSize + pageSize - 1,
+    );
     if (error) throw new Error(error.message);
-    const rows = (data ?? []) as T[];
-    out.push(...rows);
-    if (rows.length < pageSize) return out;
+    return (data ?? []) as T[];
+  };
+  // First page alone; if it is full, fetch the next pages a few at a time in
+  // parallel (one round trip per batch instead of one per page).
+  const out = await page(0);
+  for (let next = 1; out.length === next * pageSize; next += 4) {
+    const batch = await Promise.all([0, 1, 2, 3].map((i) => page(next + i)));
+    for (const rows of batch) out.push(...rows);
+    if (batch.some((rows) => rows.length < pageSize)) break;
   }
+  return out;
 }
 
 const hhmm = (t: unknown) => (typeof t === "string" ? t.slice(0, 5) : "00:00");
@@ -166,10 +176,7 @@ export async function loadReference(admin: Admin = getSupabaseAdmin()) {
 
 // ------------------------------------------------------------------ people
 
-export async function loadMembers(
-  admin: Admin,
-  leadRows: { pod_id: string; member_id: string; role_in_pod: string }[],
-): Promise<Member[]> {
+export async function loadMembers(admin: Admin): Promise<Member[]> {
   const [
     members,
     profiles,
@@ -288,7 +295,12 @@ export async function loadMembers(
   const certsBy = group(certs, "member_id");
   const winBy = group(windows, "mentor_id");
   const excBy = group(exceptions, "mentor_id");
-  const leads = new Set(leadRows.map((l) => l.member_id));
+  // Leaders come from the same membership rows (lead or co_lead).
+  const leads = new Set(
+    memberships
+      .filter((m) => m.role_in_pod === "lead" || m.role_in_pod === "co_lead")
+      .map((m) => m.member_id as string),
+  );
 
   return members
     .filter((m) => m.claimed_at || m.status !== "active")
@@ -618,9 +630,10 @@ export async function loadTrackerData(
   session: TrackerSession,
 ): Promise<TrackerData> {
   const admin = getSupabaseAdmin();
-  const ref = await loadReference(admin);
-  const [members, work, audit] = await Promise.all([
-    loadMembers(admin, ref.leadRows),
+  // Independent loads run in parallel (each is a few PostgREST round trips).
+  const [ref, members, work, audit] = await Promise.all([
+    loadReference(admin),
+    loadMembers(admin),
     loadRequests(admin, session),
     session.roles.includes("admin")
       ? admin
@@ -657,3 +670,52 @@ export async function loadTrackerData(
     refCounter: 0,
   };
 }
+
+// ------------------------------------------------------------------ redaction
+
+/**
+ * Trim the dataset to what this viewer may see before it is sent to the
+ * browser (PRD section 5: contact and availability details are for Sales,
+ * Management, admins and the Pod Leaders of the member's pods). Everyone keeps
+ * their own full record; others keep name, pods, skills, seniority, formats
+ * and certifications only.
+ */
+export function redactForViewer(
+  data: TrackerData,
+  session: TrackerSession,
+): TrackerData {
+  if (isStaff(session)) return data;
+  const led = new Set(session.ledPodIds);
+  const me = session.member.id;
+  const canSeeDetails = (m: Member) =>
+    m.id === me ||
+    (led.size > 0 && [m.podId, ...m.extraPodIds].some((p) => led.has(p)));
+  return {
+    ...data,
+    members: data.members.map((m) =>
+      canSeeDetails(m)
+        ? m
+        : {
+            ...m,
+            email: "",
+            phone: undefined,
+            cities: [],
+            travelNotes: "",
+            weekly: [],
+            exceptions: [],
+            busy: [],
+            reviewedAt: null,
+            lastSignInAt: null,
+          },
+    ),
+  };
+}
+
+/**
+ * Per-request cache: the (live) layout and its page share one load.
+ * getTrackerSession() is itself cached, so the session object is identical.
+ */
+export const loadTrackerDataForViewer = cache(
+  async (session: TrackerSession): Promise<TrackerData> =>
+    redactForViewer(await loadTrackerData(session), session),
+);

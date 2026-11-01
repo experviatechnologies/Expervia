@@ -29,7 +29,7 @@ import {
   DueBadge,
   RefLink,
   StatusPill,
-  requestHref,
+  useRequestHref,
 } from "@/components/tracker/bits";
 
 type Tab = "awaiting" | "responded" | "closed";
@@ -56,6 +56,7 @@ export function NominationsView() {
 }
 
 function LeaderInbox() {
+  const requestHref = useRequestHref();
   const { data, me } = useSession();
   const L = lookup(data);
   const [tab, setTab] = useState<Tab>("awaiting");
@@ -158,6 +159,7 @@ function LeaderInbox() {
 }
 
 function SalesOverview() {
+  const requestHref = useRequestHref();
   const { data } = useSession();
   const L = lookup(data);
   const active = data.requests

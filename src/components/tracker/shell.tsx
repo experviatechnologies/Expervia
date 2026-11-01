@@ -28,14 +28,12 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTracker } from "@/lib/tracker/store";
+import { useBase, useTracker } from "@/lib/tracker/store";
 import { has, isSales, primaryRole } from "@/lib/tracker/selectors";
 import { ROLE_LABEL } from "@/lib/tracker/labels";
 import type { Member } from "@/lib/tracker/types";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Avatar, Btn } from "./ui";
-
-export const BASE = "/tracker/demo";
 
 type NavItem = {
   href: string;
@@ -46,43 +44,51 @@ type NavItem = {
 
 const ALL = {
   dashboard: {
-    href: `${BASE}/dashboard`,
+    path: "dashboard",
     label: "Dashboard",
     icon: LayoutGrid,
   },
   availability: {
-    href: `${BASE}/availability`,
+    path: "availability",
     label: "Availability",
     icon: CalendarClock,
   },
   directory: {
-    href: `${BASE}/directory`,
+    path: "directory",
     label: "ETEN Directory",
     icon: Users,
   },
   requests: {
-    href: `${BASE}/requests`,
+    path: "requests",
     label: "Presales Requests",
     icon: Briefcase,
   },
   nominations: {
-    href: `${BASE}/nominations`,
+    path: "nominations",
     label: "Nominations",
     icon: UserCheck,
   },
-  meetings: { href: `${BASE}/meetings`, label: "Meetings", icon: Video },
+  meetings: { path: "meetings", label: "Meetings", icon: Video },
   notifications: {
-    href: `${BASE}/notifications`,
+    path: "notifications",
     label: "Notifications",
     icon: Bell,
   },
-  reports: { href: `${BASE}/reports`, label: "Reports", icon: BarChart3 },
-  settings: { href: `${BASE}/settings`, label: "Settings", icon: Settings },
+  reports: { path: "reports", label: "Reports", icon: BarChart3 },
+  settings: { path: "settings", label: "Settings", icon: Settings },
 };
 type Key = keyof typeof ALL;
 
+const hrefOf = (base: string, k: Key) => `${base}/${ALL[k].path}`;
+
 /** Navigation per role (PRD section 5). Pod Leaders are also members. */
-export function navKeys(me: Member): Key[] {
+export function navKeys(me: Member, enabled?: string[]): Key[] {
+  const keys = roleKeys(me);
+  // The live tracker switches pages on phase by phase.
+  return enabled ? keys.filter((k) => enabled.includes(k)) : keys;
+}
+
+function roleKeys(me: Member): Key[] {
   if (isSales(me) && !has(me, "admin"))
     return [
       "dashboard",
@@ -113,13 +119,18 @@ export function navKeys(me: Member): Key[] {
 }
 
 /** Whether the current path is a section this persona may open. */
-function allowed(me: Member, pathname: string) {
-  const parts = pathname.slice(BASE.length + 1).split("/");
+function allowed(
+  me: Member,
+  pathname: string,
+  base: string,
+  enabled?: string[],
+) {
+  const parts = pathname.slice(base.length + 1).split("/");
   const section = parts[0] as Key;
   if (!section) return true;
   // Request detail pages do their own per-request access check.
   if (section === "requests" && parts[1] && parts[1] !== "new") return true;
-  return navKeys(me).includes(section);
+  return navKeys(me, enabled).includes(section);
 }
 
 export function TrackerShell({ children }: { children: React.ReactNode }) {
@@ -127,10 +138,12 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const BASE = t.base;
 
   useEffect(() => {
-    if (t.ready && !t.me) router.replace(`${BASE}/login`);
-  }, [t.ready, t.me, router]);
+    if (t.ready && !t.me)
+      router.replace(t.live ? "/signin?next=/tracker" : `${BASE}/login`);
+  }, [t.ready, t.me, t.live, BASE, router]);
 
   // Close the mobile drawer when navigating.
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -148,20 +161,23 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
   const unread = t.data.notifications.filter(
     (n) => n.to === me.id && !n.read,
   ).length;
-  const nav: NavItem[] = navKeys(me).map((k) => ({
-    ...ALL[k],
+  const nav: NavItem[] = navKeys(me, t.enabledPages).map((k) => ({
+    href: hrefOf(BASE, k),
+    label: ALL[k].label,
+    icon: ALL[k].icon,
     badge: k === "notifications" ? unread : undefined,
   }));
 
   const signOut = () => {
+    // The live provider signs out of Supabase and redirects itself.
     t.signOut();
-    router.push(`${BASE}/login`);
+    if (!t.live) router.push(`${BASE}/login`);
   };
 
   const rail = (
     <div className="flex h-full flex-col">
       <Link
-        href={`${BASE}/dashboard`}
+        href={nav[0]?.href ?? BASE}
         className="flex flex-col gap-2.5 px-3 pt-4 pb-5"
       >
         <span className="inline-flex w-fit rounded-xl bg-white px-3 py-2">
@@ -221,13 +237,17 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
           </div>
           <ThemeToggle className="text-trk-rail-muted hover:text-trk-rail-ink grid size-8 shrink-0 place-items-center rounded-lg" />
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Link
-            href={`${BASE}/login`}
-            className="text-trk-rail-ink flex items-center justify-center gap-1.5 rounded-lg bg-white/10 px-2 py-2 text-[12.5px] font-semibold hover:bg-white/15"
-          >
-            <ArrowLeftRight className="size-3.5" /> Switch
-          </Link>
+        <div
+          className={`mt-3 grid gap-2 ${t.live ? "grid-cols-1" : "grid-cols-2"}`}
+        >
+          {!t.live && (
+            <Link
+              href={`${BASE}/login`}
+              className="text-trk-rail-ink flex items-center justify-center gap-1.5 rounded-lg bg-white/10 px-2 py-2 text-[12.5px] font-semibold hover:bg-white/15"
+            >
+              <ArrowLeftRight className="size-3.5" /> Switch
+            </Link>
+          )}
           <button
             type="button"
             onClick={signOut}
@@ -275,7 +295,7 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="min-w-0">
-          <DemoBanner onReset={t.reset} />
+          {!t.live && <DemoBanner onReset={t.reset} />}
           <header className="border-eten-line bg-eten-panel/95 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur sm:px-6">
             <button
               type="button"
@@ -285,23 +305,29 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
             >
               <Menu className="size-5" />
             </button>
-            {navKeys(me).includes("directory") ? (
+            {navKeys(me, t.enabledPages).includes("directory") ? (
               <TopSearch />
             ) : (
               <div className="flex-1" />
             )}
+            {(!t.enabledPages || t.enabledPages.includes("notifications")) && (
+              <Link
+                href={`${BASE}/notifications`}
+                aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
+                className="text-eten-ink-muted hover:text-eten-ink relative rounded-lg p-2"
+              >
+                <Bell className="size-5" />
+                {unread > 0 && (
+                  <span className="bg-trk-danger absolute top-1.5 right-1.5 size-2 rounded-full" />
+                )}
+              </Link>
+            )}
             <Link
-              href={`${BASE}/notifications`}
-              aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
-              className="text-eten-ink-muted hover:text-eten-ink relative rounded-lg p-2"
-            >
-              <Bell className="size-5" />
-              {unread > 0 && (
-                <span className="bg-trk-danger absolute top-1.5 right-1.5 size-2 rounded-full" />
-              )}
-            </Link>
-            <Link
-              href={`${BASE}/settings`}
+              href={
+                !t.enabledPages || t.enabledPages.includes("settings")
+                  ? `${BASE}/settings`
+                  : "/profile"
+              }
               aria-label="Your profile and settings"
               className="flex items-center gap-2 rounded-lg p-1"
             >
@@ -317,7 +343,11 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
             tabIndex={-1}
             className="mx-auto w-full max-w-[1320px] px-4 py-6 outline-none sm:px-6 lg:py-8"
           >
-            {allowed(me, pathname) ? children : <NoAccess />}
+            {allowed(me, pathname, BASE, t.enabledPages) ? (
+              children
+            ) : (
+              <NoAccess />
+            )}
           </div>
         </div>
       </div>
@@ -326,6 +356,7 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
 }
 
 function TopSearch() {
+  const BASE = useBase();
   const router = useRouter();
   const [q, setQ] = useState("");
   return (
@@ -378,6 +409,27 @@ export function DemoBanner({ onReset }: { onReset: () => void }) {
 }
 
 function NoAccess() {
+  const { base, live } = useTracker();
+  const BASE = base;
+  if (live) {
+    return (
+      <div className="border-eten-line bg-eten-panel mx-auto max-w-[520px] rounded-2xl border p-8 text-center">
+        <p className="text-[17px] font-bold">
+          This page is not available to you yet
+        </p>
+        <p className="text-eten-ink-muted mt-1 text-[14px]">
+          It is either not part of your role or not switched on yet. More of the
+          tracker goes live in the coming phases.
+        </p>
+        <div className="mt-5 flex justify-center gap-2">
+          <Btn href={BASE} variant="primary">
+            Back to the tracker
+          </Btn>
+          <Btn href={`${BASE}/demo/login`}>Explore the demo</Btn>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="border-eten-line bg-eten-panel mx-auto max-w-[520px] rounded-2xl border p-8 text-center">
       <p className="text-[17px] font-bold">

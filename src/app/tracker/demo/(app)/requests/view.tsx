@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { useSession } from "@/lib/tracker/store";
+import { useSession, useBase } from "@/lib/tracker/store";
 import { has, isActive, lookup, teamSummary } from "@/lib/tracker/selectors";
 import {
   ACTIVE_STATUSES,
@@ -31,13 +31,14 @@ import {
   td,
   th,
 } from "@/components/tracker/ui";
-import { StatusPill, requestHref } from "@/components/tracker/bits";
-import { BASE } from "@/components/tracker/shell";
+import { StatusPill, useRequestHref } from "@/components/tracker/bits";
 
 type Tab = "active" | "draft" | "confirmed" | "completed" | "cancelled" | "all";
 const PAGE = 15;
 
 export function RequestsView({ initialStage }: { initialStage: string }) {
+  const BASE = useBase();
+  const requestHref = useRequestHref();
   const { data, me } = useSession();
   const L = lookup(data);
   const canCreate = has(me, "sales_manager") || has(me, "admin");

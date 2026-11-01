@@ -26,12 +26,13 @@ import {
   ParticipantPill,
   RefLink,
   RespondDialog,
-  requestHref,
+  useRequestHref,
 } from "@/components/tracker/bits";
 
 type Tab = "invitations" | "upcoming" | "past";
 
 export function MeetingsView() {
+  const requestHref = useRequestHref();
   const { data, me, now } = useSession();
   const L = lookup(data);
   const sales = isSales(me);

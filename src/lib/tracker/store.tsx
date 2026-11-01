@@ -103,8 +103,15 @@ function save(data: TrackerData) {
   }
 }
 
-type Ctx = ReturnType<typeof useTrackerState>;
-const TrackerContext = createContext<Ctx | null>(null);
+/**
+ * The session interface every tracker screen reads through useSession(). The
+ * demo provider below fills it from in-browser data; LiveTrackerProvider
+ * (src/components/tracker/live-provider.tsx) fills it from Supabase, so the
+ * same screens serve /tracker/demo and the real /tracker.
+ */
+export type TrackerContextValue = ReturnType<typeof useTrackerState>;
+type Ctx = TrackerContextValue;
+export const TrackerContext = createContext<Ctx | null>(null);
 
 function useTrackerState() {
   const [data, setData] = useState<TrackerData | null>(null);
@@ -891,6 +898,12 @@ function useTrackerState() {
     retryJob,
     isSales: isSales(me),
     ledPods: data && me ? podsLedBy(data, me) : [],
+    /** URL prefix for links inside the tracker. */
+    base: "/tracker/demo" as string,
+    /** True on the real tracker (live data), false in the demo. */
+    live: false as boolean,
+    /** Pages switched on (live tracker); undefined = every page (demo). */
+    enabledPages: undefined as string[] | undefined,
   };
 }
 
@@ -945,6 +958,11 @@ export function useTracker() {
   const ctx = useContext(TrackerContext);
   if (!ctx) throw new Error("useTracker must be used inside <TrackerProvider>");
   return ctx;
+}
+
+/** URL prefix of the current tracker: "/tracker/demo" or "/tracker". */
+export function useBase() {
+  return useTracker().base;
 }
 
 /** For pages under the signed-in shell, where `me` and `data` are guaranteed. */

@@ -9,7 +9,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useSession, type RequestInput } from "@/lib/tracker/store";
+import { useSession, type RequestInput, useBase } from "@/lib/tracker/store";
 import { has } from "@/lib/tracker/selectors";
 import {
   ACCESS_LABEL,
@@ -44,8 +44,7 @@ import {
   inputClass,
   useToast,
 } from "@/components/tracker/ui";
-import { BASE } from "@/components/tracker/shell";
-import { requestHref } from "@/components/tracker/bits";
+import { useRequestHref } from "@/components/tracker/bits";
 
 type FormState = {
   title: string;
@@ -75,6 +74,8 @@ type FormState = {
 };
 
 export function RequestForm({ editId }: { editId?: string }) {
+  const BASE = useBase();
+  const requestHref = useRequestHref();
   const t = useSession();
   const { data, me } = t;
   const router = useRouter();

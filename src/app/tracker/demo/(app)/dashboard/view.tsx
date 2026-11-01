@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Plus, ArrowRight } from "lucide-react";
-import { useSession } from "@/lib/tracker/store";
+import { useSession, useBase } from "@/lib/tracker/store";
 import {
   has,
   isSales,
@@ -53,11 +53,11 @@ import {
   RefLink,
   RespondDialog,
   StatusPill,
-  requestHref,
+  useRequestHref,
 } from "@/components/tracker/bits";
-import { BASE } from "@/components/tracker/shell";
 
 export function DashboardView() {
+  const BASE = useBase();
   const { me } = useSession();
   const first = me.name.split(" ")[0];
   const engineer = me.roles.includes("member");
@@ -88,6 +88,8 @@ export function DashboardView() {
 // ------------------------------------------------------------------ sales
 
 function SalesSection() {
+  const BASE = useBase();
+  const requestHref = useRequestHref();
   const { data, me, now } = useSession();
   const p = pipeline(data, now);
   const L = lookup(data);
@@ -345,6 +347,7 @@ function SalesSection() {
 }
 
 function OutcomesCard({ outcomes }: { outcomes: PresalesRequest[] }) {
+  const requestHref = useRequestHref();
   return (
     <Card title="Recent meeting outcomes" bodyClassName="">
       {outcomes.length === 0 ? (
@@ -382,6 +385,8 @@ function OutcomesCard({ outcomes }: { outcomes: PresalesRequest[] }) {
 // ------------------------------------------------------------------ pod leader
 
 function PodLeaderSection() {
+  const BASE = useBase();
+  const requestHref = useRequestHref();
   const { data, me } = useSession();
   const pods = podsLedBy(data, me);
   const podIds = pods.map((p) => p.id);
@@ -613,6 +618,8 @@ function Meter({ label, n, d }: { label: string; n: number; d: number }) {
 // ------------------------------------------------------------------ member
 
 function MemberSection({ me }: { me: Member }) {
+  const BASE = useBase();
+  const requestHref = useRequestHref();
   const { data, now } = useSession();
   const [responding, setResponding] = useState<Assignment | null>(null);
   const mine = data.assignments.filter((a) => a.memberId === me.id);
@@ -824,6 +831,7 @@ function MemberSection({ me }: { me: Member }) {
 // ------------------------------------------------------------------ management
 
 function ManagementSection() {
+  const BASE = useBase();
   const { data } = useSession();
   const { metrics, byPod } = computeMetrics(data);
   const pick = [
@@ -898,6 +906,7 @@ function ManagementSection() {
 // ------------------------------------------------------------------ admin
 
 function AdminSection() {
+  const BASE = useBase();
   const { data } = useSession();
   const L = lookup(data);
   const accounts = data.members;

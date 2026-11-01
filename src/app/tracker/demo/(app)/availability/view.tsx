@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CalendarPlus, Copy, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/tracker/store";
+import { useSession, useBase } from "@/lib/tracker/store";
 import {
   effectiveWindows,
   isFresh,
@@ -54,7 +54,6 @@ import {
   inputClass,
   useToast,
 } from "@/components/tracker/ui";
-import { BASE } from "@/components/tracker/shell";
 
 const FORMATS: MeetingFormat[] = ["online", "physical", "hybrid"];
 
@@ -87,6 +86,7 @@ function validateDay(windows: WeeklyWindow[]) {
 }
 
 export function AvailabilityView() {
+  const BASE = useBase();
   const t = useSession();
   const { me, data } = t;
   const toast = useToast();

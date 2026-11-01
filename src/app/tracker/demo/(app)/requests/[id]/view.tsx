@@ -19,7 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/tracker/store";
+import { useSession, useBase } from "@/lib/tracker/store";
 import {
   canSeeRequest,
   clientLabel,
@@ -77,7 +77,6 @@ import {
   ParticipantPill,
   RespondDialog,
 } from "@/components/tracker/bits";
-import { BASE } from "@/components/tracker/shell";
 
 type Tab = "overview" | "nominations" | "team" | "activity" | "outcome";
 
@@ -88,6 +87,7 @@ export function RequestDetail({
   id: string;
   initialTab: string;
 }) {
+  const BASE = useBase();
   const t = useSession();
   const { data, me } = t;
   const req = data.requests.find((r) => r.id === id);
