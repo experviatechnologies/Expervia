@@ -23,7 +23,7 @@ const ROLLOUT: [boolean, string][] = [
   [true, "Presales requests: create, route to pods, edit, reschedule, cancel"],
   [true, "Pod Leader nominations and no-suitable-candidate responses"],
   [true, "Selecting engineers, invitations, accept and decline"],
-  [false, "Confirmation, conflict rechecks and calendar invites (Phase 5)"],
+  [true, "Confirmation, conflict rechecks, replacements and calendar invites"],
   [false, "Meetings, outcomes, notifications and reports (Phase 6)"],
 ];
 

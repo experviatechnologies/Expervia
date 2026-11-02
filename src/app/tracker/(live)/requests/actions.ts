@@ -10,6 +10,7 @@ import {
   notifyPresales,
 } from "@/lib/tracker/server/events";
 import { sendTrackerEmail } from "@/lib/tracker/server/email";
+import { sendInvites } from "@/lib/tracker/server/invites";
 import { addWorkingHours } from "@/lib/tracker/policy";
 import { TIMEZONES, fmtRange } from "@/lib/tracker/time";
 import type { RequestInput } from "@/lib/tracker/store";
@@ -329,12 +330,21 @@ export async function cancelRequest(
   if (!why) return { error: "Give a reason for cancelling." };
   const { data: req } = await admin
     .from("presales_requests")
-    .select("id, ref, title, status")
+    .select(
+      "id, ref, title, client, objective, status, starts_at, ends_at, timezone, format, location, platform, join_link, prep_notes",
+    )
     .eq("id", requestId)
     .maybeSingle();
   if (!req) return { error: "Request not found." };
   if (["completed", "cancelled"].includes(req.status))
     return { error: "This request is already closed." };
+  // Confirmed participants have the meeting in their calendar: they get a
+  // cancellation for the same event.
+  const { data: confirmed } = await admin
+    .from("presales_assignments")
+    .select("member_id, idempotency_key")
+    .eq("request_id", requestId)
+    .eq("status", "confirmed");
 
   const { error } = await admin
     .from("presales_requests")
@@ -354,6 +364,14 @@ export async function cancelRequest(
     session.member.id,
     `Cancelled the request: ${why}`,
   );
+  if (confirmed?.length) {
+    await sendInvites(
+      admin,
+      req,
+      confirmed as { member_id: string; idempotency_key: string }[],
+      "CANCEL",
+    );
+  }
   await auditTracker({
     actorId: session.member.id,
     action: "request_cancelled",
@@ -368,7 +386,10 @@ export async function cancelRequest(
     requestId,
   });
   await sendTrackerEmail({
-    recipientIds: people,
+    // Confirmed participants already got the calendar cancellation.
+    recipientIds: people.filter(
+      (p) => !(confirmed ?? []).some((c) => c.member_id === p),
+    ),
     subject: `Cancelled: ${req.title} (${req.ref})`,
     heading: `Cancelled: ${req.title}`,
     body: `${req.ref} has been cancelled.\nReason: ${why}`,

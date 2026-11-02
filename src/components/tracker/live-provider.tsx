@@ -38,6 +38,11 @@ import {
   respondToInvitation,
   selectParticipants as selectParticipantsAction,
 } from "@/app/tracker/(live)/selection/actions";
+import {
+  confirmMeeting as confirmMeetingAction,
+  recheckAvailability,
+  replaceParticipant as replaceParticipantAction,
+} from "@/app/tracker/(live)/confirmation/actions";
 import { useToast } from "./ui";
 
 export function LiveTrackerProvider({
@@ -158,9 +163,10 @@ export function LiveTrackerProvider({
         ),
       respond: (assignmentId, accept, reason) =>
         run(respondToInvitation(assignmentId, accept, reason)),
-      replaceParticipant: notYet,
-      recheck: notYet,
-      confirmMeeting: notYet,
+      replaceParticipant: (id) => run(replaceParticipantAction(id)),
+      recheck: (requestId) => run(recheckAvailability(requestId)),
+      confirmMeeting: (requestId, manualReason) =>
+        run(confirmMeetingAction(requestId, manualReason)),
       recordOutcome: notYet,
       markRead: notYet,
       markAllRead: notYet,
