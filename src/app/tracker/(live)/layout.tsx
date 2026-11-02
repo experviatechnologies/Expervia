@@ -9,7 +9,13 @@ import { ToastProvider } from "@/components/tracker/ui";
  * Pages switched on in the live tracker. Each Phase 4 to 6 step adds to this
  * list; the shell's navigation and access checks only offer these.
  */
-const LIVE_PAGES = ["dashboard", "availability", "directory", "settings"];
+const LIVE_PAGES = [
+  "dashboard",
+  "availability",
+  "directory",
+  "requests",
+  "settings",
+];
 
 /**
  * The real tracker (behind the ETEN sign-in). Loads the signed-in member's

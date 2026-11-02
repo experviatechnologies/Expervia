@@ -127,6 +127,7 @@ export function RequestForm({ editId }: { editId?: string }) {
   const [podsTouched, setPodsTouched] = useState(Boolean(existing));
   const [skillFilter, setSkillFilter] = useState("");
   const [showErrors, setShowErrors] = useState(false);
+  const [saving, setSaving] = useState(false);
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setF((x) => ({ ...x, [k]: v }));
 
@@ -239,15 +240,22 @@ export function RequestForm({ editId }: { editId?: string }) {
       podIds: f.podIds,
       deadline,
     };
-    const id = t.saveRequest(input, send, existing?.id);
-    toast(
-      send
-        ? "Submitted. Pod Leaders have been notified."
-        : existing
-          ? "Changes saved."
-          : "Draft saved.",
-    );
-    router.push(requestHref(id));
+    setSaving(true);
+    void t
+      .saveRequest(input, send, existing?.id)
+      .then((id) => {
+        // An empty id means the save failed (the reason was already shown).
+        if (!id) return;
+        toast(
+          send
+            ? "Submitted. Pod Leaders have been notified."
+            : existing
+              ? "Changes saved."
+              : "Draft saved.",
+        );
+        router.push(requestHref(id));
+      })
+      .finally(() => setSaving(false));
   };
 
   const err = (k: keyof FormState) => (showErrors ? errors[k] : undefined);
@@ -716,8 +724,12 @@ export function RequestForm({ editId }: { editId?: string }) {
           >
             Cancel
           </Btn>
-          {draftOrNew && <Btn onClick={() => submit(false)}>Save draft</Btn>}
-          <Btn type="submit" variant="primary">
+          {draftOrNew && (
+            <Btn disabled={saving} onClick={() => submit(false)}>
+              Save draft
+            </Btn>
+          )}
+          <Btn type="submit" variant="primary" disabled={saving}>
             {draftOrNew ? "Submit for nominations" : "Save changes"}
           </Btn>
         </div>

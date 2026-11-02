@@ -86,7 +86,7 @@ function describe(
       return {
         who: "",
         what: presalesNotifText(targetType, actor),
-        href: presalesNotifHref(),
+        href: presalesNotifHref(targetId),
         iconKey: "presales",
         tag: "Presales",
         tone: "blue",

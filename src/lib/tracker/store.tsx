@@ -293,7 +293,7 @@ function useTrackerState() {
     input: RequestInput,
     submit: boolean,
     existingId?: string,
-  ): string {
+  ): Promise<string> {
     const id = existingId ?? nid("req");
     update((d) => {
       const { podIds, deadline, ...rest } = input;
@@ -350,7 +350,8 @@ function useTrackerState() {
         }
       }
     });
-    return id;
+    // Async to match the live provider, where the id comes from the server.
+    return Promise.resolve(id);
   }
 
   const cancelRequest = (id: string, reason: string) =>

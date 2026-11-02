@@ -65,7 +65,7 @@ export function presalesNotifText(event: string | null, actor: string): string {
   }
 }
 
-/** Where a presales notification opens. Request pages arrive in Phase 5. */
-export function presalesNotifHref(): string {
-  return "/tracker";
+/** Where a presales notification opens: the request when there is one. */
+export function presalesNotifHref(requestId?: string | null): string {
+  return requestId ? `/tracker/requests/${requestId}` : "/tracker/dashboard";
 }

@@ -179,17 +179,22 @@ export function RequestDetail({
                 <Btn
                   variant="primary"
                   onClick={() => {
-                    t.saveRequest(
-                      {
-                        ...req,
-                        podIds: req.routing.map((r) => r.podId),
-                        deadline:
-                          req.routing[0]?.deadline ?? new Date().toISOString(),
-                      },
-                      true,
-                      req.id,
-                    );
-                    toast("Submitted. Pod Leaders have been notified.");
+                    void t
+                      .saveRequest(
+                        {
+                          ...req,
+                          podIds: req.routing.map((r) => r.podId),
+                          deadline:
+                            req.routing[0]?.deadline ??
+                            new Date().toISOString(),
+                        },
+                        true,
+                        req.id,
+                      )
+                      .then((id) => {
+                        if (id)
+                          toast("Submitted. Pod Leaders have been notified.");
+                      });
                   }}
                 >
                   <Send className="size-4" /> Submit for nominations

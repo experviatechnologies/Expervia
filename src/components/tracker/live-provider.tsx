@@ -24,6 +24,11 @@ import {
   saveWeeklyAvailability,
 } from "@/app/tracker/(live)/availability/actions";
 import { saveExpertiseProfile } from "@/app/tracker/(live)/settings/actions";
+import {
+  cancelRequest as cancelRequestAction,
+  rescheduleRequest,
+  saveRequest as saveRequestAction,
+} from "@/app/tracker/(live)/requests/actions";
 import { useToast } from "./ui";
 
 export function LiveTrackerProvider({
@@ -111,12 +116,23 @@ export function LiveTrackerProvider({
             ),
       setCalendar: notYet,
       // Workflow (Phase 5)
-      saveRequest: () => {
-        notYet();
-        return "";
+      saveRequest: async (input, submit, existingId) => {
+        try {
+          const res = await saveRequestAction(input, submit, existingId);
+          if ("error" in res) {
+            toast(res.error);
+            return "";
+          }
+          router.refresh();
+          return res.id;
+        } catch {
+          toast("Something went wrong. Please try again.");
+          return "";
+        }
       },
-      cancelRequest: notYet,
-      reschedule: notYet,
+      cancelRequest: (id, reason) => run(cancelRequestAction(id, reason)),
+      reschedule: (id, startUtc, endUtc) =>
+        run(rescheduleRequest(id, startUtc, endUtc)),
       nominate: notYet,
       noneSuitable: notYet,
       withdrawNomination: notYet,
