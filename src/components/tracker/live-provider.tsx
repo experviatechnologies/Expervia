@@ -29,6 +29,11 @@ import {
   rescheduleRequest,
   saveRequest as saveRequestAction,
 } from "@/app/tracker/(live)/requests/actions";
+import {
+  markNoneSuitable,
+  nominate as nominateAction,
+  withdrawNomination as withdrawNominationAction,
+} from "@/app/tracker/(live)/nominations/actions";
 import { useToast } from "./ui";
 
 export function LiveTrackerProvider({
@@ -133,9 +138,11 @@ export function LiveTrackerProvider({
       cancelRequest: (id, reason) => run(cancelRequestAction(id, reason)),
       reschedule: (id, startUtc, endUtc) =>
         run(rescheduleRequest(id, startUtc, endUtc)),
-      nominate: notYet,
-      noneSuitable: notYet,
-      withdrawNomination: notYet,
+      nominate: (requestId, podId, picks) =>
+        run(nominateAction(requestId, podId, picks)),
+      noneSuitable: (requestId, podId, reason) =>
+        run(markNoneSuitable(requestId, podId, reason)),
+      withdrawNomination: (id) => run(withdrawNominationAction(id)),
       selectParticipants: notYet,
       respond: notYet,
       replaceParticipant: notYet,

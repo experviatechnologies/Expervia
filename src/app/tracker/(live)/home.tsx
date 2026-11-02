@@ -21,7 +21,8 @@ const ROLLOUT: [boolean, string][] = [
   [true, "Settings: expertise profile, skill levels and presales opt-out"],
   [true, "Your dashboard"],
   [true, "Presales requests: create, route to pods, edit, reschedule, cancel"],
-  [false, "Nominations, selection and invitations (Phase 5)"],
+  [true, "Pod Leader nominations and no-suitable-candidate responses"],
+  [false, "Selection, invitations and confirmation (Phase 5)"],
   [false, "Meetings, outcomes, notifications and reports (Phase 6)"],
 ];
 
