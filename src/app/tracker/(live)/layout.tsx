@@ -15,6 +15,7 @@ const LIVE_PAGES = [
   "directory",
   "requests",
   "nominations",
+  "meetings",
   "settings",
 ];
 

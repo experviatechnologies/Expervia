@@ -34,6 +34,10 @@ import {
   nominate as nominateAction,
   withdrawNomination as withdrawNominationAction,
 } from "@/app/tracker/(live)/nominations/actions";
+import {
+  respondToInvitation,
+  selectParticipants as selectParticipantsAction,
+} from "@/app/tracker/(live)/selection/actions";
 import { useToast } from "./ui";
 
 export function LiveTrackerProvider({
@@ -143,8 +147,17 @@ export function LiveTrackerProvider({
       noneSuitable: (requestId, podId, reason) =>
         run(markNoneSuitable(requestId, podId, reason)),
       withdrawNomination: (id) => run(withdrawNominationAction(id)),
-      selectParticipants: notYet,
-      respond: notYet,
+      selectParticipants: (requestId, memberIds, rationale, overrideReason) =>
+        run(
+          selectParticipantsAction(
+            requestId,
+            memberIds,
+            rationale,
+            overrideReason,
+          ),
+        ),
+      respond: (assignmentId, accept, reason) =>
+        run(respondToInvitation(assignmentId, accept, reason)),
       replaceParticipant: notYet,
       recheck: notYet,
       confirmMeeting: notYet,

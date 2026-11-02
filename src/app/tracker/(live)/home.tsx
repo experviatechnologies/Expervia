@@ -22,7 +22,8 @@ const ROLLOUT: [boolean, string][] = [
   [true, "Your dashboard"],
   [true, "Presales requests: create, route to pods, edit, reschedule, cancel"],
   [true, "Pod Leader nominations and no-suitable-candidate responses"],
-  [false, "Selection, invitations and confirmation (Phase 5)"],
+  [true, "Selecting engineers, invitations, accept and decline"],
+  [false, "Confirmation, conflict rechecks and calendar invites (Phase 5)"],
   [false, "Meetings, outcomes, notifications and reports (Phase 6)"],
 ];
 
