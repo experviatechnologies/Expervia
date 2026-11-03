@@ -113,7 +113,9 @@ export function NotificationsView() {
                       <p className="mt-0.5 text-[13px]">Action: {n.action}</p>
                     )}
                     <p className="text-eten-faint mt-1 text-[12px]">
-                      In-app only in the demo (email delivery is simulated)
+                      {t.live
+                        ? "Also sent by email for key moments"
+                        : "In-app only in the demo (email delivery is simulated)"}
                     </p>
                   </div>
                   <div className="flex items-start gap-2">

@@ -24,7 +24,8 @@ const ROLLOUT: [boolean, string][] = [
   [true, "Pod Leader nominations and no-suitable-candidate responses"],
   [true, "Selecting engineers, invitations, accept and decline"],
   [true, "Confirmation, conflict rechecks, replacements and calendar invites"],
-  [false, "Meetings, outcomes, notifications and reports (Phase 6)"],
+  [true, "Notifications inbox"],
+  [false, "Meeting outcomes and reports (Phase 6)"],
 ];
 
 export function LiveRollout() {

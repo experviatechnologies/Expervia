@@ -6,6 +6,7 @@ import type {
   AccountStatus,
   Assignment,
   AuditEntry,
+  Notification,
   AvailabilityException,
   ExceptionReason,
   MeetingFormat,
@@ -24,6 +25,7 @@ import type {
   WeeklyWindow,
 } from "@/lib/tracker/types";
 import { isStaff, type TrackerSession } from "./session";
+import { presalesNotifHref, presalesNotifText } from "@/lib/tracker/events";
 
 /**
  * Server-side read layer for the real tracker (Phase 2, step 2.4).
@@ -654,7 +656,7 @@ export async function loadTrackerData(
 ): Promise<TrackerData> {
   const admin = getSupabaseAdmin();
   // Independent loads run in parallel (each is a few PostgREST round trips).
-  const [ref, members, work, audit] = await Promise.all([
+  const [ref, members, work, audit, notifications] = await Promise.all([
     loadReference(admin),
     loadMembers(admin, {
       contacts: isStaff(session) || session.ledPodIds.length > 0,
@@ -668,6 +670,7 @@ export async function loadTrackerData(
           .order("created_at", { ascending: false })
           .limit(200)
       : Promise.resolve({ data: [] as Row[] }),
+    loadNotifications(admin, session.member.id),
   ]);
 
   const auditEntries: AuditEntry[] = ((audit.data ?? []) as Row[]).map((e) => ({
@@ -687,13 +690,134 @@ export async function loadTrackerData(
     meetingTypes: ref.meetingTypes,
     members,
     ...work,
-    // Tracker notifications and background jobs are wired in step 2.5 / Phase 7.
-    notifications: [],
+    notifications,
+    // Background jobs (reminders, retries) arrive with the scheduler, Phase 7.
     audit: auditEntries,
     jobs: [],
     policies: ref.policies,
     refCounter: 0,
   };
+}
+
+// ------------------------------------------------------------------ notifications
+
+/** Events that need the recipient to act; shown as Critical. */
+const CRITICAL_EVENTS = new Set([
+  "request_routed",
+  "invited",
+  "invite_declined",
+  "calendar_conflict",
+  "rescheduled",
+  "cancelled",
+]);
+
+/**
+ * The signed-in person's presales notifications (newest 100), in the UI's
+ * shape: wording from lib/tracker/events, the request they concern, and the
+ * deadline still open for them (invitation response or nomination).
+ */
+export async function loadNotifications(
+  admin: Admin,
+  me: string,
+): Promise<Notification[]> {
+  const { data, error } = await admin
+    .from("notifications")
+    .select("id, actor_id, target_type, target_id, is_read, created_at")
+    .eq("recipient_id", me)
+    .eq("type", "presales")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Row[];
+  if (!rows.length) return [];
+
+  const actorIds = Array.from(
+    new Set(rows.map((r) => r.actor_id as string).filter(Boolean)),
+  );
+  const reqIds = Array.from(
+    new Set(rows.map((r) => r.target_id as string).filter(Boolean)),
+  );
+  const [actors, reqs, seats, routes] = await Promise.all([
+    actorIds.length
+      ? admin
+          .from("profiles")
+          .select("member_id, full_name")
+          .in("member_id", actorIds)
+      : Promise.resolve({ data: [] as Row[] }),
+    reqIds.length
+      ? admin
+          .from("presales_requests")
+          .select("id, ref, title, status")
+          .in("id", reqIds)
+      : Promise.resolve({ data: [] as Row[] }),
+    reqIds.length
+      ? admin
+          .from("presales_assignments")
+          .select("request_id, due_at")
+          .eq("member_id", me)
+          .eq("status", "invitation_pending")
+          .in("request_id", reqIds)
+      : Promise.resolve({ data: [] as Row[] }),
+    reqIds.length
+      ? admin
+          .from("presales_request_pods")
+          .select("request_id, deadline")
+          .eq("status", "awaiting")
+          .in("request_id", reqIds)
+      : Promise.resolve({ data: [] as Row[] }),
+  ]);
+  const actorName = new Map(
+    ((actors.data ?? []) as Row[]).map((a) => [
+      a.member_id as string,
+      (a.full_name as string) ?? "A member",
+    ]),
+  );
+  const reqBy = new Map(
+    ((reqs.data ?? []) as Row[]).map((r) => [r.id as string, r]),
+  );
+  const dueSeat = new Map(
+    ((seats.data ?? []) as Row[]).map((s) => [
+      s.request_id as string,
+      s.due_at as string,
+    ]),
+  );
+  const dueRoute = new Map<string, string>();
+  for (const r of (routes.data ?? []) as Row[]) {
+    const prev = dueRoute.get(r.request_id as string);
+    if (!prev || (r.deadline as string) < prev)
+      dueRoute.set(r.request_id as string, r.deadline as string);
+  }
+
+  return rows.map((n): Notification => {
+    const event = (n.target_type as string) ?? "";
+    const reqId = (n.target_id as string) ?? undefined;
+    const req = reqId ? reqBy.get(reqId) : undefined;
+    const open =
+      req && !["completed", "cancelled"].includes(req.status as string);
+    const dueAt =
+      open && event === "invited"
+        ? dueSeat.get(reqId!)
+        : open && event === "request_routed"
+          ? dueRoute.get(reqId!)
+          : undefined;
+    return {
+      id: n.id as string,
+      to: me,
+      at: n.created_at as string,
+      title: presalesNotifText(
+        event,
+        n.actor_id
+          ? (actorName.get(n.actor_id as string) ?? "A member")
+          : "ETEN",
+      ),
+      body: req ? `${req.ref} · ${req.title}` : "",
+      requestId: req ? reqId : undefined,
+      href: presalesNotifHref(req ? reqId : null),
+      critical: CRITICAL_EVENTS.has(event),
+      dueAt,
+      read: Boolean(n.is_read),
+    };
+  });
 }
 
 // ------------------------------------------------------------------ redaction
