@@ -47,6 +47,7 @@ import {
   markAllPresalesNotificationsRead,
   markPresalesNotificationRead,
 } from "@/app/tracker/(live)/notifications/actions";
+import { recordOutcome as recordOutcomeAction } from "@/app/tracker/(live)/outcomes/actions";
 import { useToast } from "./ui";
 
 export function LiveTrackerProvider({
@@ -171,7 +172,8 @@ export function LiveTrackerProvider({
       recheck: (requestId) => run(recheckAvailability(requestId)),
       confirmMeeting: (requestId, manualReason) =>
         run(confirmMeetingAction(requestId, manualReason)),
-      recordOutcome: notYet,
+      recordOutcome: (requestId, attendance, outcome) =>
+        run(recordOutcomeAction(requestId, attendance, outcome)),
       markRead: (id) => run(markPresalesNotificationRead(id)),
       markAllRead: () => run(markAllPresalesNotificationsRead()),
       // Administration lives in the admin console for now.

@@ -25,7 +25,8 @@ const ROLLOUT: [boolean, string][] = [
   [true, "Selecting engineers, invitations, accept and decline"],
   [true, "Confirmation, conflict rechecks, replacements and calendar invites"],
   [true, "Notifications inbox"],
-  [false, "Meeting outcomes and reports (Phase 6)"],
+  [true, "Meeting outcomes: attendance, summary, actions and next steps"],
+  [false, "Reports (Phase 6)"],
 ];
 
 export function LiveRollout() {
