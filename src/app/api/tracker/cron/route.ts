@@ -51,6 +51,12 @@ async function handle(request: NextRequest) {
   try {
     const report = await runReminders(admin);
     await finish({ status: "succeeded", details: report });
+    // Housekeeping: keep 30 days of successful runs (failures are kept).
+    await admin
+      .from("presales_job_runs")
+      .delete()
+      .eq("status", "succeeded")
+      .lt("started_at", new Date(Date.now() - 30 * 86_400_000).toISOString());
     return NextResponse.json({ ok: true, sent: report });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

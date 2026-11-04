@@ -7,6 +7,7 @@ import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { toCsv } from "@/lib/csv";
 import { DownloadCsvButton } from "@/components/shared/download-csv-button";
+import { SystemHealth } from "./system-health";
 
 export const metadata: Metadata = {
   title: "Tracker readiness",
@@ -454,6 +455,11 @@ export default async function TrackerReadinessPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-eten-ink mb-3 text-sm font-bold">System health</h2>
+        <SystemHealth />
       </section>
 
       <section className="mt-6">

@@ -32,6 +32,30 @@ function emailHtml(
   `;
 }
 
+/**
+ * Record an email that couldn't be sent, for the admin health view
+ * (Phase 7, step 7.2). Never throws.
+ */
+async function logEmailFailure(
+  recipientId: string,
+  subject: string,
+  error: string,
+) {
+  try {
+    await getSupabaseAdmin()
+      .from("presales_job_runs")
+      .insert({
+        job: "email",
+        status: "failed",
+        finished_at: new Date().toISOString(),
+        details: { recipient_id: recipientId, subject },
+        error: error.slice(0, 1000),
+      });
+  } catch (err) {
+    console.error("logging email failure failed", err);
+  }
+}
+
 export async function sendTrackerEmail(params: {
   recipientIds: (string | null | undefined)[];
   subject: string;
@@ -53,26 +77,37 @@ export async function sendTrackerEmail(params: {
     const href = `${siteConfig.url}${params.path}`;
     await Promise.all(
       ids.map(async (id) => {
-        const { data } = await admin.auth.admin.getUserById(id);
-        const to = data?.user?.email;
-        if (!to) return;
-        const { error } = await resend.emails.send({
-          from: fromEmail,
-          to,
-          subject: params.subject,
-          html: emailHtml(
-            params.heading,
-            params.body,
-            href,
-            params.cta ?? "Open the tracker",
-          ),
-          attachments: params.attachments?.map((a) => ({
-            filename: a.filename,
-            content: Buffer.from(a.content).toString("base64"),
-            contentType: a.contentType,
-          })),
-        });
-        if (error) console.error("tracker email failed", error.message);
+        try {
+          const { data } = await admin.auth.admin.getUserById(id);
+          const to = data?.user?.email;
+          if (!to) return;
+          const { error } = await resend.emails.send({
+            from: fromEmail,
+            to,
+            subject: params.subject,
+            html: emailHtml(
+              params.heading,
+              params.body,
+              href,
+              params.cta ?? "Open the tracker",
+            ),
+            attachments: params.attachments?.map((a) => ({
+              filename: a.filename,
+              content: Buffer.from(a.content).toString("base64"),
+              contentType: a.contentType,
+            })),
+          });
+          if (error) {
+            console.error("tracker email failed", error.message);
+            await logEmailFailure(id, params.subject, error.message);
+          }
+        } catch (err) {
+          await logEmailFailure(
+            id,
+            params.subject,
+            err instanceof Error ? err.message : String(err),
+          );
+        }
       }),
     );
   } catch (err) {
