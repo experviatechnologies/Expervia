@@ -26,7 +26,9 @@ const ROLLOUT: [boolean, string][] = [
   [true, "Confirmation, conflict rechecks, replacements and calendar invites"],
   [true, "Notifications inbox"],
   [true, "Meeting outcomes: attendance, summary, actions and next steps"],
-  [false, "Reports (Phase 6)"],
+  [true, "Reports: KPIs with definitions, filters and CSV export"],
+  [false, "Automatic reminders and deadline escalations (Phase 7)"],
+  [false, "Outlook and Google Calendar sync (Phase 8)"],
 ];
 
 export function LiveRollout() {

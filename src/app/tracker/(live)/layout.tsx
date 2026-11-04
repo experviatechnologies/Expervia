@@ -17,6 +17,7 @@ const LIVE_PAGES = [
   "nominations",
   "meetings",
   "notifications",
+  "reports",
   "settings",
 ];
 

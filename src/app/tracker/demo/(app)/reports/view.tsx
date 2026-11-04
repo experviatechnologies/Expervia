@@ -22,7 +22,7 @@ import {
 import { BarList } from "@/components/tracker/bits";
 
 export function ReportsView() {
-  const { data, now } = useSession();
+  const { data, now, live } = useSession();
   const today = zonedDate(now, DEFAULT_TZ);
   const [from, setFrom] = useState(addDaysToDate(today, -90));
   const [to, setTo] = useState(addDaysToDate(today, 30));
@@ -78,7 +78,7 @@ export function ReportsView() {
         ]),
       ],
     );
-    downloadCsv(`eten-presales-report-${today}.csv`, csv);
+    downloadCsv(`eten-presales-report-${live ? "" : "demo-"}${today}.csv`, csv);
   };
 
   return (
@@ -93,10 +93,18 @@ export function ReportsView() {
         }
       />
       <div className="mb-5">
-        <Notice tone="warning" title="Demo data">
-          These figures are calculated from generated demo records. They are not
-          real Expervia metrics.
-        </Notice>
+        {live ? (
+          <Notice tone="info" title="Live data">
+            Calculated from what is recorded in the tracker: availability,
+            requests, nominations, invitations and meeting outcomes. Measures
+            show n/a until there is data to measure.
+          </Notice>
+        ) : (
+          <Notice tone="warning" title="Demo data">
+            These figures are calculated from generated demo records. They are
+            not real Expervia metrics.
+          </Notice>
+        )}
       </div>
       <Card className="mb-6">
         <div className="grid gap-3 sm:grid-cols-3">
