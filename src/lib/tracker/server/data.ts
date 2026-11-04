@@ -704,6 +704,9 @@ export async function loadTrackerData(
 /** Events that need the recipient to act; shown as Critical. */
 const CRITICAL_EVENTS = new Set([
   "request_routed",
+  "deadline_missed",
+  "invite_expiring",
+  "invite_overdue",
   "invited",
   "invite_declined",
   "calendar_conflict",
@@ -812,7 +815,7 @@ export async function loadNotifications(
       ),
       body: req ? `${req.ref} · ${req.title}` : "",
       requestId: req ? reqId : undefined,
-      href: presalesNotifHref(req ? reqId : null),
+      href: presalesNotifHref(req ? reqId : null, event),
       critical: CRITICAL_EVENTS.has(event),
       dueAt,
       read: Boolean(n.is_read),

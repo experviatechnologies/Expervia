@@ -72,3 +72,43 @@ export async function logActivity(
     console.error("logActivity failed", err);
   }
 }
+
+/**
+ * Notification from the tracker itself (scheduled reminders): no actor, and
+ * recipients who switched presales notifications off are skipped.
+ */
+export async function notifySystem(params: {
+  recipients: (string | null | undefined)[];
+  event: PresalesEvent;
+  requestId?: string | null;
+}): Promise<void> {
+  const ids = Array.from(
+    new Set(params.recipients.filter(Boolean)),
+  ) as string[];
+  if (!ids.length) return;
+  try {
+    const admin = getSupabaseAdmin();
+    const { data: off } = await admin
+      .from("notification_preferences")
+      .select("member_id")
+      .in("member_id", ids)
+      .eq("category", "presales")
+      .eq("mode", "off");
+    const muted = new Set((off ?? []).map((r) => r.member_id as string));
+    const rows = ids
+      .filter((id) => !muted.has(id))
+      .map((recipient_id) => ({
+        recipient_id,
+        type: "presales",
+        actor_id: null,
+        target_type: params.event,
+        target_id: params.requestId ?? null,
+      }));
+    if (rows.length) {
+      const { error } = await admin.from("notifications").insert(rows);
+      if (error) console.error("notifySystem failed", error.message);
+    }
+  } catch (err) {
+    console.error("notifySystem failed", err);
+  }
+}

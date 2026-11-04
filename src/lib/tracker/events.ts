@@ -22,6 +22,12 @@ export const PRESALES_EVENTS = [
   "outcome_needed", // Meeting owner: record outcome and actions
   "role_granted", // Member: given a Sales or Management role
   "pod_leader_assigned", // Member: made Lead or backup leader of a pod
+  // Scheduled reminders and escalations (Phase 7)
+  "deadline_missed", // Sales Manager and backup leader: a pod didn't respond
+  "invite_expiring", // Engineer: invitation response due soon
+  "invite_overdue", // Sales Manager: an invitation passed its deadline
+  "meeting_reminder", // Participants: meeting in 24 hours or 1 hour
+  "availability_review", // Engineer: weekly availability review
 ] as const;
 
 export type PresalesEvent = (typeof PRESALES_EVENTS)[number];
@@ -56,6 +62,16 @@ export function presalesNotifText(event: string | null, actor: string): string {
       return `${actor} cancelled a presales meeting`;
     case "outcome_needed":
       return "Record the outcome of your presales meeting";
+    case "deadline_missed":
+      return "A pod missed its nomination deadline and needs follow-up";
+    case "invite_expiring":
+      return "Your presales invitation needs a response soon";
+    case "invite_overdue":
+      return "An invitation passed its response deadline";
+    case "meeting_reminder":
+      return "Reminder: you have a presales meeting coming up";
+    case "availability_review":
+      return "Please review your presales availability for the week";
     case "pod_leader_assigned":
       return `${actor} made you a leader of your pod for presales nominations`;
     case "role_granted":
@@ -66,6 +82,10 @@ export function presalesNotifText(event: string | null, actor: string): string {
 }
 
 /** Where a presales notification opens: the request when there is one. */
-export function presalesNotifHref(requestId?: string | null): string {
+export function presalesNotifHref(
+  requestId?: string | null,
+  event?: string | null,
+): string {
+  if (event === "availability_review") return "/tracker/availability";
   return requestId ? `/tracker/requests/${requestId}` : "/tracker/dashboard";
 }
