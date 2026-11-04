@@ -25,6 +25,13 @@ export type MemberIdentity = {
   fullName: string | null;
   /** ETEN readiness level 0–5 (V0–V5); set by operations. */
   vLevel: number;
+  /**
+   * Sign-in strength of this session: aal2 once an authenticator code has been
+   * entered (two-step sign-in), aal1 for password or email link only.
+   */
+  aal: "aal1" | "aal2";
+  /** Has a verified authenticator app (TOTP factor). */
+  hasMfa: boolean;
 };
 
 export const getCurrentMember = cache(
@@ -34,6 +41,11 @@ export const getCurrentMember = cache(
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return null;
+
+    // getUser() has just validated this session's token with Supabase Auth, so
+    // its aal claim (read here from the same token) can be trusted.
+    const { data: aalData } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
     // Own rows only (RLS). The members row is created by the on_auth_user_created
     // trigger; fall back to sane defaults if a read races that trigger.
@@ -74,12 +86,25 @@ export const getCurrentMember = cache(
       claimedAt: m?.claimed_at ?? null,
       fullName: profile?.full_name ?? null,
       vLevel: m?.v_level ?? 0,
+      aal: aalData?.currentLevel === "aal2" ? "aal2" : "aal1",
+      hasMfa: (user.factors ?? []).some(
+        (f) => f.factor_type === "totp" && f.status === "verified",
+      ),
     };
   },
 );
 
-/** True when the signed-in user is an operations (staff) member. */
+/**
+ * True when the signed-in user is an operations (staff) member who has
+ * completed two-step sign-in in this session. Every admin page, action and
+ * route gates on this, so admin access always needs the authenticator code.
+ */
 export async function isOperations(): Promise<boolean> {
   const member = await getCurrentMember();
-  return member?.role === "operations";
+  return member?.role === "operations" && member.aal === "aal2";
+}
+
+/** The two-step sign-in page, returning to `next` afterwards. */
+export function mfaPath(next: string): string {
+  return `/mfa?next=${encodeURIComponent(next)}`;
 }

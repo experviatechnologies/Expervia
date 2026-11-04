@@ -37,6 +37,51 @@ function sentSummary(details: Record<string, unknown> | null) {
     : "nothing due";
 }
 
+/**
+ * Staff (operations, Sales Managers, Management) and whether each has an
+ * authenticator app set up. Staff are few, so one auth lookup each is fine.
+ */
+async function staffTwoStep(admin: ReturnType<typeof getSupabaseAdmin>) {
+  const [{ data: ops }, { data: roleRows }] = await Promise.all([
+    admin
+      .from("members")
+      .select("id")
+      .eq("role", "operations")
+      .eq("status", "active"),
+    admin.from("member_roles").select("member_id"),
+  ]);
+  const ids = Array.from(
+    new Set([
+      ...(ops ?? []).map((m) => m.id as string),
+      ...(roleRows ?? []).map((r) => r.member_id as string),
+    ]),
+  );
+  const [users, { data: names }] = await Promise.all([
+    Promise.all(ids.map((id) => admin.auth.admin.getUserById(id))),
+    ids.length
+      ? admin
+          .from("profiles")
+          .select("member_id, full_name")
+          .in("member_id", ids)
+      : Promise.resolve({
+          data: [] as { member_id: string; full_name: string }[],
+        }),
+  ]);
+  const nameOf = new Map(
+    (names ?? []).map((n) => [n.member_id as string, n.full_name as string]),
+  );
+  const missing = ids.filter((id, i) => {
+    const factors = users[i].data.user?.factors ?? [];
+    return !factors.some(
+      (f) => f.factor_type === "totp" && f.status === "verified",
+    );
+  });
+  return {
+    total: ids.length,
+    missing: missing.map((id) => ({ id, name: nameOf.get(id) ?? "A member" })),
+  };
+}
+
 export async function SystemHealth() {
   const admin = getSupabaseAdmin();
   // Request-time clock (server component: rendered once per request).
@@ -75,6 +120,7 @@ export async function SystemHealth() {
     );
   }
 
+  const twoStep = await staffTwoStep(admin);
   const runs = (runRows ?? []) as Run[];
   const emails = (emailRows ?? []) as {
     id: number;
@@ -136,6 +182,20 @@ export async function SystemHealth() {
           ? `${failed.length} failed, ${stuck.length} stuck in the last ${runs.length} runs`
           : "No failed or stuck runs recently",
       help: "Details below.",
+    },
+    {
+      ok: twoStep.missing.length === 0,
+      label: twoStep.missing.length
+        ? `${twoStep.total - twoStep.missing.length} of ${twoStep.total} staff have two-step sign-in`
+        : `All ${twoStep.total} staff have two-step sign-in`,
+      help: twoStep.missing.length
+        ? `Not set up yet: ${twoStep.missing
+            .slice(0, 5)
+            .map((m) => m.name)
+            .join(
+              ", ",
+            )}${twoStep.missing.length > 5 ? ` and ${twoStep.missing.length - 5} more` : ""}. They are asked to set it up at their next sign-in.`
+        : "Admins, Sales Managers and Management enter an app code at sign-in.",
     },
     {
       ok: emails.length === 0,

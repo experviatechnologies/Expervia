@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { getCurrentMember, type MemberIdentity } from "@/lib/auth";
+import { getCurrentMember, mfaPath, type MemberIdentity } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import type { Role } from "@/lib/tracker/types";
 
@@ -24,7 +24,15 @@ export type TrackerSession = {
   ledPodIds: string[];
   /** False when migrations 46/47 have not been run yet. */
   schemaReady: boolean;
+  /**
+   * Holds a staff role (Sales, Management or admin) but has not entered an
+   * authenticator code this session. Staff roles are left out of `roles`
+   * until they do (PRD FR-004).
+   */
+  mfaRequired: boolean;
 };
+
+const STAFF_ROLES: Role[] = ["sales_manager", "management", "admin"];
 
 export const getTrackerSession = cache(
   async (): Promise<TrackerSession | null> => {
@@ -64,7 +72,19 @@ export const getTrackerSession = cache(
       .map((m) => m.pod_id);
     if (ledPodIds.length > 0) roles.add("pod_leader");
 
-    return { member, roles: Array.from(roles), ledPodIds, schemaReady };
+    // Staff access needs two-step sign-in. Until then the person keeps only
+    // their engineer and Pod Leader roles, and pages send them to /mfa.
+    const mfaRequired =
+      member.aal !== "aal2" && STAFF_ROLES.some((r) => roles.has(r));
+    if (mfaRequired) STAFF_ROLES.forEach((r) => roles.delete(r));
+
+    return {
+      member,
+      roles: Array.from(roles),
+      ledPodIds,
+      schemaReady,
+      mfaRequired,
+    };
   },
 );
 
@@ -81,6 +101,7 @@ export async function requireTrackerSession(
 ): Promise<TrackerSession> {
   const s = await getTrackerSession();
   if (!s) redirect(`/signin?next=${encodeURIComponent(next)}`);
+  if (s.mfaRequired) redirect(mfaPath(next));
   return s;
 }
 
@@ -93,6 +114,8 @@ export async function authorizeTracker(
 ): Promise<{ session: TrackerSession } | { error: string }> {
   const s = await getTrackerSession();
   if (!s) return { error: "Please sign in again." };
+  if (s.mfaRequired)
+    return { error: "Please finish two-step sign-in first, then try again." };
   if (!s.schemaReady)
     return { error: "The tracker database is not set up yet." };
   if (roles.length > 0 && !hasRole(s, ...roles)) {

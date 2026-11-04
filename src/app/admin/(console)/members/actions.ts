@@ -479,3 +479,57 @@ export async function setStaffRole(input: {
   revalidatePath(`/admin/members/${input.memberId}`);
   return { ok: true };
 }
+
+/**
+ * Reset a member's two-step sign-in (lost phone, new app). Removes their
+ * authenticator apps so they set one up again at their next sign-in. Ops-only
+ * and audited; you can't reset your own (another admin must, so a stolen
+ * admin session can't quietly remove the second step).
+ */
+export async function resetTwoStepSignIn(input: {
+  memberId: string;
+  reason: string;
+}): Promise<ActionResult> {
+  if (!(await isOperations())) {
+    return { error: "You don't have permission to manage members." };
+  }
+  const reason = input.reason?.trim() ?? "";
+  if (reason.length < 3) {
+    return { error: "Please give a reason for this change." };
+  }
+  const me = await getCurrentMember();
+  if (!me) return { error: "Please sign in again." };
+  if (me.id === input.memberId) {
+    return { error: "Another admin needs to reset your two-step sign-in." };
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin.auth.admin.mfa.listFactors({
+    userId: input.memberId,
+  });
+  if (error) return { error: "Couldn't load their sign-in settings." };
+  const factors = data?.factors ?? [];
+  if (factors.length === 0) {
+    return { error: "They don't have two-step sign-in set up." };
+  }
+  for (const f of factors) {
+    const { error: delError } = await admin.auth.admin.mfa.deleteFactor({
+      id: f.id,
+      userId: input.memberId,
+    });
+    if (delError) {
+      return { error: "Couldn't reset it fully. Please try again." };
+    }
+  }
+
+  await writeAudit({
+    actorId: me.id,
+    action: "member.mfa_reset",
+    targetType: "member",
+    targetId: input.memberId,
+    reason,
+    metadata: { factors_removed: factors.length },
+  });
+  revalidatePath(`/admin/members/${input.memberId}`);
+  return { ok: true };
+}

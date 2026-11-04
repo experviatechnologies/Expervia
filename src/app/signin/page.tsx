@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SignInForm } from "./signin-form";
+import { safeNext as toSafeNext } from "@/lib/safe-next";
 
 export const metadata: Metadata = {
   title: "Sign in to ETEN",
@@ -14,13 +15,7 @@ export default async function SignInPage({
 }) {
   const { error, next } = await searchParams;
   // Only same-site paths (e.g. /tracker); anything else falls back.
-  const safeNext =
-    next &&
-    next.startsWith("/") &&
-    !next.startsWith("//") &&
-    !next.startsWith("/\\")
-      ? next
-      : "/dashboard";
+  const safeNext = toSafeNext(next);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-16">

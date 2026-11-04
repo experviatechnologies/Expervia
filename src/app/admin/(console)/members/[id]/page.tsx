@@ -19,6 +19,7 @@ import { DeleteMemberControl } from "../delete-member-control";
 import { MemberVLevelControl } from "../member-vlevel-control";
 import { MentorshipIntentControl } from "../mentorship-intent-control";
 import { StaffRolesControl } from "../staff-roles-control";
+import { MfaResetControl } from "../mfa-reset-control";
 import { AddEvidence } from "../add-evidence";
 import { AwardRecognition } from "../award-recognition";
 import { vLevelLabel } from "@/lib/eten/v-levels";
@@ -332,6 +333,30 @@ export default async function AdminMemberDetailPage({
                 (r): r is "sales_manager" | "management" =>
                   r === "sales_manager" || r === "management",
               )}
+          />
+        </div>
+        <div className="border-eten-line-soft mt-4 flex flex-wrap items-start justify-between gap-3 border-t pt-4">
+          <div className="max-w-[420px]">
+            <dt className="text-eten-faint font-mono text-[11px] tracking-wider uppercase">
+              Two-step sign-in
+            </dt>
+            <dd className="text-eten-ink-muted mt-1 text-xs">
+              An authenticator app code after the password. Required for admins,
+              Sales Managers and Management. Reset it if they lose their phone;
+              they set it up again at their next sign-in.
+            </dd>
+          </div>
+          <MfaResetControl
+            memberId={member.id}
+            isSelf={manager.id === member.id}
+            enabledAt={
+              (authUser?.user?.factors ?? [])
+                .filter(
+                  (f) => f.factor_type === "totp" && f.status === "verified",
+                )
+                .map((f) => f.created_at)
+                .sort()[0] ?? null
+            }
           />
         </div>
       </Section>
