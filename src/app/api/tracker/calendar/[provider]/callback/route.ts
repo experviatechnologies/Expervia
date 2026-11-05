@@ -1,7 +1,11 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { getTrackerSession, hasRole } from "@/lib/tracker/server/session";
-import { calendarAdapter, saveConnection } from "@/lib/tracker/server/calendar";
+import {
+  calendarAdapter,
+  saveConnection,
+  syncBusyFor,
+} from "@/lib/tracker/server/calendar";
 import { auditTracker } from "@/lib/tracker/server/events";
 
 /**
@@ -96,6 +100,10 @@ export async function GET(
     );
     return back("failed");
   }
+
+  // Read busy times now so checks work straight away (best-effort; the
+  // scheduled sync retries every 15 minutes).
+  await syncBusyFor(session.member.id).catch(() => false);
 
   await auditTracker({
     actorId: session.member.id,

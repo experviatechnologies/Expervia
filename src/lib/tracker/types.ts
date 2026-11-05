@@ -118,6 +118,8 @@ export type Member = {
    * checked (demo data).
    */
   busyChecked?: boolean;
+  /** `busy` covers meetings up to this instant; later ones are unverified. */
+  busyUntil?: string;
   prefs: {
     weeklyReminder: boolean;
     meetingReminders: boolean;

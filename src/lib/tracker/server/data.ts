@@ -27,7 +27,7 @@ import type {
   WeeklyWindow,
 } from "@/lib/tracker/types";
 import { isStaff, type TrackerSession } from "./session";
-import { calendarConfigured } from "./calendar";
+import { BUSY_FRESH_MS, calendarConfigured } from "./calendar";
 import { presalesNotifHref, presalesNotifText } from "@/lib/tracker/events";
 
 /**
@@ -76,6 +76,30 @@ async function fetchAll<T extends Row>(
     if (batch.some((rows) => rows.length < pageSize)) break;
   }
   return out;
+}
+
+/**
+ * Busy times saved by the scheduled sync (times only). Counted as checked
+ * only while connected and synced within the last hour; meetings after
+ * busy_until are unverified (see evaluateMember).
+ */
+function cachedBusy(
+  c: Row | undefined,
+): Pick<Member, "busy" | "busyChecked" | "busyUntil"> {
+  const syncedAt = c?.busy_synced_at
+    ? Date.parse(c.busy_synced_at as string)
+    : 0;
+  const fresh =
+    c?.status === "connected" && Date.now() - syncedAt < BUSY_FRESH_MS;
+  if (!fresh) return { busy: [], busyChecked: false };
+  return {
+    busy: ((c.busy as { s: string; e: string }[]) ?? []).map((b) => ({
+      startUtc: b.s,
+      endUtc: b.e,
+    })),
+    busyChecked: true,
+    busyUntil: (c.busy_until as string) ?? undefined,
+  };
 }
 
 const hhmm = (t: unknown) => (typeof t === "string" ? t.slice(0, 5) : "00:00");
@@ -292,7 +316,7 @@ export async function loadMembers(
     fetchAll<Row>((a, b) =>
       admin
         .from("presales_calendar_connections")
-        .select("member_id, provider, status")
+        .select("member_id, provider, status, busy, busy_until, busy_synced_at")
         .order("member_id")
         .range(a, b),
     ).catch(() => [] as Row[]),
@@ -431,9 +455,7 @@ export async function loadMembers(
             note: (e.note as string) ?? undefined,
           }),
         ),
-        busy: [],
-        // Free/busy is read from the provider in step 8.2.
-        busyChecked: false,
+        ...cachedBusy(calendarBy.get(id)),
         optedIn: (ps?.opted_in as boolean | undefined) ?? true,
         prefs: { weeklyReminder: true, meetingReminders: true, digest: false },
       };

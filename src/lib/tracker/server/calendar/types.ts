@@ -34,7 +34,14 @@ export type CalendarAdapter = {
   }): Promise<TokenSet & { accountEmail: string | null }>;
   /** A fresh access token from the refresh token. */
   refresh(refreshToken: string): Promise<TokenSet>;
+  /**
+   * Busy periods between two instants (UTC), times only. Throws
+   * CalendarAuthError when the token is rejected.
+   */
+  busy(accessToken: string, fromUtc: Date, toUtc: Date): Promise<BusyPeriod[]>;
 };
+
+export type BusyPeriod = { startUtc: string; endUtc: string };
 
 /** A provider rejected the grant: the member must reconnect. */
 export class CalendarAuthError extends Error {

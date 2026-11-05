@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { readBusy, type BusyPeriod } from "./calendar";
 import { evaluateMember, type Evaluation } from "@/lib/tracker/availability";
 import { DEFAULT_TZ } from "@/lib/tracker/time";
 import type {
@@ -17,6 +18,10 @@ import type {
  * need for these people (presales windows and exceptions, formats, cities,
  * opt-in, time zone, and their seats on other active requests) and runs the
  * same evaluateMember() the screens use, so screen and server agree.
+ *
+ * Connected calendars are read live here for the meeting's time (step 8.2),
+ * not from the 15-minute cache, because these checks gate selection and
+ * confirmation. A calendar that can't be read counts as unverified.
  */
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
@@ -111,6 +116,25 @@ export async function evaluateParticipants(
       }) as unknown as Assignment,
   );
 
+  // Live free/busy for connected calendars, read in parallel.
+  const connected = memberIds.filter(
+    (id) =>
+      (calendars.data ?? []).find((c) => c.member_id === id)?.status ===
+      "connected",
+  );
+  const live = new Map<string, BusyPeriod[] | null>(
+    await Promise.all(
+      connected.map(async (id) => {
+        const res = await readBusy(
+          id,
+          new Date(meeting.startUtc),
+          new Date(meeting.endUtc),
+        );
+        return [id, res.ok ? res.busy : null] as const;
+      }),
+    ),
+  );
+
   for (const id of memberIds) {
     const m = (members.data ?? []).find((x) => x.id === id);
     const ps = (presales.data ?? []).find((x) => x.member_id === id);
@@ -126,13 +150,12 @@ export async function evaluateParticipants(
       cities: (ps?.cities as string[]) ?? [],
       willingToTravel: Boolean(ps?.willing_to_travel),
       timezone: tz,
-      // Free/busy is read from the provider in step 8.2; until then a
-      // connected calendar is reported as unverified, never as free.
       calendar:
         (calendars.data ?? []).find((c) => c.member_id === id)?.status ??
         "none",
-      busy: [],
-      busyChecked: false,
+      busy: live.get(id) ?? [],
+      // Not read (or read failed): unverified, never free.
+      busyChecked: Array.isArray(live.get(id)),
       weekly: (windows.data ?? [])
         .filter((w) => w.mentor_id === id)
         .map((w) => ({

@@ -2,6 +2,7 @@ import "server-only";
 import { tokenKeyConfigured } from "./crypto";
 import {
   CalendarAuthError,
+  type BusyPeriod,
   type CalendarAdapter,
   type TokenSet,
 } from "./types";
@@ -105,6 +106,79 @@ function emailFromIdToken(idToken?: string): string | null {
   }
 }
 
+const GRAPH = "https://graph.microsoft.com/v1.0";
+/** showAs values that block a meeting. Tentative counts: it may be accepted. */
+const BLOCKING = new Set(["busy", "oof", "tentative"]);
+
+type GraphEvent = {
+  showAs?: string;
+  isCancelled?: boolean;
+  start?: { dateTime: string };
+  end?: { dateTime: string };
+};
+
+/** Graph returns "2026-11-05T09:00:00.0000000" in the zone we asked for (UTC). */
+const utcIso = (dt: string) =>
+  new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(dt) ? dt : `${dt}Z`).toISOString();
+
+/**
+ * Busy times from the member's calendar view (expands recurring events).
+ * Only showAs, start, end and isCancelled are requested; titles, attendees
+ * and bodies are never asked for. calendarView works for work, school and
+ * personal accounts (getSchedule does not support personal accounts).
+ */
+async function msBusy(
+  accessToken: string,
+  fromUtc: Date,
+  toUtc: Date,
+): Promise<BusyPeriod[]> {
+  const q = new URLSearchParams({
+    startDateTime: fromUtc.toISOString(),
+    endDateTime: toUtc.toISOString(),
+    $select: "showAs,start,end,isCancelled",
+    $top: "500",
+  });
+  let url: string | undefined = `${GRAPH}/me/calendarView?${q}`;
+  const out: BusyPeriod[] = [];
+  for (let page = 0; url && page < 10; page++) {
+    const res: Response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Prefer: 'outlook.timezone="UTC"',
+      },
+      cache: "no-store",
+    });
+    if (res.status === 401) {
+      throw new CalendarAuthError(
+        "Microsoft rejected the access token.",
+        "expired",
+      );
+    }
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: { code?: string };
+      };
+      throw new Error(
+        `Microsoft calendar read failed: ${res.status} ${body.error?.code ?? ""}`.trim(),
+      );
+    }
+    const json = (await res.json()) as {
+      value?: GraphEvent[];
+      "@odata.nextLink"?: string;
+    };
+    for (const ev of json.value ?? []) {
+      if (ev.isCancelled || !ev.start || !ev.end) continue;
+      if (!BLOCKING.has((ev.showAs ?? "busy").toLowerCase())) continue;
+      out.push({
+        startUtc: utcIso(ev.start.dateTime),
+        endUtc: utcIso(ev.end.dateTime),
+      });
+    }
+    url = json["@odata.nextLink"];
+  }
+  return out;
+}
+
 export const microsoft: CalendarAdapter = {
   id: "microsoft",
   label: "Microsoft Outlook",
@@ -147,4 +221,6 @@ export const microsoft: CalendarAdapter = {
     });
     return toTokenSet(t, refreshToken);
   },
+
+  busy: msBusy,
 };
