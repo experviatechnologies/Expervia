@@ -54,6 +54,9 @@ export default async function RootLayout({
   const host =
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
   const isMentorshipHost = Boolean(mentorshipHost) && host === mentorshipHost;
+  // Same for the presales tracker's own address (Phase 9).
+  const trackerHost = process.env.NEXT_PUBLIC_TRACKER_HOST;
+  const isTrackerHost = Boolean(trackerHost) && host === trackerHost;
 
   return (
     <html
@@ -87,7 +90,9 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface flex min-h-full flex-col">
-        <SiteChrome forceBare={isMentorshipHost}>{children}</SiteChrome>
+        <SiteChrome forceBare={isMentorshipHost || isTrackerHost}>
+          {children}
+        </SiteChrome>
       </body>
     </html>
   );

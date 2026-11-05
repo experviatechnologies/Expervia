@@ -2,6 +2,7 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getResendClient, escapeHtml } from "@/lib/email";
 import { siteConfig } from "@/config/site";
+import { trackerUrl } from "@/lib/tracker/host";
 
 /**
  * Presales tracker emails (PRD section 10: in-app and email in Version 1).
@@ -74,7 +75,10 @@ export async function sendTrackerEmail(params: {
       new Set(params.recipientIds.filter(Boolean)),
     ) as string[];
     const resend = getResendClient();
-    const href = `${siteConfig.url}${params.path}`;
+    // Tracker pages link to the tracker's own address when it is set.
+    const href = params.path.startsWith("/tracker")
+      ? trackerUrl(params.path)
+      : `${siteConfig.url}${params.path}`;
     await Promise.all(
       ids.map(async (id) => {
         try {

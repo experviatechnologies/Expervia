@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendTrackerEmail } from "./email";
 import { buildIcs } from "@/lib/tracker/ics";
 import { fmtRange } from "@/lib/tracker/time";
-import { siteConfig } from "@/config/site";
+import { trackerUrl } from "@/lib/tracker/host";
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 
@@ -56,7 +56,7 @@ export async function sendInvites(
     req.format === "online"
       ? [req.platform, req.join_link].filter(Boolean).join(" ")
       : ((req.location as string) ?? "");
-  const url = `${siteConfig.url}/tracker/requests/${req.id}`;
+  const url = trackerUrl(`/tracker/requests/${req.id}`);
   for (const s of seats) {
     if (!emails.has(s.member_id)) continue;
     const ics = buildIcs({

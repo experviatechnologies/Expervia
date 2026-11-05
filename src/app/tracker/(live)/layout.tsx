@@ -1,4 +1,6 @@
+import { headers } from "next/headers";
 import { Database } from "lucide-react";
+import { TRACKER_HOST } from "@/lib/tracker/host";
 import { requireTrackerSession } from "@/lib/tracker/server/session";
 import { loadTrackerDataForViewer } from "@/lib/tracker/server/data";
 import { LiveTrackerProvider } from "@/components/tracker/live-provider";
@@ -20,6 +22,17 @@ const LIVE_PAGES = [
   "reports",
   "settings",
 ];
+
+/**
+ * Links start at the root on the tracker's own address, at /tracker
+ * elsewhere (Phase 9, step 9.1).
+ */
+async function trackerBase(): Promise<string> {
+  if (!TRACKER_HOST) return "/tracker";
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  return host === TRACKER_HOST ? "" : "/tracker";
+}
 
 /**
  * The real tracker (behind the ETEN sign-in). Loads the signed-in member's
@@ -68,6 +81,7 @@ export default async function LiveTrackerLayout({
         data={data}
         meId={session.member.id}
         enabledPages={LIVE_PAGES}
+        base={await trackerBase()}
       >
         <TrackerShell>{children}</TrackerShell>
       </LiveTrackerProvider>

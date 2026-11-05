@@ -8,12 +8,36 @@ import type { NextConfig } from "next";
 // is attached (verify on a preview once it is).
 const MENTORSHIP_HOST = process.env.NEXT_PUBLIC_MENTORSHIP_HOST;
 
+// The presales tracker's own address (Phase 9), e.g.
+// "presales.experviatechnologies.com": that host serves /tracker at its root.
+// Shared screens it hands off to (sign-in, two-step sign-in, password reset,
+// auth callbacks) and api/ are served as they are. Inert until set.
+const TRACKER_HOST = process.env.NEXT_PUBLIC_TRACKER_HOST;
+
 const nextConfig: NextConfig = {
   async rewrites() {
-    if (!MENTORSHIP_HOST) return [];
+    const beforeFiles: {
+      source: string;
+      has: { type: "host"; value: string }[];
+      destination: string;
+    }[] = [];
+    if (TRACKER_HOST) {
+      const has = [{ type: "host" as const, value: TRACKER_HOST }];
+      beforeFiles.push(
+        { source: "/", has, destination: "/tracker" },
+        {
+          source:
+            "/:path((?!tracker$|tracker/|_next/|api/|auth/|signin$|join$|mfa$|forgot-password$|reset-password$|onboarding$|onboarding/|suspended$|.*\\..*).*)",
+          has,
+          destination: "/tracker/:path",
+        },
+      );
+    }
+    if (!MENTORSHIP_HOST) return { beforeFiles, afterFiles: [], fallback: [] };
     const has = [{ type: "host" as const, value: MENTORSHIP_HOST }];
     return {
       beforeFiles: [
+        ...beforeFiles,
         { source: "/", has, destination: "/mentorship" },
         {
           // Everything except: static assets in /public (any path with a file

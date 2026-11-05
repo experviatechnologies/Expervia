@@ -1,6 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { siteConfig } from "@/config/site";
+import { trackerUrl } from "@/lib/tracker/host";
 import { sendInvites, type InviteRequest } from "../invites";
 import { accessTokenFor } from "./index";
 import { CalendarAuthError, type CalendarEventInput } from "./types";
@@ -53,7 +53,7 @@ function eventFor(req: Record<string, unknown>): CalendarEventInput {
     req.format === "online"
       ? [req.platform, req.join_link].filter(Boolean).join(" ")
       : ((req.location as string) ?? "");
-  const url = `${siteConfig.url}/tracker/requests/${req.id}`;
+  const url = trackerUrl(`/tracker/requests/${req.id}`);
   return {
     subject: `${req.title} (${req.ref})`,
     body: [

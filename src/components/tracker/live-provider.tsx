@@ -55,11 +55,14 @@ export function LiveTrackerProvider({
   data,
   meId,
   enabledPages,
+  base = "/tracker",
   children,
 }: {
   data: TrackerData;
   meId: string;
   enabledPages: string[];
+  /** "" on the tracker's own address, "/tracker" on the main site. */
+  base?: string;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -91,7 +94,7 @@ export function LiveTrackerProvider({
       now,
       data,
       me,
-      base: "/tracker",
+      base,
       live: true,
       enabledPages,
       isSales: isSales(me),
@@ -190,7 +193,7 @@ export function LiveTrackerProvider({
       savePolicies: notYet,
       retryJob: notYet,
     };
-  }, [data, meId, enabledPages, now, router, toast]);
+  }, [data, meId, enabledPages, base, now, router, toast]);
 
   return (
     <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
