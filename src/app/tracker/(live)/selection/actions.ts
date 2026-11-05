@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { syncRequestEvents } from "@/lib/tracker/server/calendar/events";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { authorizeTracker } from "@/lib/tracker/server/session";
 import {
@@ -383,6 +384,9 @@ export async function respondToInvitation(
       cta: "Find a replacement",
     });
   }
+  // A decline after a reschedule removes the event from their calendar; an
+  // accept keeps it (already moved to the new time).
+  await syncRequestEvents(admin, seat.request_id as string);
   revalidatePath("/tracker", "layout");
   return { ok: true };
 }

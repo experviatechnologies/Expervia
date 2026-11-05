@@ -96,7 +96,7 @@ export const SYNC_STATUS: Record<SyncStatus, Labelled> = {
   pending: { label: "Sync pending", tone: "info" },
   created: { label: "Event created", tone: "success" },
   failed: { label: "Sync failed", tone: "danger" },
-  manual: { label: "Manually confirmed", tone: "warning" },
+  manual: { label: "Emailed invite", tone: "info" },
 };
 
 export const FORMAT_LABEL: Record<MeetingFormat, string> = {

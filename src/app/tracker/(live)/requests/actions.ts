@@ -11,6 +11,7 @@ import {
 } from "@/lib/tracker/server/events";
 import { sendTrackerEmail } from "@/lib/tracker/server/email";
 import { sendInvites } from "@/lib/tracker/server/invites";
+import { syncRequestEvents } from "@/lib/tracker/server/calendar/events";
 import { addWorkingHours } from "@/lib/tracker/policy";
 import { TIMEZONES, fmtRange } from "@/lib/tracker/time";
 import type { RequestInput } from "@/lib/tracker/store";
@@ -338,13 +339,15 @@ export async function cancelRequest(
   if (!req) return { error: "Request not found." };
   if (["completed", "cancelled"].includes(req.status))
     return { error: "This request is already closed." };
-  // Confirmed participants have the meeting in their calendar: they get a
-  // cancellation for the same event.
-  const { data: confirmed } = await admin
+  // Confirmed participants have the meeting in their calendar. Those whose
+  // event ETEN wrote directly have it deleted (syncRequestEvents below);
+  // those who got an emailed .ics get a cancellation for the same event.
+  const { data: confirmedRows } = await admin
     .from("presales_assignments")
-    .select("member_id, idempotency_key")
+    .select("member_id, idempotency_key, external_event_id")
     .eq("request_id", requestId)
     .eq("status", "confirmed");
+  const confirmed = (confirmedRows ?? []).filter((c) => !c.external_event_id);
 
   const { error } = await admin
     .from("presales_requests")
@@ -364,7 +367,7 @@ export async function cancelRequest(
     session.member.id,
     `Cancelled the request: ${why}`,
   );
-  if (confirmed?.length) {
+  if (confirmed.length) {
     await sendInvites(
       admin,
       req,
@@ -372,6 +375,7 @@ export async function cancelRequest(
       "CANCEL",
     );
   }
+  await syncRequestEvents(admin, requestId);
   await auditTracker({
     actorId: session.member.id,
     action: "request_cancelled",
@@ -388,7 +392,7 @@ export async function cancelRequest(
   await sendTrackerEmail({
     // Confirmed participants already got the calendar cancellation.
     recipientIds: people.filter(
-      (p) => !(confirmed ?? []).some((c) => c.member_id === p),
+      (p) => !confirmed.some((c) => c.member_id === p),
     ),
     subject: `Cancelled: ${req.title} (${req.ref})`,
     heading: `Cancelled: ${req.title}`,
@@ -455,6 +459,8 @@ export async function rescheduleRequest(
     session.member.id,
     `Rescheduled the meeting to ${fmtRange(start.toISOString(), end.toISOString(), req.timezone as string)}`,
   );
+  // Events already in participants' calendars move to the new time now.
+  await syncRequestEvents(admin, requestId);
   await notifyPresales({
     recipients: people,
     actorId: session.member.id,

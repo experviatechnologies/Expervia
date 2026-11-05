@@ -9,7 +9,10 @@ import {
   logActivity,
   notifyPresales,
 } from "@/lib/tracker/server/events";
-import { sendInvites } from "@/lib/tracker/server/invites";
+import {
+  sendManualInvites,
+  syncRequestEvents,
+} from "@/lib/tracker/server/calendar/events";
 import type { MeetingFormat } from "@/lib/tracker/types";
 
 /**
@@ -190,6 +193,8 @@ export async function replaceParticipant(
       requestId: req.id,
     });
   }
+  // Remove the event from the released participant's calendar, if any.
+  await syncRequestEvents(admin, req.id);
   revalidatePath("/tracker", "layout");
   return { ok: true };
 }
@@ -230,8 +235,8 @@ export async function confirmMeeting(
 
   const { error } = await admin
     .from("presales_assignments")
-    // Invites go out as calendar files; there is no calendar API sync yet.
-    .update({ status: "confirmed", sync_status: "manual" })
+    // 'pending' until syncRequestEvents (below) writes the calendar event.
+    .update({ status: "confirmed", sync_status: "pending" })
     .in(
       "id",
       accepted.map((s) => s.id),
@@ -264,7 +269,10 @@ export async function confirmMeeting(
     event: "confirmed",
     requestId: req.id,
   });
-  await sendInvites(admin, req, accepted, "REQUEST");
+  // Connected calendars get the event written directly; everyone else gets
+  // the emailed .ics. Failures are retried by the 15-minute job.
+  const sync = await syncRequestEvents(admin, req.id);
+  await sendManualInvites(admin, req.id, sync.manualMemberIds);
 
   revalidatePath("/tracker", "layout");
   return { ok: true };

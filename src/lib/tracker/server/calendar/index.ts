@@ -159,6 +159,16 @@ export async function accessTokenFor(
 export const BUSY_AHEAD_DAYS = 28;
 export const BUSY_FRESH_MS = 60 * 60_000;
 
+/** Calendar event ids ETEN created for this member's meetings. */
+async function ownEventIds(memberId: string): Promise<Set<string>> {
+  const { data } = await getSupabaseAdmin()
+    .from("presales_assignments")
+    .select("external_event_id")
+    .eq("member_id", memberId)
+    .not("external_event_id", "is", null);
+  return new Set((data ?? []).map((r) => r.external_event_id as string));
+}
+
 /**
  * Read busy times live. ok:false means the calendar could not be checked
  * (not connected, expired, provider error): the caller must then treat the
@@ -174,7 +184,14 @@ export async function readBusy(
     const auth = await accessTokenFor(memberId, { forceRefresh: attempt > 0 });
     if (!auth) return { ok: false };
     try {
-      const busy = await auth.provider.busy(auth.token, fromUtc, toUtc);
+      const [all, own] = await Promise.all([
+        auth.provider.busy(auth.token, fromUtc, toUtc),
+        ownEventIds(memberId),
+      ]);
+      // ETEN's own meeting events are not "other" busy time: ETEN meetings
+      // are checked through assignments, and a meeting must not clash with
+      // its own event after a reschedule.
+      const busy = all.filter((b) => !b.eventId || !own.has(b.eventId));
       await admin
         .from("presales_calendar_connections")
         .update({ last_error: null, last_checked_at: new Date().toISOString() })

@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { runReminders } from "@/lib/tracker/server/reminders";
 import { syncAllBusy } from "@/lib/tracker/server/calendar";
+import { retryFailedEventSyncs } from "@/lib/tracker/server/calendar/events";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -15,7 +16,8 @@ export const maxDuration = 300;
  *
  * Two jobs, logged separately so one failing never stops the other:
  *   reminders      reminders and escalations (step 7.1)
- *   calendar_sync  connected calendars' busy times, next 28 days (step 8.2)
+ *   calendar_sync  connected calendars' busy times, next 28 days (step 8.2),
+ *                  and retries of meeting events that failed to sync (8.3)
  */
 function authorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -72,7 +74,10 @@ async function handle(request: NextRequest) {
   }
 
   const reminders = await logged("reminders", () => runReminders(admin));
-  const calendars = await logged("calendar_sync", syncAllBusy);
+  const calendars = await logged("calendar_sync", async () => ({
+    ...(await syncAllBusy()),
+    ...(await retryFailedEventSyncs()),
+  }));
 
   // Housekeeping: keep 30 days of successful runs (failures are kept).
   await admin

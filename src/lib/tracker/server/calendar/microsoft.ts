@@ -4,6 +4,7 @@ import {
   CalendarAuthError,
   type BusyPeriod,
   type CalendarAdapter,
+  type CalendarEventInput,
   type TokenSet,
 } from "./types";
 
@@ -111,6 +112,7 @@ const GRAPH = "https://graph.microsoft.com/v1.0";
 const BLOCKING = new Set(["busy", "oof", "tentative"]);
 
 type GraphEvent = {
+  id?: string;
   showAs?: string;
   isCancelled?: boolean;
   start?: { dateTime: string };
@@ -135,7 +137,7 @@ async function msBusy(
   const q = new URLSearchParams({
     startDateTime: fromUtc.toISOString(),
     endDateTime: toUtc.toISOString(),
-    $select: "showAs,start,end,isCancelled",
+    $select: "id,showAs,start,end,isCancelled",
     $top: "500",
   });
   let url: string | undefined = `${GRAPH}/me/calendarView?${q}`;
@@ -172,12 +174,61 @@ async function msBusy(
       out.push({
         startUtc: utcIso(ev.start.dateTime),
         endUtc: utcIso(ev.end.dateTime),
+        eventId: ev.id,
       });
     }
     url = json["@odata.nextLink"];
   }
   return out;
 }
+
+/** Graph fetch with the member's token; maps 401 to CalendarAuthError. */
+async function graph(
+  accessToken: string,
+  path: string,
+  init: { method: string; body?: unknown },
+): Promise<Response> {
+  const res = await fetch(`${GRAPH}${path}`, {
+    method: init.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    cache: "no-store",
+  });
+  if (res.status === 401) {
+    throw new CalendarAuthError(
+      "Microsoft rejected the access token.",
+      "expired",
+    );
+  }
+  return res;
+}
+
+async function graphError(res: Response, what: string): Promise<Error> {
+  const body = (await res.json().catch(() => ({}))) as {
+    error?: { code?: string };
+  };
+  return new Error(
+    `Microsoft calendar ${what} failed: ${res.status} ${body.error?.code ?? ""}`.trim(),
+  );
+}
+
+/** Any ISO instant as Graph's zone-less dateTime in UTC. */
+const graphUtc = (iso: string) => new Date(iso).toISOString().replace(/Z$/, "");
+
+const eventBody = (ev: CalendarEventInput) => ({
+  subject: ev.subject,
+  body: { contentType: "text", content: ev.body },
+  start: { dateTime: graphUtc(ev.startUtc), timeZone: "UTC" },
+  end: { dateTime: graphUtc(ev.endUtc), timeZone: "UTC" },
+  location: { displayName: ev.location ?? "" },
+  showAs: "busy",
+  isReminderOn: true,
+  reminderMinutesBeforeStart: 30,
+  categories: ["ETEN presales"],
+});
 
 export const microsoft: CalendarAdapter = {
   id: "microsoft",
@@ -223,4 +274,37 @@ export const microsoft: CalendarAdapter = {
   },
 
   busy: msBusy,
+
+  async createEvent(accessToken, event, idempotencyKey) {
+    const res = await graph(accessToken, "/me/events", {
+      method: "POST",
+      // transactionId makes Microsoft ignore a repeated create of the same seat.
+      body: { ...eventBody(event), transactionId: idempotencyKey },
+    });
+    if (!res.ok) throw await graphError(res, "create");
+    const json = (await res.json()) as { id?: string };
+    if (!json.id) throw new Error("Microsoft calendar create returned no id.");
+    return json.id;
+  },
+
+  async updateEvent(accessToken, eventId, event) {
+    const res = await graph(
+      accessToken,
+      `/me/events/${encodeURIComponent(eventId)}`,
+      { method: "PATCH", body: eventBody(event) },
+    );
+    if (res.status === 404) return false;
+    if (!res.ok) throw await graphError(res, "update");
+    return true;
+  },
+
+  async deleteEvent(accessToken, eventId) {
+    const res = await graph(
+      accessToken,
+      `/me/events/${encodeURIComponent(eventId)}`,
+      { method: "DELETE" },
+    );
+    if (res.status === 404 || res.status === 410) return;
+    if (!res.ok) throw await graphError(res, "delete");
+  },
 };
