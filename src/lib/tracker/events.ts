@@ -28,6 +28,8 @@ export const PRESALES_EVENTS = [
   "invite_overdue", // Sales Manager: an invitation passed its deadline
   "meeting_reminder", // Participants: meeting in 24 hours or 1 hour
   "availability_review", // Engineer: weekly availability review
+  // Calendar integration (Phase 8)
+  "calendar_reconnect", // Engineer: calendar access expired or was removed
 ] as const;
 
 export type PresalesEvent = (typeof PRESALES_EVENTS)[number];
@@ -72,6 +74,8 @@ export function presalesNotifText(event: string | null, actor: string): string {
       return "Reminder: you have a presales meeting coming up";
     case "availability_review":
       return "Please review your presales availability for the week";
+    case "calendar_reconnect":
+      return "Your calendar connection stopped working. Reconnect it so you can be checked for meetings";
     case "pod_leader_assigned":
       return `${actor} made you a leader of your pod for presales nominations`;
     case "role_granted":
@@ -87,5 +91,6 @@ export function presalesNotifHref(
   event?: string | null,
 ): string {
   if (event === "availability_review") return "/tracker/availability";
+  if (event === "calendar_reconnect") return "/tracker/settings?tab=calendar";
   return requestId ? `/tracker/requests/${requestId}` : "/tracker/dashboard";
 }

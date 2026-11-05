@@ -1,6 +1,8 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { notifySystem } from "../events";
+import { sendTrackerEmail } from "../email";
 import { decryptToken, encryptToken } from "./crypto";
 import { google } from "./google";
 import { microsoft } from "./microsoft";
@@ -112,11 +114,23 @@ export async function accessTokenFor(
     return { provider, token: decryptToken(row.access_token_enc as string) };
   }
 
-  const mark = (status: string, lastError: string) =>
-    admin
+  // Only reached while the connection is 'connected', so the member is told
+  // once, when it stops working, not on every later check.
+  const mark = async (status: string, lastError: string) => {
+    await admin
       .from("presales_calendar_connections")
       .update({ status, last_error: lastError.slice(0, 500) })
       .eq("member_id", memberId);
+    await notifySystem({ recipients: [memberId], event: "calendar_reconnect" });
+    await sendTrackerEmail({
+      recipientIds: [memberId],
+      subject: "Please reconnect your calendar",
+      heading: "Your calendar connection stopped working",
+      body: `ETEN can no longer read your ${provider.label} calendar, so Sales sees your availability as unverified. This happens when access expires, a password changes or the app is removed from your account. Reconnecting takes a minute.`,
+      path: "/tracker/settings?tab=calendar",
+      cta: "Reconnect my calendar",
+    });
+  };
 
   if (!row.refresh_token_enc) {
     await mark("expired", "No refresh token; please reconnect.");

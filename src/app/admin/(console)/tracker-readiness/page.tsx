@@ -8,6 +8,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { toCsv } from "@/lib/csv";
 import { DownloadCsvButton } from "@/components/shared/download-csv-button";
 import { SystemHealth } from "./system-health";
+import { CalendarHealth } from "./calendar-health";
 
 export const metadata: Metadata = {
   title: "Tracker readiness",
@@ -460,6 +461,13 @@ export default async function TrackerReadinessPage() {
       <section className="mt-6">
         <h2 className="text-eten-ink mb-3 text-sm font-bold">System health</h2>
         <SystemHealth />
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-eten-ink mb-3 text-sm font-bold">
+          Calendar integration
+        </h2>
+        <CalendarHealth />
       </section>
 
       <section className="mt-6">
