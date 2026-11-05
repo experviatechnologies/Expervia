@@ -7,6 +7,7 @@ import {
   syncBusyFor,
 } from "@/lib/tracker/server/calendar";
 import { auditTracker } from "@/lib/tracker/server/events";
+import { CalendarScopeError } from "@/lib/tracker/server/calendar/types";
 
 /**
  * The provider sends the member back here after they consent (or decline).
@@ -94,6 +95,7 @@ export async function GET(
       accountEmail: tokens.accountEmail,
     });
   } catch (e) {
+    if (e instanceof CalendarScopeError) return back("scope");
     console.error(
       "calendar connect failed",
       e instanceof Error ? e.message : e,

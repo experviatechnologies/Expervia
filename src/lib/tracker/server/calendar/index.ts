@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { decryptToken, encryptToken } from "./crypto";
+import { google } from "./google";
 import { microsoft } from "./microsoft";
 import {
   CalendarAuthError,
@@ -18,16 +19,19 @@ export type { BusyPeriod } from "./types";
  * member's OAuth tokens. Tokens never leave the server.
  */
 
-const ADAPTERS: Partial<Record<CalendarProviderId, CalendarAdapter>> = {
+const ADAPTERS: Record<CalendarProviderId, CalendarAdapter> = {
   microsoft,
+  google,
 };
 
 export function calendarAdapter(id: string): CalendarAdapter | null {
-  return ADAPTERS[id as CalendarProviderId] ?? null;
+  return Object.hasOwn(ADAPTERS, id)
+    ? ADAPTERS[id as CalendarProviderId]
+    : null;
 }
 
 export function calendarConfigured(id: CalendarProviderId): boolean {
-  return ADAPTERS[id]?.configured() ?? false;
+  return ADAPTERS[id].configured();
 }
 
 /** PKCE verifier and its S256 challenge, plus a random state value. */

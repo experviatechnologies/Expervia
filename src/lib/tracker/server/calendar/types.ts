@@ -79,3 +79,9 @@ export class CalendarAuthError extends Error {
     super(message);
   }
 }
+
+/**
+ * The member signed in but did not grant calendar access (Google lets people
+ * untick individual permissions on the consent screen).
+ */
+export class CalendarScopeError extends Error {}

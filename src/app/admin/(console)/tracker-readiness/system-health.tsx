@@ -192,6 +192,13 @@ export async function SystemHealth() {
       help: "MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET and CALENDAR_TOKEN_KEY in Vercel.",
     },
     {
+      ok: calendarConfigured("google"),
+      label: calendarConfigured("google")
+        ? "Google calendar connection configured"
+        : "Google calendar connection not configured",
+      help: "GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and CALENDAR_TOKEN_KEY in Vercel.",
+    },
+    {
       ok: twoStep.missing.length === 0,
       label: twoStep.missing.length
         ? `${twoStep.total - twoStep.missing.length} of ${twoStep.total} staff have two-step sign-in`

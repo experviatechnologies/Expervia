@@ -560,6 +560,10 @@ const CALENDAR_RESULT: Record<
     tone: "warning",
     text: "We couldn't connect your calendar. Please try again. If your work account blocks it, ask your IT team to allow the ETEN app.",
   },
+  scope: {
+    tone: "warning",
+    text: "The calendar permission wasn't ticked, so nothing was connected. Try again and tick the box that lets ETEN see and edit your calendar events.",
+  },
   unknown: { tone: "warning", text: "That calendar provider isn't supported." },
 };
 
@@ -617,7 +621,16 @@ function CalendarTab({ result }: { result?: string }) {
                     Connect Microsoft Outlook
                   </Btn>
                 )}
-                <Btn disabled>Google Calendar (coming soon)</Btn>
+                {data.policies.googleEnabled ? (
+                  <a
+                    href="/api/tracker/calendar/google/start"
+                    className={btnClass("secondary")}
+                  >
+                    Connect Google Calendar
+                  </a>
+                ) : (
+                  <Btn disabled>Google Calendar (coming soon)</Btn>
+                )}
               </>
             ) : (
               <>
@@ -641,19 +654,21 @@ function CalendarTab({ result }: { result?: string }) {
               </>
             )}
           </div>
-          {!data.policies.outlookEnabled && me.calendar === "none" && (
-            <p className="text-eten-faint mt-3 text-[13px]">
-              Calendar connection isn&apos;t switched on yet. Until then, keep
-              your weekly hours and date exceptions up to date on{" "}
-              <Link
-                href="/tracker/availability"
-                className="text-eten-accent font-semibold underline"
-              >
-                My availability
-              </Link>
-              .
-            </p>
-          )}
+          {!data.policies.outlookEnabled &&
+            !data.policies.googleEnabled &&
+            me.calendar === "none" && (
+              <p className="text-eten-faint mt-3 text-[13px]">
+                Calendar connection isn&apos;t switched on yet. Until then, keep
+                your weekly hours and date exceptions up to date on{" "}
+                <Link
+                  href="/tracker/availability"
+                  className="text-eten-accent font-semibold underline"
+                >
+                  My availability
+                </Link>
+                .
+              </p>
+            )}
         </Card>
         <Card title="What we access">
           <ul className="text-eten-ink-muted list-disc space-y-1.5 pl-5 text-[14px]">
@@ -672,9 +687,14 @@ function CalendarTab({ result }: { result?: string }) {
               account&apos;s IT team may need to approve the ETEN app first.
             </li>
             <li>
+              Google asks you to allow ETEN to see and edit events on your
+              calendars, and to see your email address. Only your main calendar
+              is used.
+            </li>
+            <li>
               Access keys are encrypted on our server and never sent to your
               browser. Disconnecting deletes them at once. You can also remove
-              ETEN from your Microsoft account&apos;s app permissions.
+              ETEN from your Microsoft or Google account&apos;s app permissions.
             </li>
           </ul>
         </Card>
