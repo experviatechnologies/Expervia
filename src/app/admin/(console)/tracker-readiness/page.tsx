@@ -9,6 +9,7 @@ import { toCsv } from "@/lib/csv";
 import { DownloadCsvButton } from "@/components/shared/download-csv-button";
 import { SystemHealth } from "./system-health";
 import { CalendarHealth } from "./calendar-health";
+import { RolloutPanel } from "./rollout-panel";
 
 export const metadata: Metadata = {
   title: "Tracker readiness",
@@ -456,6 +457,15 @@ export default async function TrackerReadinessPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-eten-ink mb-1 text-sm font-bold">Rollout</h2>
+        <p className="text-eten-faint mb-3 text-xs">
+          Who gets the weekly availability email. Move from staff only, to pilot
+          pods, to everyone as the launch plan goes.
+        </p>
+        <RolloutPanel />
       </section>
 
       <section className="mt-6">

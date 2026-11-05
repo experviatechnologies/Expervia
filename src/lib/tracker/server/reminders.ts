@@ -22,7 +22,9 @@ import {
  *   meeting_reminder    Participants: 24 hours and 1 hour before
  *   outcome_needed      Owner: meeting ended, no outcome yet
  *   availability_review Engineers: weekly, on the policy's reminder day,
- *                       when their availability isn't fresh (batched)
+ *                       when their availability isn't fresh (batched);
+ *                       only once the rollout switch (migration 57) is at
+ *                       "pilot" (pilot pods only) or "everyone"
  */
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
@@ -347,16 +349,34 @@ export async function runReminders(
   // ---------------------------------------------------------- weekly availability review
   const { data: settings } = await admin
     .from("presales_settings")
-    .select("reminder_weekday, fresh_days, timezone")
+    // rollout_stage (migration 57) gates who is reminded. Before 57 is run
+    // this read fails, settings is null and no weekly reminder goes out.
+    .select(
+      "reminder_weekday, fresh_days, timezone, rollout_stage, pilot_pod_ids",
+    )
     .eq("id", true)
     .maybeSingle();
   const tz = (settings?.timezone as string) ?? "Africa/Lagos";
   const local = zonedParts(nowMs, tz);
+  const stage = (settings?.rollout_stage as string) ?? "staff";
   if (
     settings &&
+    stage !== "staff" &&
     local.weekday === settings.reminder_weekday &&
     local.hour >= 9
   ) {
+    // Pilot: only engineers in the pilot pods are reminded.
+    let pilotIds: Set<string> | null = null;
+    if (stage === "pilot") {
+      const pods = (settings.pilot_pod_ids as string[]) ?? [];
+      const { data: inPilot } = pods.length
+        ? await admin
+            .from("pod_memberships")
+            .select("member_id")
+            .in("pod_id", pods)
+        : { data: [] };
+      pilotIds = new Set((inPilot ?? []).map((m) => m.member_id as string));
+    }
     const monday = addDaysToDate(zonedDate(nowMs, tz), 1 - local.weekday);
     const cutoff = new Date(
       nowMs - (settings.fresh_days as number) * 24 * HOUR,
@@ -386,6 +406,7 @@ export async function runReminders(
       if (sent >= REVIEW_BATCH) break;
       const id = p.member_id as string;
       if (mutedIds.has(id)) continue;
+      if (pilotIds && !pilotIds.has(id)) continue;
       if (
         !(await claim(
           admin,
