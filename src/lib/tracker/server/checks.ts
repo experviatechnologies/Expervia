@@ -38,7 +38,7 @@ export async function evaluateParticipants(
   const out = new Map<string, Evaluation>();
   if (!memberIds.length) return out;
 
-  const [members, presales, prefs, windows, exceptions, seats] =
+  const [members, presales, prefs, windows, exceptions, seats, calendars] =
     await Promise.all([
       admin.from("members").select("id, status").in("id", memberIds),
       admin
@@ -71,6 +71,11 @@ export async function evaluateParticipants(
         .in("member_id", memberIds)
         .in("status", ["invitation_pending", "accepted", "confirmed"])
         .neq("request_id", meeting.id),
+      // Connection status only; an error (migration 54 not run) means none.
+      admin
+        .from("presales_calendar_connections")
+        .select("member_id, status")
+        .in("member_id", memberIds),
     ]);
   for (const r of [members, presales, prefs, windows, exceptions, seats])
     if (r.error) throw new Error(r.error.message);
@@ -121,9 +126,13 @@ export async function evaluateParticipants(
       cities: (ps?.cities as string[]) ?? [],
       willingToTravel: Boolean(ps?.willing_to_travel),
       timezone: tz,
-      // No calendar integration yet (Phase 8): declared availability only.
-      calendar: "none",
+      // Free/busy is read from the provider in step 8.2; until then a
+      // connected calendar is reported as unverified, never as free.
+      calendar:
+        (calendars.data ?? []).find((c) => c.member_id === id)?.status ??
+        "none",
       busy: [],
+      busyChecked: false,
       weekly: (windows.data ?? [])
         .filter((w) => w.mentor_id === id)
         .map((w) => ({

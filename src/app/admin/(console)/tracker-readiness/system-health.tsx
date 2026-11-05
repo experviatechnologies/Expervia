@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { calendarConfigured } from "@/lib/tracker/server/calendar";
 
 /**
  * Presales tracker system health for admins (Phase 7, step 7.2; PRD FR-030):
@@ -182,6 +183,13 @@ export async function SystemHealth() {
           ? `${failed.length} failed, ${stuck.length} stuck in the last ${runs.length} runs`
           : "No failed or stuck runs recently",
       help: "Details below.",
+    },
+    {
+      ok: calendarConfigured("microsoft"),
+      label: calendarConfigured("microsoft")
+        ? "Microsoft calendar connection configured"
+        : "Microsoft calendar connection not configured",
+      help: "MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET and CALENDAR_TOKEN_KEY in Vercel.",
     },
     {
       ok: twoStep.missing.length === 0,

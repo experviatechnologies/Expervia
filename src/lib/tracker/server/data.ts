@@ -6,6 +6,8 @@ import type {
   AccountStatus,
   Assignment,
   AuditEntry,
+  CalendarProvider,
+  CalendarStatus,
   Notification,
   AvailabilityException,
   ExceptionReason,
@@ -25,6 +27,7 @@ import type {
   WeeklyWindow,
 } from "@/lib/tracker/types";
 import { isStaff, type TrackerSession } from "./session";
+import { calendarConfigured } from "./calendar";
 import { presalesNotifHref, presalesNotifText } from "@/lib/tracker/events";
 
 /**
@@ -169,8 +172,12 @@ export async function loadReference(admin: Admin = getSupabaseAdmin()) {
     opens: hhmm(s.opens_at ?? "09:00"),
     closes: hhmm(s.closes_at ?? "17:00"),
     holidays: (s.holidays as { date: string; name: string }[]) ?? [],
-    outlookEnabled: (s.outlook_enabled as boolean) ?? false,
-    googleEnabled: (s.google_enabled as boolean) ?? false,
+    // Offered only when switched on AND the provider's keys are set in Vercel.
+    outlookEnabled:
+      ((s.outlook_enabled as boolean) ?? false) &&
+      calendarConfigured("microsoft"),
+    googleEnabled:
+      ((s.google_enabled as boolean) ?? false) && calendarConfigured("google"),
   };
 
   return { pods: podList, skills: skillList, meetingTypes, policies, leadRows };
@@ -193,6 +200,7 @@ export async function loadMembers(
     windows,
     exceptions,
     prefs,
+    calendars,
     users,
   ] = await Promise.all([
     fetchAll<Row>((a, b) =>
@@ -279,6 +287,15 @@ export async function loadMembers(
         .order("member_id")
         .range(a, b),
     ),
+    // Calendar connection status only (tokens never leave the calendar
+    // module). Empty until migration 54 has been run.
+    fetchAll<Row>((a, b) =>
+      admin
+        .from("presales_calendar_connections")
+        .select("member_id, provider, status")
+        .order("member_id")
+        .range(a, b),
+    ).catch(() => [] as Row[]),
     // Emails and last sign-in come from Supabase Auth: the slowest read, so
     // only fetched for viewers who may see other people's contact details.
     opts.contacts === false
@@ -299,6 +316,7 @@ export async function loadMembers(
   };
   const profileBy = new Map(profiles.map((p) => [p.member_id as string, p]));
   const presalesBy = new Map(presales.map((p) => [p.member_id as string, p]));
+  const calendarBy = new Map(calendars.map((c) => [c.member_id as string, c]));
   const tzBy = new Map(
     prefs.map((p) => [p.member_id as string, p.timezone as string]),
   );
@@ -380,8 +398,11 @@ export async function loadMembers(
         // Mentors' shared schedule zone first, then the presales profile.
         timezone:
           tzBy.get(id) ?? (ps?.timezone as string | undefined) ?? DEFAULT_TZ,
-        // Calendar connections arrive with the OAuth integration (Phase 8).
-        calendar: "none",
+        calendar:
+          (calendarBy.get(id)?.status as CalendarStatus | undefined) ?? "none",
+        calendarProvider: calendarBy.get(id)?.provider as
+          | CalendarProvider
+          | undefined,
         reviewedAt: (ps?.availability_reviewed_at as string) ?? null,
         lastSignInAt: user?.lastSignIn ?? null,
         weekly: (winBy.get(id) ?? []).map(
@@ -411,6 +432,8 @@ export async function loadMembers(
           }),
         ),
         busy: [],
+        // Free/busy is read from the provider in step 8.2.
+        busyChecked: false,
         optedIn: (ps?.opted_in as boolean | undefined) ?? true,
         prefs: { weeklyReminder: true, meetingReminders: true, digest: false },
       };
@@ -865,6 +888,7 @@ export function redactForViewer(
             weekly: [],
             exceptions: [],
             busy: [],
+            busyChecked: false,
             reviewedAt: null,
             lastSignInAt: null,
           },

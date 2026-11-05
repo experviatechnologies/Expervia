@@ -112,6 +112,12 @@ export type Member = {
    * no event details). Simulated in the Phase 1 demo.
    */
   busy: { startUtc: string; endUtc: string }[];
+  /**
+   * False when `busy` was not (or could not be) read from the provider, so a
+   * connected calendar counts as unverified, never as free. Undefined means
+   * checked (demo data).
+   */
+  busyChecked?: boolean;
   prefs: {
     weeklyReminder: boolean;
     meetingReminders: boolean;

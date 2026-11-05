@@ -50,6 +50,7 @@ import {
   Table,
   Tabs,
   Toggle,
+  btnClass,
   inputClass,
   td,
   th,
@@ -67,7 +68,14 @@ type Tab =
   | "health"
   | "audit";
 
-export function SettingsView({ initialTab }: { initialTab: string }) {
+export function SettingsView({
+  initialTab,
+  calendarResult,
+}: {
+  initialTab: string;
+  /** Outcome of a calendar connection, from ?calendar= after the redirect. */
+  calendarResult?: string;
+}) {
   const { me, live } = useSession();
   // On the live tracker, administration stays in the admin console and
   // notification preferences on the ETEN settings page.
@@ -128,7 +136,7 @@ export function SettingsView({ initialTab }: { initialTab: string }) {
         </div>
       )}
       {tab === "profile" && <ProfileTab />}
-      {tab === "calendar" && <CalendarTab />}
+      {tab === "calendar" && <CalendarTab result={calendarResult} />}
       {tab === "notifications" && <NotificationsTab />}
       {tab === "users" && <UsersTab />}
       {tab === "import" && <ImportTab />}
@@ -524,33 +532,153 @@ function ProfileTab() {
 
 // ------------------------------------------------------------------ calendar
 
-function CalendarTab() {
+const CALENDAR_RESULT: Record<
+  string,
+  { tone: "success" | "warning"; text: string }
+> = {
+  connected: {
+    tone: "success",
+    text: "Calendar connected. Sales and Pod Leaders now see your calendar status.",
+  },
+  denied: {
+    tone: "warning",
+    text: "You chose not to give access, so nothing was connected.",
+  },
+  expired_link: {
+    tone: "warning",
+    text: "That sign-in took too long or was started in another browser. Please try again.",
+  },
+  not_configured: {
+    tone: "warning",
+    text: "Calendar connection isn't switched on yet. Ask an ETEN admin.",
+  },
+  not_member: {
+    tone: "warning",
+    text: "Only ETEN engineers in a specialist pod can connect a calendar.",
+  },
+  failed: {
+    tone: "warning",
+    text: "We couldn't connect your calendar. Please try again. If your work account blocks it, ask your IT team to allow the ETEN app.",
+  },
+  unknown: { tone: "warning", text: "That calendar provider isn't supported." },
+};
+
+function CalendarTab({ result }: { result?: string }) {
   const t = useSession();
   const { me, data } = t;
   const toast = useToast();
   if (t.live) {
+    const s = CALENDAR_STATUS[me.calendar];
+    const notice = result ? CALENDAR_RESULT[result] : undefined;
+    const broken = ["expired", "revoked", "error"].includes(me.calendar);
+    const providerName =
+      me.calendarProvider === "google"
+        ? "Google Calendar"
+        : "Microsoft Outlook";
     return (
-      <Card title="Calendar" className="max-w-[760px]">
-        <Pill>Not connected</Pill>
-        <p className="text-eten-ink-muted mt-3 text-[14px]">
-          Connecting Microsoft Outlook or Google Calendar is coming in a later
-          release. Until then, Sales and Pod Leaders see your declared
-          availability only, so keep your weekly hours and date exceptions up to
-          date on{" "}
-          <Link
-            href="/tracker/availability"
-            className="text-eten-accent font-semibold underline"
-          >
-            My availability
-          </Link>
-          .
-        </p>
-        <p className="text-eten-faint mt-3 text-[13px]">
-          When it arrives, only whether you are free or busy is read. Titles,
-          attendees and descriptions of your other events are never read or
-          shown to anyone.
-        </p>
-      </Card>
+      <div className="grid max-w-[760px] gap-6">
+        <Card
+          title="Calendar"
+          description="Connect the calendar you use for work so the tracker can check you are free before you are invited."
+        >
+          {notice && (
+            <div className="mb-4">
+              <Notice tone={notice.tone}>{notice.text}</Notice>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill tone={s.tone}>{s.label}</Pill>
+            {me.calendar !== "none" && (
+              <span className="text-eten-ink-muted text-[14px]">
+                {providerName}
+              </span>
+            )}
+          </div>
+          {broken && (
+            <div className="mt-3">
+              <Notice tone="warning">
+                Your calendar authorisation is no longer valid. Reconnect to
+                restore conflict checks.
+              </Notice>
+            </div>
+          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {me.calendar === "none" ? (
+              <>
+                {data.policies.outlookEnabled ? (
+                  <a
+                    href="/api/tracker/calendar/microsoft/start"
+                    className={btnClass("primary")}
+                  >
+                    Connect Microsoft Outlook
+                  </a>
+                ) : (
+                  <Btn variant="primary" disabled>
+                    Connect Microsoft Outlook
+                  </Btn>
+                )}
+                <Btn disabled>Google Calendar (coming soon)</Btn>
+              </>
+            ) : (
+              <>
+                {broken && (
+                  <a
+                    href={`/api/tracker/calendar/${me.calendarProvider ?? "microsoft"}/start`}
+                    className={btnClass("primary")}
+                  >
+                    <RefreshCw className="size-4" aria-hidden /> Reconnect
+                  </a>
+                )}
+                <Btn
+                  variant="danger"
+                  onClick={() => (
+                    t.setCalendar("none"),
+                    toast("Calendar disconnected.")
+                  )}
+                >
+                  Disconnect calendar
+                </Btn>
+              </>
+            )}
+          </div>
+          {!data.policies.outlookEnabled && me.calendar === "none" && (
+            <p className="text-eten-faint mt-3 text-[13px]">
+              Calendar connection isn&apos;t switched on yet. Until then, keep
+              your weekly hours and date exceptions up to date on{" "}
+              <Link
+                href="/tracker/availability"
+                className="text-eten-accent font-semibold underline"
+              >
+                My availability
+              </Link>
+              .
+            </p>
+          )}
+        </Card>
+        <Card title="What we access">
+          <ul className="text-eten-ink-muted list-disc space-y-1.5 pl-5 text-[14px]">
+            <li>
+              Only whether you are free or busy. Titles, attendees and
+              descriptions of your other events are never read, stored or shown
+              to anyone.
+            </li>
+            <li>
+              Confirmed ETEN meetings will be added to your calendar, and
+              updated or removed if they change.
+            </li>
+            <li>
+              Microsoft asks you to allow: read and write your calendars, see
+              your basic profile, and keep access you have given. Your work
+              account&apos;s IT team may need to approve the ETEN app first.
+            </li>
+            <li>
+              Access keys are encrypted on our server and never sent to your
+              browser. Disconnecting deletes them at once. You can also remove
+              ETEN from your Microsoft account&apos;s app permissions.
+            </li>
+          </ul>
+        </Card>
+      </div>
     );
   }
   const s = CALENDAR_STATUS[me.calendar];

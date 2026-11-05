@@ -8,8 +8,13 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; calendar?: string }>;
 }) {
   const sp = await searchParams;
-  return <SettingsView initialTab={sp.tab ?? "profile"} />;
+  return (
+    <SettingsView
+      initialTab={sp.tab ?? "profile"}
+      calendarResult={sp.calendar}
+    />
+  );
 }

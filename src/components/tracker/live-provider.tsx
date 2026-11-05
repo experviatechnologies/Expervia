@@ -24,6 +24,7 @@ import {
   saveWeeklyAvailability,
 } from "@/app/tracker/(live)/availability/actions";
 import { saveExpertiseProfile } from "@/app/tracker/(live)/settings/actions";
+import { disconnectCalendar } from "@/app/tracker/(live)/calendar/actions";
 import {
   cancelRequest as cancelRequestAction,
   rescheduleRequest,
@@ -133,7 +134,10 @@ export function LiveTrackerProvider({
                 optedIn: patch.optedIn,
               }),
             ),
-      setCalendar: notYet,
+      // Connecting is a redirect to the provider (Settings > Calendar links to
+      // /api/tracker/calendar/<provider>/start); only disconnect runs here.
+      setCalendar: (status) =>
+        status === "none" ? run(disconnectCalendar()) : notYet(),
       // Workflow (Phase 5)
       saveRequest: async (input, submit, existingId) => {
         try {

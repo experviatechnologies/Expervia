@@ -211,7 +211,11 @@ export function evaluateMember(
 
   // Connected calendar free/busy.
   let calendar: CalendarCheck;
-  if (member.calendar === "connected") {
+  if (member.calendar === "connected" && member.busyChecked === false) {
+    // Connected, but busy times were not read for this check.
+    calendar = "unverified";
+    warnings.push("Calendar could not be checked just now: not verified free.");
+  } else if (member.calendar === "connected") {
     const busy = member.busy.some((b) =>
       overlaps(
         s,
