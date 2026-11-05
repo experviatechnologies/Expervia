@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { authorizeTracker } from "@/lib/tracker/server/session";
+import { auditTracker } from "@/lib/tracker/server/events";
 import { TIMEZONES } from "@/lib/tracker/time";
 import type { Seniority, SkillLevel } from "@/lib/tracker/types";
 
@@ -155,6 +156,18 @@ export async function saveExpertiseProfile(input: {
     }
   }
 
+  // PRD FR-029: profile changes are significant (they drive matching).
+  await auditTracker({
+    actorId: id,
+    action: "profile_updated",
+    targetType: "member",
+    targetId: id,
+    metadata: {
+      fields: Object.keys(input).filter(
+        (k) => input[k as keyof typeof input] !== undefined,
+      ),
+    },
+  });
   revalidatePath("/tracker", "layout");
   return { ok: true };
 }

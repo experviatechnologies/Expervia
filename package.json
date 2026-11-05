@@ -10,6 +10,7 @@
     "lint:fix": "eslint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test:tracker": "node --test \"tests/tracker/*.test.mjs\"",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -48,6 +49,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "husky": "^9.1.7",
+    "jiti": "2.7.0",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",

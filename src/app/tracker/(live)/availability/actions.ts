@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { authorizeTracker } from "@/lib/tracker/server/session";
+import { auditTracker } from "@/lib/tracker/server/events";
 import { TIMEZONES, toMinutes } from "@/lib/tracker/time";
 import type {
   AvailabilityException,
@@ -56,7 +57,17 @@ async function touchReviewed(
     .eq("member_id", id);
 }
 
-function done(): Result {
+/**
+ * Finish a change: record it in the audit log (PRD FR-029: availability
+ * changes are significant, they decide who can be selected) and refresh.
+ */
+async function done(id: string, action: string): Promise<Result> {
+  await auditTracker({
+    actorId: id,
+    action,
+    targetType: "member",
+    targetId: id,
+  });
   revalidatePath("/tracker", "layout");
   return { ok: true };
 }
@@ -147,14 +158,14 @@ export async function saveWeeklyAvailability(
   }
 
   await touchReviewed(admin, id);
-  return done();
+  return done(id, "availability_weekly_saved");
 }
 
 export async function markAvailabilityReviewed(): Promise<Result> {
   const ctx = await me();
   if ("error" in ctx) return ctx;
   await touchReviewed(ctx.admin, ctx.id);
-  return done();
+  return done(ctx.id, "availability_reviewed");
 }
 
 // ------------------------------------------------------------------ exceptions
@@ -205,7 +216,7 @@ export async function saveAvailabilityException(
   if (error) return { error: "Couldn't save that exception. Try again." };
 
   await touchReviewed(admin, id);
-  return done();
+  return done(id, "availability_exception_saved");
 }
 
 export async function deleteAvailabilityException(
@@ -221,7 +232,7 @@ export async function deleteAvailabilityException(
     .eq("mentor_id", ctx.id)
     .contains("purposes", ["presales"]);
   if (error) return { error: "Couldn't delete that exception. Try again." };
-  return done();
+  return done(ctx.id, "availability_exception_deleted");
 }
 
 // ------------------------------------------------------------------ preferences
@@ -271,5 +282,5 @@ export async function saveMeetingPreferences(input: {
       .update({ timezone: input.timezone })
       .eq("member_id", id);
   }
-  return done();
+  return done(id, "meeting_preferences_saved");
 }

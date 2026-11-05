@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { runReminders } from "@/lib/tracker/server/reminders";
 import { syncAllBusy } from "@/lib/tracker/server/calendar";
 import { retryFailedEventSyncs } from "@/lib/tracker/server/calendar/events";
+import { notifySystem } from "@/lib/tracker/server/events";
+import { sendTrackerEmail } from "@/lib/tracker/server/email";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -69,7 +71,49 @@ async function handle(request: NextRequest) {
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       await finish({ status: "failed", error: message.slice(0, 1000) });
+      await alertAdminsIfNew(job, run?.id ?? null, message);
       return { ok: false, error: message };
+    }
+  }
+
+  /**
+   * PRD section 10 "Integration failure": tell the admins when a job STARTS
+   * failing (the run before this one succeeded, or there was none), not on
+   * every 15-minute retry. System health shows the detail.
+   */
+  async function alertAdminsIfNew(
+    job: string,
+    runId: number | null,
+    message: string,
+  ) {
+    try {
+      let q = admin
+        .from("presales_job_runs")
+        .select("status")
+        .eq("job", job)
+        .neq("status", "running")
+        .order("started_at", { ascending: false })
+        .limit(1);
+      if (runId !== null) q = q.neq("id", runId);
+      const { data: prev } = await q.maybeSingle();
+      if (prev?.status === "failed") return;
+      const { data: ops } = await admin
+        .from("members")
+        .select("id")
+        .eq("role", "operations")
+        .eq("status", "active");
+      const ids = (ops ?? []).map((m) => m.id as string);
+      await notifySystem({ recipients: ids, event: "integration_failure" });
+      await sendTrackerEmail({
+        recipientIds: ids,
+        subject: `Presales tracker: the ${job.replace("_", " ")} job is failing`,
+        heading: "A background job started failing",
+        body: `The ${job.replace("_", " ")} job failed: ${message.slice(0, 300)}\nIt retries every 15 minutes. You'll get one alert, not one per retry.`,
+        path: "/admin/tracker-readiness",
+        cta: "Open System health",
+      });
+    } catch (err) {
+      console.error("alertAdminsIfNew failed", err);
     }
   }
 

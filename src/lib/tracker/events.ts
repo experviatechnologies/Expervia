@@ -5,6 +5,8 @@
  * wording. Pure, so any server component that lists notifications can use it.
  */
 
+import { siteConfig } from "@/config/site";
+
 export const PRESALES_EVENTS = [
   "request_routed", // Pod Leaders: nominate by the deadline
   "deadline_near", // Pod Leaders: respond or escalate
@@ -30,6 +32,7 @@ export const PRESALES_EVENTS = [
   "availability_review", // Engineer: weekly availability review
   // Calendar integration (Phase 8)
   "calendar_reconnect", // Engineer: calendar access expired or was removed
+  "integration_failure", // Admins: a scheduled job started failing
 ] as const;
 
 export type PresalesEvent = (typeof PRESALES_EVENTS)[number];
@@ -74,6 +77,8 @@ export function presalesNotifText(event: string | null, actor: string): string {
       return "Reminder: you have a presales meeting coming up";
     case "availability_review":
       return "Please review your presales availability for the week";
+    case "integration_failure":
+      return "A presales tracker background job is failing. Check System health";
     case "calendar_reconnect":
       return "Your calendar connection stopped working. Reconnect it so you can be checked for meetings";
     case "pod_leader_assigned":
@@ -92,5 +97,8 @@ export function presalesNotifHref(
 ): string {
   if (event === "availability_review") return "/tracker/availability";
   if (event === "calendar_reconnect") return "/tracker/settings?tab=calendar";
+  // The admin console lives on the main site, not the tracker's address.
+  if (event === "integration_failure")
+    return `${siteConfig.url}/admin/tracker-readiness`;
   return requestId ? `/tracker/requests/${requestId}` : "/tracker/dashboard";
 }
