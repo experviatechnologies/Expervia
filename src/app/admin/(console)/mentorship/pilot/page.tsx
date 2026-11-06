@@ -27,6 +27,7 @@ const POD_AREA_GUESS: Record<string, string> = {
   "dev-tools": "software-development",
   "software-engineering": "software-development",
   devops: "software-development",
+  huawei: "cloud-infrastructure",
 };
 
 export default async function MentorshipPilotPage() {
