@@ -10,6 +10,7 @@
     "lint:fix": "eslint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "test:tracker": "node --test \"tests/tracker/*.test.mjs\"",
     "prepare": "husky"
   },

@@ -10,6 +10,7 @@ import {
   Settings,
   ShieldCheck,
   Award,
+  Phone,
 } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -121,6 +122,13 @@ export default async function ProfilePage() {
           >
             <Settings className="size-4" />
             Settings
+          </Link>
+          <Link
+            href="/onboarding/details?edit=1&next=%2Fprofile"
+            className="text-eten-ink-muted hover:text-eten-ink inline-flex items-center gap-1.5 text-sm font-semibold"
+          >
+            <Phone className="size-4" />
+            Phone, CV and contact details
           </Link>
         </div>
       </header>

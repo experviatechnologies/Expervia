@@ -41,8 +41,8 @@ export default async function OnboardingPage() {
             Let&apos;s set up your profile
           </h1>
           <p className="text-on-surface-variant mt-2 text-sm">
-            Two quick choices and you&apos;re in — this shapes your feed and how
-            peers find you.
+            Step 1 of 2: choose your pod and skills. This shapes your feed and
+            how peers find you. Next, your contact details and CV.
           </p>
         </div>
         <SignOutButton />

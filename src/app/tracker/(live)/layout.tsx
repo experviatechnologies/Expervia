@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { Database } from "lucide-react";
 import { TRACKER_HOST } from "@/lib/tracker/host";
+import { redirect } from "next/navigation";
+import { needsDetails } from "@/lib/eten/member-details-server";
 import { requireTrackerSession } from "@/lib/tracker/server/session";
 import { loadTrackerDataForViewer } from "@/lib/tracker/server/data";
 import { LiveTrackerProvider } from "@/components/tracker/live-provider";
@@ -45,6 +47,15 @@ export default async function LiveTrackerLayout({
   children: React.ReactNode;
 }) {
   const session = await requireTrackerSession("/tracker");
+  // Members give their required details (phone, CV, ...) before using the
+  // tracker, as in the member app. Operations accounts are exempt.
+  if (
+    session.member.role !== "operations" &&
+    session.member.emailConfirmed &&
+    (await needsDetails(session.member.id))
+  ) {
+    redirect("/onboarding/details?next=%2Ftracker");
+  }
 
   let problem: string | null = session.schemaReady
     ? null

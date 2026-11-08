@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { needsDetails } from "@/lib/eten/member-details-server";
 import { AppNav, type NavPod } from "./app-nav";
 
 /**
@@ -11,6 +12,7 @@ import { AppNav, type NavPod } from "./app-nav";
  * itself):
  *   - no session          → /signin
  *   - confirmed, non-ops, no primary pod → /onboarding (first-run setup)
+ *   - confirmed, non-ops, details missing → /onboarding/details
  * Operations skip onboarding; unconfirmed members pass through so /dashboard can
  * show them the "confirm your email" notice.
  */
@@ -34,6 +36,9 @@ export default async function AppLayout({
       .eq("member_id", member.id)
       .maybeSingle();
     if (!profile?.primary_specialization_pod_id) redirect("/onboarding");
+    // Required details (phone, location, job title, experience, CV, consent)
+    // for every member, new and existing, before using the app (7 Nov 2026).
+    if (await needsDetails(member.id)) redirect("/onboarding/details");
   }
 
   // Unread badges for the nav.
