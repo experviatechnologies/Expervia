@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getResendClient, escapeHtml } from "@/lib/email";
+import { sendConfirmationEmail } from "@/lib/eten/confirmation-email";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 import {
   isDisposableEmail,
@@ -7,37 +7,6 @@ import {
   checkRateLimit,
 } from "@/lib/eten/spam-guard";
 import { verifyTurnstile } from "@/lib/eten/turnstile";
-
-function confirmEmailHtml(
-  fullName: string,
-  confirmUrl: string,
-  intent: "mentor" | "mentee",
-): string {
-  const first = escapeHtml(fullName.split(/\s+/)[0] || "there");
-  const roleLine =
-    intent === "mentor"
-      ? "Thanks for joining ETEN Mentorship as a mentor."
-      : "Thanks for joining ETEN Mentorship as a mentee.";
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:520px;margin:0 auto;">
-      <h2 style="margin:0 0 12px;">Confirm your ETEN Mentorship account</h2>
-      <p style="margin:0 0 12px;line-height:1.6;">Hi ${first},</p>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        ${roleLine} Confirm your email to activate your account and set up your
-        goal.
-      </p>
-      <p style="margin:24px 0;">
-        <a href="${confirmUrl}" style="background:#7c6cf0;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
-          Confirm my account
-        </a>
-      </p>
-      <p style="margin:0 0 12px;line-height:1.6;color:#666;font-size:13px;">
-        This link is single-use and expires soon. If you didn't create this
-        account, you can ignore this email.
-      </p>
-    </div>
-  `;
-}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -174,11 +143,12 @@ export async function POST(request: Request) {
     link.properties.hashed_token,
   )}&type=signup&next=${encodeURIComponent(next)}`;
 
-  const { error: mailError } = await getResendClient().emails.send({
-    from: fromEmail,
+  const mailError = await sendConfirmationEmail({
     to: email.toLowerCase(),
-    subject: "Confirm your ETEN Mentorship account",
-    html: confirmEmailHtml(fullName, confirmUrl, intent),
+    name: fullName,
+    url: confirmUrl,
+    product: "mentorship",
+    intent,
   });
   if (mailError) {
     return Response.json(

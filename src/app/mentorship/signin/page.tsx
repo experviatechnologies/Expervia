@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { PasswordInput } from "@/components/shared/password-input";
+import { ResendConfirmation } from "@/components/shared/resend-confirmation";
 
 const inputClass =
   "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand mt-1.5 w-full rounded-[10px] border px-3.5 py-3 text-[14px] outline-none transition-colors placeholder:text-[#586273]";
@@ -15,6 +16,7 @@ export default function MentorshipSignInPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,7 +28,15 @@ export default function MentorshipSignInPage() {
       password,
     });
     if (signInError) {
-      setError("That email or password is not right. Please try again.");
+      if (signInError.code === "email_not_confirmed") {
+        setUnconfirmed(email.trim().toLowerCase());
+        setError(
+          "Your email isn't confirmed yet. Use the link we emailed you, or get a new one below.",
+        );
+      } else {
+        setUnconfirmed(null);
+        setError("That email or password is not right. Please try again.");
+      }
       setLoading(false);
       return;
     }
@@ -101,6 +111,13 @@ export default function MentorshipSignInPage() {
 
           {error && (
             <p className="text-destructive mt-4 text-[13px]">{error}</p>
+          )}
+          {unconfirmed && (
+            <ResendConfirmation
+              email={unconfirmed}
+              className="text-mnt-ink-muted border-mnt-line mt-3 rounded-xl border p-4"
+              buttonClassName="text-mnt-brand font-semibold hover:underline disabled:opacity-60 disabled:no-underline"
+            />
           )}
 
           <button

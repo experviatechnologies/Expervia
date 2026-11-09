@@ -9,6 +9,7 @@ import {
   TurnstileWidget,
   TURNSTILE_ENABLED,
 } from "@/components/shared/turnstile-widget";
+import { ResendConfirmation } from "@/components/shared/resend-confirmation";
 
 const DOMAINS = [
   { slug: "cloud-infrastructure", label: "Cloud & Infrastructure" },
@@ -163,9 +164,11 @@ function RegisterForm() {
                 <span className="text-mnt-ink font-medium">{sentTo}</span>.
                 Click it to activate your account and set up your goal.
               </p>
-              <p className="text-mnt-faint mt-3 text-[12px]">
-                Did not get it? Check spam, or wait a minute and try again.
-              </p>
+              <ResendConfirmation
+                email={sentTo}
+                className="text-mnt-ink-muted border-mnt-line mt-5 w-full max-w-sm rounded-xl border p-4"
+                buttonClassName="text-mnt-brand font-semibold hover:underline disabled:opacity-60 disabled:no-underline"
+              />
             </div>
           ) : (
             <>

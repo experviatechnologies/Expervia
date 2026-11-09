@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import {
+  TURNSTILE_ENABLED,
+  TurnstileWidget,
+} from "@/components/shared/turnstile-widget";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 const textFields = [
@@ -83,6 +88,9 @@ export function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // When the form appeared: bots submit within a second or two.
+  const [shownAt] = useState(() => Date.now());
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -95,7 +103,11 @@ export function ContactForm() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          elapsedMs: Date.now() - shownAt,
+          turnstileToken: captchaToken,
+        }),
       });
 
       if (!res.ok) {
@@ -141,6 +153,26 @@ export function ContactForm() {
           onSubmit={handleSubmit}
           className="grid grid-cols-1 gap-6 md:grid-cols-2"
         >
+          {/* Honeypot: off-screen, real visitors never fill it. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: "-9999px",
+              width: 1,
+              height: 1,
+              overflow: "hidden",
+            }}
+          >
+            <label htmlFor={HONEYPOT_FIELD}>Company URL</label>
+            <input
+              id={HONEYPOT_FIELD}
+              name={HONEYPOT_FIELD}
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
           {textFields.map((f) => (
             <div key={f.id} className="space-y-2">
               <label
@@ -203,6 +235,11 @@ export function ContactForm() {
             />
           </div>
 
+          {TURNSTILE_ENABLED && (
+            <div className="md:col-span-2">
+              <TurnstileWidget onToken={setCaptchaToken} />
+            </div>
+          )}
           <div className="pt-4 md:col-span-2">
             {error && (
               <p role="alert" className="text-destructive mb-4 text-sm">

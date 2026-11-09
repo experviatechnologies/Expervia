@@ -5,6 +5,7 @@ import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/shared/password-input";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import { ResendConfirmation } from "@/components/shared/resend-confirmation";
 import {
   TurnstileWidget,
   TURNSTILE_ENABLED,
@@ -90,9 +91,10 @@ export function JoinForm() {
           <span className="text-on-surface font-medium">{sentTo}</span>. Click
           it to activate your account and finish setting up your profile.
         </p>
-        <p className="text-on-surface-variant/70 text-xs">
-          Didn&apos;t get it? Check spam, or wait a minute and try again.
-        </p>
+        <ResendConfirmation
+          email={sentTo}
+          className="text-on-surface-variant border-outline-variant/30 mt-2 w-full rounded-xl border p-4"
+        />
       </div>
     );
   }

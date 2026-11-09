@@ -6,6 +6,7 @@ import { Loader2, MailCheck } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/shared/password-input";
+import { ResendConfirmation } from "@/components/shared/resend-confirmation";
 
 const inputClass =
   "w-full rounded-lg border border-white/10 bg-surface-container px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none transition-colors";
@@ -20,6 +21,7 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [magicSentTo, setMagicSentTo] = useState<string | null>(null);
+  const [unconfirmed, setUnconfirmed] = useState<string | null>(null);
 
   async function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,7 +35,17 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
     });
 
     if (signInError) {
-      setError("Invalid email or password.");
+      // An account that never confirmed its email: say so, and offer a new
+      // link (the first one may be sitting in Spam or Promotions).
+      if (signInError.code === "email_not_confirmed") {
+        setUnconfirmed(email.trim().toLowerCase());
+        setError(
+          "Your email isn't confirmed yet. Use the link we emailed you, or get a new one below.",
+        );
+      } else {
+        setUnconfirmed(null);
+        setError("Invalid email or password.");
+      }
       setLoading(false);
       return;
     }
@@ -133,6 +145,12 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
       )}
 
       {error && <p className="text-destructive text-sm">{error}</p>}
+      {unconfirmed && (
+        <ResendConfirmation
+          email={unconfirmed}
+          className="text-on-surface-variant border-outline-variant/30 rounded-xl border p-4"
+        />
+      )}
 
       <Button
         type="submit"

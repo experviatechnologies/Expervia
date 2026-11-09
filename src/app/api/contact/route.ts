@@ -1,4 +1,7 @@
 import { getResendClient, escapeHtml } from "@/lib/email";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import { checkRateLimit, clientIp } from "@/lib/eten/spam-guard";
+import { verifyTurnstile } from "@/lib/eten/turnstile";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,6 +24,37 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  // Bot protection (9 Nov 2026). Bot submissions were emailed from our own
+  // domain, and recipients' spam filters held that against the domain, which
+  // also sends members' confirmation emails. A bot gets a normal "ok" (so it
+  // doesn't adapt) but nothing is sent.
+  const raw = body as Record<string, unknown>;
+  const honeypot = raw[HONEYPOT_FIELD];
+  const elapsed = Number(raw.elapsedMs);
+  if (
+    (typeof honeypot === "string" && honeypot.trim()) ||
+    (Number.isFinite(elapsed) && elapsed < 3000)
+  ) {
+    return Response.json({ ok: true });
+  }
+  const ip = clientIp(request.headers);
+  if (!checkRateLimit(`contact:${ip}`, { limit: 3, windowMs: 15 * 60_000 })) {
+    return Response.json(
+      { error: "Too many messages. Please try again in a little while." },
+      { status: 429 },
+    );
+  }
+  const token =
+    typeof raw.turnstileToken === "string" ? raw.turnstileToken : null;
+  if (!(await verifyTurnstile(token, ip))) {
+    return Response.json(
+      {
+        error: "Verification failed. Please complete the check and try again.",
+      },
+      { status: 400 },
+    );
   }
 
   const {
