@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -39,6 +39,18 @@ export const metadata: Metadata = {
   verification: {
     google: "VI-FqcZRWPYzb5mSlU3lPukiPwTf7382IhNXSX_pkqA",
   },
+  // Installed on an iPhone home screen, ETEN opens full-screen as "ETEN".
+  // (The manifest in app/manifest.ts covers Android and desktop.)
+  appleWebApp: {
+    capable: true,
+    title: "ETEN",
+    statusBarStyle: "default",
+  },
+};
+
+// Browser bar and installed-app status bar colour: ETEN purple.
+export const viewport: Viewport = {
+  themeColor: "#4a16c4",
 };
 
 export default async function RootLayout({
