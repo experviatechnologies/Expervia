@@ -27,6 +27,7 @@ import {
   LifeBuoy,
   type LucideIcon,
   BriefcaseBusiness,
+  ClipboardCheck,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -56,6 +57,11 @@ const GROUPS: NavGroup[] = [
     heading: "Community",
     items: [
       { label: "Members", href: "/admin/members", Icon: Users },
+      {
+        label: "Member Details",
+        href: "/admin/member-details",
+        Icon: ClipboardCheck,
+      },
       { label: "Pods", href: "/admin/pods", Icon: Boxes },
       { label: "Applications", href: "/admin/applications", Icon: FileText },
       {

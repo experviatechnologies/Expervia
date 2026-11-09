@@ -10,15 +10,17 @@ import { trackerUrl } from "@/lib/tracker/host";
  * sends via Resend, never throws, and no-ops when email isn't configured.
  */
 
-function emailHtml(
+export function emailHtml(
   heading: string,
   body: string,
   href: string,
   cta: string,
+  /** The small line above the heading. */
+  kicker = "ETEN Availability Tracker",
 ): string {
   return `
     <div style="font-family:system-ui,-apple-system,sans-serif;color:#17123d;max-width:540px;margin:0 auto;">
-      <p style="margin:0 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6e6a8c;">ETEN Availability Tracker</p>
+      <p style="margin:0 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6e6a8c;">${escapeHtml(kicker)}</p>
       <h2 style="margin:0 0 12px;">${escapeHtml(heading)}</h2>
       <p style="margin:0 0 16px;line-height:1.6;white-space:pre-line;">${escapeHtml(body)}</p>
       <p style="margin:20px 0;">
