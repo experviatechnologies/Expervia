@@ -45,3 +45,14 @@ test("missing details are listed until everything is given", () => {
   assert.deepEqual(missingDetails({ ...full, phone: null, hasCv: false, consentAt: null }), ["phone", "cv", "consent"]);
   assert.deepEqual(missingDetails({ ...full, yearsExperience: null, jobTitle: "  " }), ["jobTitle", "yearsExperience"]);
 });
+
+test("CSV cells that look like formulas open as plain text", async () => {
+  const { toCsv } = await jiti.import("../../src/lib/csv.ts");
+  const csv = toCsv(["Name", "Phone", "Note"], [
+    ["Ada", "+2348031234567", "=HYPERLINK(\"http://x\")"],
+    ["-2", "@SUM(A1)", 5],
+  ]);
+  const [, row1, row2] = csv.split("\r\n");
+  assert.equal(row1, `Ada,'+2348031234567,"'=HYPERLINK(""http://x"")"`);
+  assert.equal(row2, "'-2,'@SUM(A1),5"); // numbers are left alone
+});

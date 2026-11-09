@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Star, Users } from "lucide-react";
+import { ArrowLeft, Download, Star, Users } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -135,6 +135,14 @@ export default async function AdminPodDetailPage({
             <Star className="size-3.5" />
             {primaryCount} primary
           </span>
+          <a
+            href={`/api/pods/${pod.slug}/roster`}
+            download
+            className="text-eten-accent inline-flex items-center gap-1.5 font-semibold hover:underline"
+          >
+            <Download className="size-4" aria-hidden />
+            Download roster (CSV)
+          </a>
         </div>
       </header>
 

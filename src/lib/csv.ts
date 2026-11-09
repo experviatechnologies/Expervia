@@ -9,7 +9,11 @@ type Cellish = string | number | null | undefined;
 
 function cell(value: Cellish): string {
   if (value == null) return "";
-  const s = String(value);
+  let s = String(value);
+  // Formula injection (OWASP "CSV Injection"): a text cell starting with
+  // = + - @ or a tab/return is run as a formula by Excel and Sheets. Prefix
+  // it with ' so it opens as plain text (a phone like +234... stays readable).
+  if (typeof value === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
