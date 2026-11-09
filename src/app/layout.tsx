@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import localFont from "next/font/local";
 import "./globals.css";
 import { SiteChrome } from "@/components/shared/site-chrome";
+import { ServiceWorkerManager } from "@/components/shared/service-worker-manager";
 import { siteConfig } from "@/config/site";
 
 // Self-hosted (not next/font/google): the fonts are stored in ./fonts and
@@ -105,6 +106,7 @@ export default async function RootLayout({
         <SiteChrome forceBare={isMentorshipHost || isTrackerHost}>
           {children}
         </SiteChrome>
+        <ServiceWorkerManager />
       </body>
     </html>
   );

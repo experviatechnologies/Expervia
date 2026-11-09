@@ -15,6 +15,30 @@ const MENTORSHIP_HOST = process.env.NEXT_PUBLIC_MENTORSHIP_HOST;
 const TRACKER_HOST = process.env.NEXT_PUBLIC_TRACKER_HOST;
 
 const nextConfig: NextConfig = {
+  // The service worker (app/sw.js/route.ts) must never be cached, or the app
+  // would miss new versions; it may only run same-origin script.
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'self'; script-src 'self'",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     const beforeFiles: {
       source: string;
