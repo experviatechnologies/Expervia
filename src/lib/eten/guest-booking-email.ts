@@ -1,6 +1,8 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getResendClient, escapeHtml } from "@/lib/email";
+import { getResendClient } from "@/lib/email";
+import { emailPayload, greetingFor } from "@/lib/email-template";
+import { formatWhen, validTimezone } from "@/lib/eten/mentorship-email";
 
 /**
  * After a guest's payment settles, email them a confirmation with the session
@@ -52,22 +54,10 @@ export async function sendGuestBookingWelcome(
       .eq("member_id", booking.mentor_id)
       .maybeSingle();
     const mentorName = mentorProfile?.full_name ?? "your mentor";
-
-    const tz = booking.guest_timezone || "UTC";
-    let whenLabel: string;
-    try {
-      whenLabel =
-        new Date(booking.starts_at).toLocaleString("en-GB", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: tz,
-        }) + ` (${tz.split("/").pop()?.replace(/_/g, " ") ?? tz})`;
-    } catch {
-      whenLabel = new Date(booking.starts_at).toUTCString();
-    }
+    const tz =
+      booking.guest_timezone && validTimezone(booking.guest_timezone)
+        ? booking.guest_timezone
+        : "Africa/Lagos";
 
     // A magic link that signs them in and lands on their mentorship dashboard,
     // handled by the shared /auth/confirm route (stamps claimed_at on first use).
@@ -83,53 +73,36 @@ export async function sendGuestBookingWelcome(
       )}&type=magiclink&next=${encodeURIComponent("/mentorship/dashboard")}`;
     }
 
-    await getResendClient().emails.send({
-      from: fromEmail,
-      to,
-      subject: `You're booked with ${mentorName}`,
-      html: welcomeHtml({
-        mentorName,
-        whenLabel,
-        minutes: booking.duration_minutes,
-        accessUrl,
+    await getResendClient().emails.send(
+      emailPayload({
+        from: fromEmail,
+        to,
+        subject: `Your sign-in link for your session with ${mentorName}`,
+        content: {
+          brand: "mentorship",
+          preview:
+            "No password needed. Join, reschedule or manage your booking.",
+          greeting: greetingFor(userRes?.user?.user_metadata?.full_name),
+          paragraphs: [
+            `Your session with ${mentorName} is booked, and we've set up an ETEN Mentorship account for you to manage it.`,
+            "Use the button below to sign in, no password needed. From your account you can join the video session, see your booking and reschedule.",
+          ],
+          details: [
+            { label: "Mentor", value: mentorName },
+            { label: "When", value: formatWhen(booking.starts_at, tz) },
+            { label: "Length", value: `${booking.duration_minutes} minutes` },
+          ],
+          cta: { label: "Sign in to my session", url: accessUrl },
+          smallPrint: [
+            'This sign-in link works once and expires after a short time. If it has expired, choose "Forgot password" on the ETEN Mentorship sign-in page to get back in.',
+            "You can reschedule for free up to 24 hours before the session.",
+          ],
+          reason:
+            "You're receiving this because you booked a session on ETEN Mentorship.",
+        },
       }),
-    });
+    );
   } catch (err) {
     console.error("guest booking welcome email failed", err);
   }
-}
-
-function welcomeHtml(input: {
-  mentorName: string;
-  whenLabel: string;
-  minutes: number;
-  accessUrl: string;
-}): string {
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#17123D;max-width:520px;margin:0 auto;">
-      <h2 style="margin:0 0 12px;">You're booked</h2>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        Your session with <strong>${escapeHtml(input.mentorName)}</strong> is
-        confirmed.
-      </p>
-      <div style="margin:0 0 16px;padding:14px 16px;background:#F7F5FD;border-radius:12px;line-height:1.6;">
-        <div style="font-weight:700;">${escapeHtml(input.whenLabel)}</div>
-        <div style="color:#5E5A7D;font-size:14px;">${input.minutes} minute session · joined on video</div>
-      </div>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        We've set up an ETEN account for you so you can join the session, see the
-        video link and manage your booking. Use the button below to sign in, no
-        password needed.
-      </p>
-      <p style="margin:20px 0;">
-        <a href="${input.accessUrl}" style="background:#4A16C4;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
-          Open your session
-        </a>
-      </p>
-      <p style="margin:16px 0 0;line-height:1.6;color:#6E6A8C;font-size:13px;">
-        You can reschedule for free up to 24 hours before the session. This
-        sign-in link is single-use and expires soon.
-      </p>
-    </div>
-  `;
 }

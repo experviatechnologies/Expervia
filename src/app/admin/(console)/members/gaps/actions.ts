@@ -4,49 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getResendClient, escapeHtml } from "@/lib/email";
-import { siteConfig } from "@/config/site";
-
-const KIND_LABEL: Record<string, string> = {
-  identity: "Identity verification (KYC)",
-  address: "Proof of address",
-  certification: "A professional certification",
-};
-
-function reminderEmailHtml(fullName: string | null, kinds: string[]): string {
-  const greeting = fullName
-    ? `Hi ${escapeHtml(fullName.split(/\s+/)[0])},`
-    : "Hi,";
-  const items = kinds
-    .map(
-      (k) =>
-        `<li style="margin:0 0 6px;">${escapeHtml(KIND_LABEL[k] ?? k)}</li>`,
-    )
-    .join("");
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:520px;margin:0 auto;">
-      <h2 style="margin:0 0 12px;">Complete your ETEN profile</h2>
-      <p style="margin:0 0 12px;line-height:1.6;">${greeting}</p>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        A few items are still outstanding on your ETEN profile. Completing them
-        unlocks the full benefits of membership and helps us verify your status.
-      </p>
-      <ul style="margin:0 0 16px;padding-left:20px;line-height:1.6;">${items}</ul>
-      <p style="margin:20px 0;">
-        <a href="${siteConfig.url}/profile/verification" style="background:#2e5395;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
-          Verify identity &amp; address
-        </a>
-      </p>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        Add your certifications from your
-        <a href="${siteConfig.url}/profile/certifications">profile</a>.
-      </p>
-      <p style="margin:16px 0 0;line-height:1.6;color:#666;font-size:13px;">
-        If you have already submitted these, no action is needed.
-      </p>
-    </div>
-  `;
-}
+import { getResendClient } from "@/lib/email";
+import { emailPayload } from "@/lib/email-template";
+import { documentReminderEmail } from "@/lib/eten/account-emails";
 
 /**
  * Emails a member a reminder to complete their outstanding onboarding documents
@@ -100,12 +60,13 @@ export async function sendDocumentReminder(
     return { error: "This member has no outstanding documents." };
   }
 
-  const { error: mailError } = await getResendClient().emails.send({
-    from: fromEmail,
-    to: email,
-    subject: "Complete your ETEN profile",
-    html: reminderEmailHtml(profile?.full_name ?? null, kinds),
-  });
+  const { subject, content } = documentReminderEmail(
+    profile?.full_name ?? null,
+    kinds,
+  );
+  const { error: mailError } = await getResendClient().emails.send(
+    emailPayload({ from: fromEmail, to: email, subject, content }),
+  );
   if (mailError) return { error: "The email failed to send." };
 
   const me = await getCurrentMember();

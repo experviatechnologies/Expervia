@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
-import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
+import {
+  sendMentorshipEmail,
+  memberName,
+  MENTOR_REASON,
+  MENTEE_REASON,
+} from "@/lib/eten/mentorship-email";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -80,12 +85,25 @@ export async function requestMentorship(input: {
     targetType: "request_received",
     targetId: null,
   });
-  await sendMentorshipEmail(
-    input.mentorId,
-    "New mentorship request",
-    "You have a new mentorship request",
-    "A mentee has requested you as a mentor on ETEN Mentorship. Open your dashboard to accept or decline.",
-  );
+  const menteeName = await memberName(admin, me.id, "A mentee");
+  await sendMentorshipEmail(input.mentorId, {
+    subject: `${menteeName} would like you as a mentor`,
+    preview: message
+      ? `"${message.length > 80 ? `${message.slice(0, 80)}...` : message}"`
+      : "Accept or decline from your mentor dashboard.",
+    paragraphs: [
+      `${menteeName} sent you a mentorship request on ETEN Mentorship.`,
+    ],
+    details: [
+      { label: "From", value: menteeName },
+      ...(message ? [{ label: "Their message", value: message }] : []),
+    ],
+    cta: { label: "Review request", path: "/mentor" },
+    smallPrint: [
+      "If you can't take them on right now, declining lets them find another mentor sooner.",
+    ],
+    reason: MENTOR_REASON,
+  });
 
   revalidatePath("/mentorship/mentors");
   revalidatePath("/mentorship/dashboard");
@@ -139,13 +157,33 @@ export async function decideMentorshipRequest(input: {
       input.decision === "accepted" ? "request_accepted" : "request_declined",
     targetId: null,
   });
+  const mentorName = await memberName(admin, req.mentor_id, "Your mentor");
+  const note = (input.note ?? "").trim().slice(0, 500);
+  const noteDetails = note ? [{ label: "Their note", value: note }] : [];
   if (input.decision === "accepted") {
-    await sendMentorshipEmail(
-      req.mentee_id,
-      "Your mentorship request was accepted",
-      "Good news, your request was accepted",
-      "A mentor accepted your mentorship request on ETEN Mentorship. Open your dashboard to see what's next.",
-    );
+    await sendMentorshipEmail(req.mentee_id, {
+      subject: `${mentorName} accepted your mentorship request`,
+      preview: "Open your dashboard to see your next steps.",
+      paragraphs: [
+        `Good news: ${mentorName} has agreed to be your mentor on ETEN Mentorship.`,
+        "Your dashboard shows what happens next, including sessions you can book.",
+      ],
+      details: noteDetails,
+      cta: { label: "Go to my dashboard", path: "/dashboard" },
+      reason: MENTEE_REASON,
+    });
+  } else {
+    await sendMentorshipEmail(req.mentee_id, {
+      subject: "An update on your mentorship request",
+      preview: "There are other mentors ready to help.",
+      paragraphs: [
+        `${mentorName} isn't able to take on your mentorship request right now. This usually comes down to timing and capacity.`,
+        "There are other mentors on ETEN Mentorship who can help with your goals.",
+      ],
+      details: noteDetails,
+      cta: { label: "Find another mentor", path: "/mentors" },
+      reason: MENTEE_REASON,
+    });
   }
 
   revalidatePath("/mentorship/mentor");

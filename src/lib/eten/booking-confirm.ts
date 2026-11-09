@@ -1,6 +1,12 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
-import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
+import {
+  sendMentorshipEmail,
+  memberName,
+  formatMoney,
+  MENTOR_REASON,
+  MENTEE_REASON,
+} from "@/lib/eten/mentorship-email";
 
 /**
  * Turning a pending session_booking into a real Circle session, shared by the
@@ -10,19 +16,6 @@ import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
  */
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
-
-function fmtWhenUtc(ms: number): string {
-  return (
-    new Date(ms).toLocaleString("en-GB", {
-      weekday: "long",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    }) + " UTC"
-  );
-}
 
 /**
  * Does [start,end) for the mentor collide with an already-scheduled session or
@@ -99,7 +92,7 @@ export async function confirmBookingToSession(
   const { data: booking } = await admin
     .from("session_bookings")
     .select(
-      "id, mentor_id, mentee_id, starts_at, duration_minutes, session_type, status, circle_id",
+      "id, mentor_id, mentee_id, starts_at, duration_minutes, session_type, status, circle_id, guest_timezone",
     )
     .eq("id", bookingId)
     .maybeSingle();
@@ -242,7 +235,23 @@ export async function confirmBookingToSession(
   if (updErr)
     return { error: "Couldn't confirm the booking. Please try again." };
 
-  const whenUtc = fmtWhenUtc(startMs);
+  const [mentorName, menteeName, { data: payment }] = await Promise.all([
+    memberName(admin, booking.mentor_id, "your mentor"),
+    memberName(admin, booking.mentee_id, "A mentee"),
+    admin
+      .from("payments")
+      .select(
+        "amount, currency, reference, mentor_amount, settlement_currency, settlement_mentor_amount",
+      )
+      .eq("booking_id", booking.id)
+      .eq("purpose", "session")
+      .eq("status", "success")
+      .maybeSingle(),
+  ]);
+  const when = {
+    startsAt: startIso,
+    minutes: booking.duration_minutes ?? 40,
+  };
 
   await notify({
     recipientId: booking.mentee_id,
@@ -251,12 +260,41 @@ export async function confirmBookingToSession(
     targetType: "booking_accepted",
     targetId: circleId,
   });
-  await sendMentorshipEmail(
-    booking.mentee_id,
-    "Your session is confirmed",
-    "Your session is confirmed",
-    `Your session for ${whenUtc} is confirmed. The live room opens 10 minutes before it starts; join it from your Circle.`,
-  );
+  await sendMentorshipEmail(booking.mentee_id, {
+    subject: `Your session with ${mentorName} is confirmed`,
+    preview: payment
+      ? "Your receipt and a calendar invite are inside."
+      : "Add it to your calendar with the attached invite.",
+    paragraphs: [
+      `You're booked in with ${mentorName}. The details are below, and the attached file adds the session to your calendar.`,
+    ],
+    details: [
+      { label: "Mentor", value: mentorName },
+      ...(payment
+        ? [
+            {
+              label: "Paid",
+              value: formatMoney(payment.amount, payment.currency),
+            },
+            { label: "Payment reference", value: payment.reference },
+          ]
+        : []),
+    ],
+    when: { ...when, timezoneHint: booking.guest_timezone },
+    calendar: {
+      uid: `session-${session.id}`,
+      title: `Mentorship session with ${mentorName}`,
+    },
+    cta: {
+      label: "Open my session",
+      path: `/circles/${circleId}/class/${session.id}`,
+    },
+    smallPrint: [
+      "The live room opens 10 minutes before the start time.",
+      ...(payment ? ["Keep this email as your receipt."] : []),
+    ],
+    reason: MENTEE_REASON,
+  });
 
   if (opts.notifyMentor) {
     await notify({
@@ -266,12 +304,38 @@ export async function confirmBookingToSession(
       targetType: "booking_paid",
       targetId: booking.id,
     });
-    await sendMentorshipEmail(
-      booking.mentor_id,
-      "New paid session booked",
-      "You have a new paid session",
-      `A mentee booked and paid for a session with you for ${whenUtc}. It's confirmed and on your schedule.`,
-    );
+    const earning = payment
+      ? payment.settlement_currency && payment.settlement_mentor_amount != null
+        ? formatMoney(
+            payment.settlement_mentor_amount,
+            payment.settlement_currency,
+          )
+        : formatMoney(payment.mentor_amount, payment.currency)
+      : null;
+    await sendMentorshipEmail(booking.mentor_id, {
+      subject: `${menteeName} booked a paid session with you`,
+      preview: "It's paid, confirmed and on your schedule.",
+      paragraphs: [
+        `${menteeName} booked and paid for a session with you. It's confirmed and on your schedule, so there's nothing to accept.`,
+      ],
+      details: [
+        { label: "Mentee", value: menteeName },
+        ...(earning ? [{ label: "Your earning", value: earning }] : []),
+      ],
+      when,
+      calendar: {
+        uid: `session-${session.id}`,
+        title: `Mentorship session with ${menteeName}`,
+      },
+      cta: {
+        label: "Open the session",
+        path: `/circles/${circleId}/class/${session.id}`,
+      },
+      smallPrint: [
+        "Your earning appears under Earnings in your mentor dashboard.",
+      ],
+      reason: MENTOR_REASON,
+    });
   }
 
   return { ok: true, circleId };

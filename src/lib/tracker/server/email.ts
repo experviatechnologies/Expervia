@@ -1,6 +1,7 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getResendClient, escapeHtml } from "@/lib/email";
+import { getResendClient } from "@/lib/email";
+import { emailPayload } from "@/lib/email-template";
 import { siteConfig } from "@/config/site";
 import { trackerUrl } from "@/lib/tracker/host";
 
@@ -9,31 +10,6 @@ import { trackerUrl } from "@/lib/tracker/host";
  * Best-effort like the mentorship emails: looks up each recipient's address,
  * sends via Resend, never throws, and no-ops when email isn't configured.
  */
-
-export function emailHtml(
-  heading: string,
-  body: string,
-  href: string,
-  cta: string,
-  /** The small line above the heading. */
-  kicker = "ETEN Availability Tracker",
-): string {
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#17123d;max-width:540px;margin:0 auto;">
-      <p style="margin:0 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6e6a8c;">${escapeHtml(kicker)}</p>
-      <h2 style="margin:0 0 12px;">${escapeHtml(heading)}</h2>
-      <p style="margin:0 0 16px;line-height:1.6;white-space:pre-line;">${escapeHtml(body)}</p>
-      <p style="margin:20px 0;">
-        <a href="${href}" style="background:#4a16c4;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;display:inline-block;">
-          ${escapeHtml(cta)}
-        </a>
-      </p>
-      <p style="margin:16px 0 0;line-height:1.6;color:#6e6a8c;font-size:13px;">
-        You receive this because of your role in the Expervia Technology Experts Network.
-      </p>
-    </div>
-  `;
-}
 
 /**
  * Record an email that couldn't be sent, for the admin health view
@@ -88,15 +64,20 @@ export async function sendTrackerEmail(params: {
           const to = data?.user?.email;
           if (!to) return;
           const { error } = await resend.emails.send({
-            from: fromEmail,
-            to,
-            subject: params.subject,
-            html: emailHtml(
-              params.heading,
-              params.body,
-              href,
-              params.cta ?? "Open the tracker",
-            ),
+            ...emailPayload({
+              from: fromEmail,
+              to,
+              subject: params.subject,
+              content: {
+                brand: "tracker",
+                heading: params.heading,
+                preview: params.body.split("\n")[0] ?? "",
+                paragraphs: [params.body],
+                cta: { label: params.cta ?? "Open the tracker", url: href },
+                reason:
+                  "You're receiving this because of your role in the Expervia Technology Experts Network.",
+              },
+            }),
             attachments: params.attachments?.map((a) => ({
               filename: a.filename,
               content: Buffer.from(a.content).toString("base64"),

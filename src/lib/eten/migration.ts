@@ -1,7 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Resend } from "resend";
-import { escapeHtml } from "@/lib/email";
+import {
+  emailPayload,
+  greetingFor,
+  type EmailContent,
+} from "@/lib/email-template";
 
 /**
  * ETEN existing-member migration (roadmap M0.2).
@@ -254,30 +258,38 @@ async function existingAuthEmails(admin: SupabaseClient): Promise<Set<string>> {
   return set;
 }
 
-function inviteEmailHtml(fullName: string | null, claimUrl: string): string {
-  const greeting = fullName
-    ? `Hi ${escapeHtml(fullName.split(/\s+/)[0])},`
-    : "Hi,";
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:520px;margin:0 auto;">
-      <h2 style="margin:0 0 12px;">Your ETEN account is ready</h2>
-      <p style="margin:0 0 12px;line-height:1.6;">${greeting}</p>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        Because you registered with Expervia, we've set up an ETEN account for you
-        with your details already filled in. Click below to set your password and
-        finish your profile ahead of launch.
-      </p>
-      <p style="margin:24px 0;">
-        <a href="${claimUrl}" style="background:#2e5395;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
-          Claim your account
-        </a>
-      </p>
-      <p style="margin:0 0 12px;line-height:1.6;color:#666;font-size:13px;">
-        This link is single-use and expires soon. If you didn't expect this, you
-        can ignore this email.
-      </p>
-    </div>
-  `;
+/**
+ * The email that lets a migrated member claim the account we created for them.
+ * `reminder` is the follow-up ops send from Pending claims.
+ */
+export function claimEmail(
+  fullName: string | null,
+  claimUrl: string,
+  opts: { reminder?: boolean } = {},
+): { subject: string; content: EmailContent } {
+  return {
+    subject: opts.reminder
+      ? "Finish setting up your ETEN account"
+      : "Your ETEN account is ready to claim",
+    content: {
+      brand: "eten",
+      preview: "Your details are already filled in. Set a password to sign in.",
+      greeting: greetingFor(fullName),
+      paragraphs: [
+        opts.reminder
+          ? "You registered with Expervia, so we created an ETEN account for you with your details already filled in. It isn't active yet."
+          : "You registered with Expervia, so we've created your ETEN account (Expervia Technology Experts Network) with your details already filled in.",
+        "Set a password to sign in, then check your profile is up to date. It takes about a minute.",
+      ],
+      cta: { label: "Set my password", url: claimUrl },
+      showLink: true,
+      smallPrint: [
+        'For your security, this link works once and expires after a short time. If it has expired, choose "Forgot password" on the sign-in page, or reply to this email and we\'ll help.',
+        "Not expecting this? You can ignore this email.",
+      ],
+      reason: "You're receiving this because you registered with Expervia.",
+    },
+  };
 }
 
 /**
@@ -328,12 +340,10 @@ export async function provisionAndInvite(
     .eq("member_id", data.user.id);
 
   if (opts.send !== false) {
-    const { error: mailError } = await resend.emails.send({
-      from: fromEmail,
-      to: candidate.email,
-      subject: "Your ETEN account is ready — claim it",
-      html: inviteEmailHtml(candidate.fullName, claimUrl),
-    });
+    const { subject, content } = claimEmail(candidate.fullName, claimUrl);
+    const { error: mailError } = await resend.emails.send(
+      emailPayload({ from: fromEmail, to: candidate.email, subject, content }),
+    );
     if (mailError) throw new Error(mailError.message);
   }
   return data.user.id;

@@ -1,71 +1,57 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getResendClient, escapeHtml } from "@/lib/email";
-import { siteConfig } from "@/config/site";
+import {
+  sendEmail,
+  greetingFor,
+  type EmailContent,
+} from "@/lib/email-template";
 
 /**
  * Account confirmation emails for ETEN and ETEN Mentorship sign-ups
  * (delivered via Resend; this project does not use Supabase's SMTP).
  *
- * Written for inbox placement (9 Nov 2026, some Gmail users never saw them):
- * a hand-written plain-text part alongside the HTML, a Reply-To a person can
- * answer, the sender identified in the footer, the link also shown as text,
- * and no tracking or marketing language.
+ * Uses the shared email template (plain-text part, Reply-To, footer), which
+ * came out of the 9 Nov 2026 incident where some Gmail users never saw them.
  */
 
 export type Product = "eten" | "mentorship";
 
-const NAME: Record<Product, string> = {
-  eten: "ETEN",
-  mentorship: "ETEN Mentorship",
-};
-
+/** Copy for the confirmation email, by product and (for mentorship) role. */
 export function confirmationEmail(params: {
   name: string;
   url: string;
   product: Product;
   intent?: "mentor" | "mentee";
-}): { subject: string; html: string; text: string } {
-  const first = params.name.trim().split(/\s+/)[0] || "there";
-  const product = NAME[params.product];
-  const why =
-    params.product === "mentorship"
-      ? `You signed up for ${product}${params.intent ? ` as a ${params.intent}` : ""}.`
-      : "You signed up to join ETEN, the Expervia Technology Experts Network.";
-  const subject = `Confirm your email for ${product}`;
+}): { subject: string; content: EmailContent } {
+  const mentorship = params.product === "mentorship";
+  const intro = mentorship
+    ? `Thanks for signing up to ETEN Mentorship${params.intent ? ` as a ${params.intent}` : ""}. Confirm your email address and your account will be ready.`
+    : "Thanks for signing up to ETEN, the Expervia Technology Experts Network. Confirm your email address and your account will be ready.";
+  const next =
+    params.intent === "mentor"
+      ? "Next, you'll set up your mentor profile so mentees can find you."
+      : params.intent === "mentee"
+        ? "Next, you'll be able to browse mentors and book your first session."
+        : "Next, you'll complete your member details so your Pod Leader can reach you.";
 
-  const text = [
-    `Hi ${first},`,
-    "",
-    `${why} Please confirm your email address to activate your account:`,
-    "",
-    params.url,
-    "",
-    "The link works once and expires after a while. If it has expired, request a new one from the sign-in page.",
-    "",
-    "If you didn't sign up, ignore this email and no account will be activated.",
-    "",
-    "Expervia Technologies",
-    siteConfig.url,
-  ].join("\n");
-
-  const html = `<!doctype html>
-<html lang="en"><body style="margin:0;padding:24px;background:#ffffff;">
-  <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1a1a2e;max-width:520px;margin:0 auto;font-size:15px;line-height:1.6;">
-    <p style="margin:0 0 16px;">Hi ${escapeHtml(first)},</p>
-    <p style="margin:0 0 16px;">${escapeHtml(why)} Please confirm your email address to activate your account.</p>
-    <p style="margin:24px 0;">
-      <a href="${params.url}" style="background:#2e5395;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">Confirm my email</a>
-    </p>
-    <p style="margin:0 0 8px;color:#555;font-size:13px;">Or copy this link into your browser:</p>
-    <p style="margin:0 0 20px;font-size:13px;word-break:break-all;"><a href="${params.url}" style="color:#2e5395;">${escapeHtml(params.url)}</a></p>
-    <p style="margin:0 0 16px;color:#555;font-size:13px;">The link works once and expires after a while. If you didn't sign up, ignore this email and no account will be activated.</p>
-    <hr style="border:none;border-top:1px solid #e5e5ea;margin:24px 0 12px;" />
-    <p style="margin:0;color:#777;font-size:12px;">Expervia Technologies · <a href="${siteConfig.url}" style="color:#777;">${escapeHtml(siteConfig.url.replace(/^https?:\/\//, ""))}</a></p>
-  </div>
-</body></html>`;
-
-  return { subject, html, text };
+  return {
+    subject: mentorship
+      ? "Confirm your email for ETEN Mentorship"
+      : "Confirm your email to join ETEN",
+    content: {
+      brand: mentorship ? "mentorship" : "eten",
+      preview: "One click and your account is active.",
+      greeting: greetingFor(params.name),
+      paragraphs: [intro, next],
+      cta: { label: "Confirm my email", url: params.url },
+      showLink: true,
+      smallPrint: [
+        'For your security, this link works once and expires after a short time. If it has expired, go to the sign-in page and choose "Resend the confirmation email".',
+        "Didn't sign up? You can ignore this email. No account will be activated.",
+      ],
+      reason: `You're receiving this because this address was used to sign up for ${mentorship ? "ETEN Mentorship" : "ETEN"}.`,
+    },
+  };
 }
 
 /** Send a confirmation email. Returns an error message, or null when sent. */
@@ -76,19 +62,8 @@ export async function sendConfirmationEmail(params: {
   product: Product;
   intent?: "mentor" | "mentee";
 }): Promise<string | null> {
-  const from = process.env.CONTACT_FROM_EMAIL;
-  if (!from) return "Email isn't configured.";
-  const { subject, html, text } = confirmationEmail(params);
-  const replyTo = process.env.CONTACT_TO_EMAIL?.trim();
-  const { error } = await getResendClient().emails.send({
-    from,
-    to: params.to,
-    subject,
-    html,
-    text,
-    ...(replyTo ? { replyTo } : {}),
-  });
-  return error ? error.message : null;
+  const { subject, content } = confirmationEmail(params);
+  return sendEmail({ to: params.to, subject, content });
 }
 
 /** Where a confirmed member lands, by how they signed up. */

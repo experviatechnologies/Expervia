@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       from: process.env.CONTACT_FROM_EMAIL!,
       to: process.env.CONTACT_TO_EMAIL!,
       replyTo: email.trim(),
-      subject: `New Huawei Community application — ${fullName.trim()}`,
+      subject: `New Huawei Community application: ${fullName.trim()}`,
       html: `
         <h2>New Huawei Professionals Community application</h2>
         <table cellspacing="0" cellpadding="0">

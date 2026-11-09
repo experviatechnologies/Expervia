@@ -1,5 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getResendClient } from "@/lib/email";
+import { emailPayload } from "@/lib/email-template";
+import { resetPasswordEmail } from "@/lib/eten/account-emails";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 import { clientIp, checkRateLimit } from "@/lib/eten/spam-guard";
 
@@ -8,28 +10,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESET_NEXT = "/reset-password";
 
 type Body = { email?: string } & Record<string, unknown>;
-
-function resetEmailHtml(confirmUrl: string): string {
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:520px;margin:0 auto;">
-      <h2 style="margin:0 0 12px;">Reset your ETEN password</h2>
-      <p style="margin:0 0 12px;line-height:1.6;">Hi,</p>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        We received a request to reset the password on your ETEN account. Click
-        below to choose a new one.
-      </p>
-      <p style="margin:24px 0;">
-        <a href="${confirmUrl}" style="background:#2e5395;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
-          Set a new password
-        </a>
-      </p>
-      <p style="margin:0 0 12px;line-height:1.6;color:#666;font-size:13px;">
-        This link is single-use and expires soon. If you didn't ask to reset
-        your password, you can safely ignore this email.
-      </p>
-    </div>
-  `;
-}
 
 /**
  * Sends a password-reset link for a member account. The forgot-password form
@@ -92,13 +72,16 @@ export async function POST(request: Request) {
       link.properties.hashed_token,
     )}&type=recovery&next=${encodeURIComponent(RESET_NEXT)}`;
     // A send failure is swallowed too, for the same anti-enumeration reason.
+    const { subject, content } = resetPasswordEmail(
+      "eten",
+      link.user?.user_metadata?.full_name,
+      email,
+      confirmUrl,
+    );
     await getResendClient()
-      .emails.send({
-        from: fromEmail,
-        to: email,
-        subject: "Reset your ETEN password",
-        html: resetEmailHtml(confirmUrl),
-      })
+      .emails.send(
+        emailPayload({ from: fromEmail, to: email, subject, content }),
+      )
       .catch(() => {});
   }
 

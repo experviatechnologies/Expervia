@@ -5,7 +5,11 @@ import { randomUUID } from "crypto";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
-import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
+import {
+  sendMentorshipEmail,
+  memberName,
+  MENTOR_REASON,
+} from "@/lib/eten/mentorship-email";
 import { getMentorSlots } from "@/lib/eten/availability";
 import { confirmBookingToSession } from "@/lib/eten/booking-confirm";
 import { getMonetizationSettings, computeSplit } from "@/lib/eten/monetization";
@@ -96,16 +100,6 @@ export async function requestSessionBooking(input: {
     return { error: "Couldn't request that time. Please try again." };
   }
 
-  const whenUtc =
-    new Date(startMs).toLocaleString("en-GB", {
-      weekday: "long",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    }) + " UTC";
-
   await notify({
     recipientId: input.mentorId,
     actorId: me.id,
@@ -113,12 +107,24 @@ export async function requestSessionBooking(input: {
     targetType: "booking_requested",
     targetId: created.id,
   });
-  await sendMentorshipEmail(
-    input.mentorId,
-    "New session booking request",
-    "A mentee requested a session time",
-    `A mentee asked to book a session with you for ${whenUtc}. Open your dashboard to accept or decline.`,
-  );
+  const menteeName = await memberName(admin, me.id, "A mentee");
+  await sendMentorshipEmail(input.mentorId, {
+    subject: `${menteeName} requested a session with you`,
+    preview: "Accept or decline the time from your mentor dashboard.",
+    paragraphs: [
+      `${menteeName} would like to book a free session with you at the time below.`,
+    ],
+    details: [{ label: "From", value: menteeName }],
+    when: {
+      startsAt: new Date(startMs).toISOString(),
+      minutes: slot.durationMinutes || durationMinutes,
+    },
+    cta: { label: "Review request", path: "/mentor" },
+    smallPrint: [
+      "If this time no longer works for you, decline it so they can choose another.",
+    ],
+    reason: MENTOR_REASON,
+  });
 
   revalidatePath(`/mentorship/mentors/${input.mentorId}`);
   revalidatePath("/mentorship/mentor");
@@ -381,7 +387,9 @@ export async function cancelAcceptedBooking(input: {
   const admin = getSupabaseAdmin();
   const { data: booking } = await admin
     .from("session_bookings")
-    .select("id, mentor_id, mentee_id, starts_at, status, session_id")
+    .select(
+      "id, mentor_id, mentee_id, starts_at, duration_minutes, status, session_id",
+    )
     .eq("id", input.bookingId)
     .maybeSingle();
   if (!booking) return { error: "Booking not found." };
@@ -438,15 +446,6 @@ export async function cancelAcceptedBooking(input: {
     await admin.from("circle_sessions").delete().eq("id", booking.session_id);
   }
 
-  const whenUtc =
-    new Date(startMs).toLocaleString("en-GB", {
-      weekday: "long",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    }) + " UTC";
   await notify({
     recipientId: booking.mentor_id,
     actorId: me.id,
@@ -454,12 +453,30 @@ export async function cancelAcceptedBooking(input: {
     targetType: "booking_cancelled",
     targetId: booking.id,
   });
-  await sendMentorshipEmail(
-    booking.mentor_id,
-    "A session was cancelled",
-    "Session cancelled",
-    `A mentee cancelled their session scheduled for ${whenUtc}.`,
-  );
+  const menteeName = await memberName(admin, me.id, "A mentee");
+  await sendMentorshipEmail(booking.mentor_id, {
+    subject: `${menteeName} cancelled their session`,
+    preview: "The time is free again in your availability.",
+    paragraphs: [
+      `${menteeName} cancelled the session below. The time is free again, so other mentees can book it.`,
+    ],
+    details: [{ label: "Mentee", value: menteeName }],
+    when: {
+      startsAt: booking.starts_at,
+      minutes: booking.duration_minutes ?? 40,
+    },
+    ...(booking.session_id
+      ? {
+          calendar: {
+            uid: `session-${booking.session_id}`,
+            title: `Mentorship session with ${menteeName}`,
+            cancelled: true,
+          },
+        }
+      : {}),
+    cta: { label: "Open my mentor dashboard", path: "/mentor" },
+    reason: MENTOR_REASON,
+  });
 
   revalidatePath("/mentorship/mentor");
   revalidatePath(`/mentorship/mentors/${booking.mentor_id}`);

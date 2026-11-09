@@ -55,7 +55,9 @@ export default async function AdminEmailPage() {
         </h1>
         <p className="text-eten-ink-muted mt-1 text-sm">
           Compose a custom email and send it to a chosen audience. Messages go
-          out individually, so recipients never see each other.
+          out individually, so recipients never see each other. Each one has an
+          unsubscribe link, and anyone who has unsubscribed is left out of the
+          count and the send.
         </p>
       </header>
 

@@ -5,7 +5,8 @@ import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getResendClient } from "@/lib/email";
 import { siteConfig } from "@/config/site";
-import { emailHtml } from "@/lib/tracker/server/email";
+import { emailPayload } from "@/lib/email-template";
+import { detailsReminderEmail } from "@/lib/eten/account-emails";
 import { DETAIL_LABEL } from "@/lib/eten/member-details";
 import { loadDetailsReport } from "@/lib/eten/details-report";
 
@@ -58,18 +59,17 @@ export async function nudgeIncompleteMembers(input: {
     const chunk = due.slice(i, i + BATCH);
     try {
       const { error } = await resend.batch.send(
-        chunk.map((m) => ({
-          from: fromEmail,
-          to: m.email,
-          subject: "Action needed: complete your ETEN details",
-          html: emailHtml(
-            "Please complete your ETEN details",
-            `Hi ${m.name.split(" ")[0] || "there"},\nYour Pod Leader uses your contact details and CV to reach you and put you forward for client work and opportunities. Your ETEN account now asks for these before you continue.\nStill needed: ${m.missing.map((k) => DETAIL_LABEL[k]).join(", ")}.\nIt takes about two minutes.`,
-            href,
-            "Complete my details",
-            "Expervia Technology Experts Network",
-          ),
-        })),
+        chunk.map((m) =>
+          emailPayload({
+            from: fromEmail,
+            to: m.email,
+            ...detailsReminderEmail(
+              m.name,
+              m.missing.map((k) => DETAIL_LABEL[k]),
+              href,
+            ),
+          }),
+        ),
         { idempotencyKey: `details-nudge/${runId}/${i}` },
       );
       if (error) {

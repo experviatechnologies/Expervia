@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { paystackRefund } from "@/lib/eten/paystack";
 import { notify } from "@/lib/eten/notifications";
-import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
+import { sendMentorshipEmail, formatMoney } from "@/lib/eten/mentorship-email";
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 
@@ -160,12 +160,31 @@ export async function processRefund(
     targetType: "refund_processed",
     targetId: null,
   });
-  await sendMentorshipEmail(
-    payment.payer_id,
-    "Your refund has been initiated",
-    "Refund initiated",
-    "Your refund has been initiated and will arrive via your payment provider. Thanks for using ETEN Mentorship.",
-  );
+  const refundText = formatMoney(amount, payment.currency);
+  await sendMentorshipEmail(payment.payer_id, {
+    subject: fullyRefunded
+      ? `Your refund of ${refundText} is on its way`
+      : `Your partial refund of ${refundText} is on its way`,
+    preview: "It goes back to the card or account you paid with.",
+    paragraphs: [
+      `We've sent ${fullyRefunded ? "your refund" : "a partial refund"} to Paystack. It goes back to the card or bank account you paid with.`,
+      "Refunds usually arrive within 10 working days, depending on your bank.",
+    ],
+    details: [
+      { label: "Refund", value: refundText },
+      {
+        label: "Original payment",
+        value: formatMoney(payment.amount, payment.currency),
+      },
+      { label: "Payment reference", value: payment.reference },
+    ],
+    cta: { label: "Go to my dashboard", path: "/dashboard" },
+    smallPrint: [
+      "If it hasn't arrived after 10 working days, reply to this email with your payment reference and we'll look into it.",
+    ],
+    reason:
+      "You're receiving this because you made a payment on ETEN Mentorship.",
+  });
 
   return { ok: true, amountMinor: amount };
 }

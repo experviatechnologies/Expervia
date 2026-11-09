@@ -38,7 +38,8 @@ function fold(line: string) {
 
 export function buildIcs(e: {
   uid: string;
-  method: "REQUEST" | "CANCEL";
+  /** PUBLISH is a plain "add to calendar" event with no RSVP (mentorship). */
+  method: "REQUEST" | "CANCEL" | "PUBLISH";
   start: string;
   end: string;
   summary: string;
@@ -46,16 +47,28 @@ export function buildIcs(e: {
   location?: string;
   url?: string;
   organizerEmail?: string;
+  /** Which product the event comes from (calendar metadata and UID domain). */
+  app?: "tracker" | "mentorship";
 }): string {
+  const app =
+    e.app === "mentorship"
+      ? {
+          name: "ETEN Mentorship",
+          domain: "mentorship.experviatechnologies.com",
+        }
+      : {
+          name: "ETEN Availability Tracker",
+          domain: "tracker.experviatechnologies.com",
+        };
   const now = new Date();
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Expervia Technologies//ETEN Availability Tracker//EN",
+    `PRODID:-//Expervia Technologies//${app.name}//EN`,
     "CALSCALE:GREGORIAN",
     `METHOD:${e.method}`,
     "BEGIN:VEVENT",
-    `UID:${e.uid}@tracker.experviatechnologies.com`,
+    `UID:${e.uid}@${app.domain}`,
     // Seconds since epoch only ever grows, so each send supersedes the last.
     `SEQUENCE:${Math.floor(now.getTime() / 1000)}`,
     `DTSTAMP:${stamp(now)}`,
@@ -66,7 +79,7 @@ export function buildIcs(e: {
     ...(e.location ? [`LOCATION:${text(e.location)}`] : []),
     ...(e.url ? [`URL:${e.url}`] : []),
     ...(e.organizerEmail
-      ? [`ORGANIZER;CN=ETEN Availability Tracker:mailto:${e.organizerEmail}`]
+      ? [`ORGANIZER;CN=${app.name}:mailto:${e.organizerEmail}`]
       : []),
     `STATUS:${e.method === "CANCEL" ? "CANCELLED" : "CONFIRMED"}`,
     "END:VEVENT",

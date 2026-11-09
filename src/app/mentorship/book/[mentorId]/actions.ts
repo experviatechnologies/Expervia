@@ -9,7 +9,10 @@ import { paystackInitialize, isPaystackConfigured } from "@/lib/eten/paystack";
 import { requestOrigin } from "@/lib/eten/request-origin";
 import { convertMinor } from "@/lib/eten/fx";
 import { notify } from "@/lib/eten/notifications";
-import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
+import {
+  sendMentorshipEmail,
+  MENTOR_REASON,
+} from "@/lib/eten/mentorship-email";
 import {
   isDisposableEmail,
   clientIp,
@@ -262,16 +265,6 @@ export async function createGuestBooking(input: {
     return { error: "Couldn't start that booking. Please try again." };
   }
 
-  const whenUtc =
-    new Date(startMs).toLocaleString("en-GB", {
-      weekday: "long",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    }) + " UTC";
-
   // --- Free booking request: no payment; the mentor confirms it, as in the
   // authenticated free flow. Notify + email the mentor, then return. ---
   if (!isPaid) {
@@ -282,12 +275,28 @@ export async function createGuestBooking(input: {
       targetType: "booking_requested",
       targetId: booking.id,
     });
-    await sendMentorshipEmail(
-      input.mentorId,
-      "New session booking request",
-      "A mentee requested a session time",
-      `${name} requested a free session with you for ${whenUtc}. Open your dashboard to accept or decline.`,
-    );
+    await sendMentorshipEmail(input.mentorId, {
+      subject: `${name} requested a session with you`,
+      preview: goal
+        ? `Goal: ${goal.length > 80 ? `${goal.slice(0, 80)}...` : goal}`
+        : "Accept or decline the time from your mentor dashboard.",
+      paragraphs: [
+        `${name} would like to book a free session with you at the time below.`,
+      ],
+      details: [
+        { label: "From", value: name },
+        ...(goal ? [{ label: "Their goal", value: goal }] : []),
+      ],
+      when: {
+        startsAt: new Date(startMs).toISOString(),
+        minutes: totalMinutes,
+      },
+      cta: { label: "Review request", path: "/mentor" },
+      smallPrint: [
+        "If this time no longer works for you, decline it so they can choose another.",
+      ],
+      reason: MENTOR_REASON,
+    });
     return { ok: true, free: true };
   }
 

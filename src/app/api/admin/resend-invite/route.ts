@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getResendClient, escapeHtml } from "@/lib/email";
+import { getResendClient } from "@/lib/email";
+import { emailPayload } from "@/lib/email-template";
+import { claimEmail } from "@/lib/eten/migration";
 import { writeAudit } from "@/lib/eten/audit";
 
 /**
@@ -22,32 +24,6 @@ export const maxDuration = 60;
 const MAX_BATCH = 50;
 const SEND_DELAY_MS = 600;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-function emailHtml(fullName: string | null, claimUrl: string): string {
-  const greeting = fullName
-    ? `Hi ${escapeHtml(fullName.split(/\s+/)[0])},`
-    : "Hi,";
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:520px;margin:0 auto;">
-      <h2 style="margin:0 0 12px;">Finish setting up your ETEN account</h2>
-      <p style="margin:0 0 12px;line-height:1.6;">${greeting}</p>
-      <p style="margin:0 0 12px;line-height:1.6;">
-        We set up an ETEN account for you because you registered with Expervia,
-        but it hasn't been activated yet. Click below to set your password and
-        finish your profile — it only takes a minute.
-      </p>
-      <p style="margin:24px 0;">
-        <a href="${claimUrl}" style="background:#2e5395;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">
-          Set your password &amp; sign in
-        </a>
-      </p>
-      <p style="margin:0 0 12px;line-height:1.6;color:#666;font-size:13px;">
-        This link is single-use and expires soon. If the button doesn't work,
-        request a new one or reply to this email and we'll help.
-      </p>
-    </div>
-  `;
-}
 
 export async function POST(request: NextRequest) {
   const manager = await getCurrentManager();
@@ -149,12 +125,12 @@ export async function POST(request: NextRequest) {
         link.properties.hashed_token,
       )}&type=recovery&next=/reset-password`;
 
-      const { error: mailError } = await resend.emails.send({
-        from: fromEmail,
-        to: email,
-        subject: "Finish setting up your ETEN account",
-        html: emailHtml(fullName, claimUrl),
+      const { subject, content } = claimEmail(fullName, claimUrl, {
+        reminder: true,
       });
+      const { error: mailError } = await resend.emails.send(
+        emailPayload({ from: fromEmail, to: email, subject, content }),
+      );
       if (mailError) throw new Error(mailError.message);
 
       await writeAudit({

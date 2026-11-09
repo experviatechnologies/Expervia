@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { notify } from "@/lib/eten/notifications";
-import { sendMentorshipEmail } from "@/lib/eten/mentorship-email";
+import {
+  sendMentorshipEmail,
+  memberName,
+  MENTEE_REASON,
+} from "@/lib/eten/mentorship-email";
 import { addEvidenceRecord } from "@/lib/eten/evidence";
 import { writeAudit } from "@/lib/eten/audit";
 import { recordRecognition } from "@/lib/eten/recognition";
@@ -122,12 +126,33 @@ async function enrolMemberInCircle(
     targetType: "circle_enrolled",
     targetId: circleId,
   });
-  await sendMentorshipEmail(
-    memberId,
-    "You've been added to a Circle",
-    "You're in a Mentorship Circle",
-    "A mentor added you to a Mentorship Circle on ETEN. Open your dashboard to see the sessions and assignments.",
+  const { data: circleRow } = await admin
+    .from("mentorship_circles")
+    .select("title, mentor_id")
+    .eq("id", circleId)
+    .maybeSingle();
+  const mentorName = await memberName(
+    admin,
+    circleRow?.mentor_id ?? actorId,
+    "Your mentor",
   );
+  const circleTitle = circleRow?.title?.trim();
+  await sendMentorshipEmail(memberId, {
+    subject: circleTitle
+      ? `You've joined the ${circleTitle} Circle`
+      : `You've joined ${mentorName}'s Mentorship Circle`,
+    preview: "See your upcoming classes and assignments.",
+    paragraphs: [
+      `${mentorName} added you to a Mentorship Circle on ETEN. A Circle is a small group that learns together through live classes and assignments.`,
+      "Open the Circle to see what's scheduled and say hello.",
+    ],
+    details: [
+      ...(circleTitle ? [{ label: "Circle", value: circleTitle }] : []),
+      { label: "Mentor", value: mentorName },
+    ],
+    cta: { label: "Open the Circle", path: `/circles/${circleId}` },
+    reason: MENTEE_REASON,
+  });
   return { ok: true };
 }
 
@@ -525,17 +550,14 @@ export async function scheduleClass(input: {
     );
 
     // Notify + email the mentees that a live class is on the calendar.
-    const classTitle = input.title?.trim() || "a live class";
-    const whenText =
-      new Date(startMs).toLocaleString("en-GB", {
-        weekday: "long",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "UTC",
-      }) + " UTC";
+    const classTitle = input.title?.trim() || "Live class";
+    const { data: circleRow } = await admin
+      .from("mentorship_circles")
+      .select("title")
+      .eq("id", input.circleId)
+      .maybeSingle();
+    const circleTitle = circleRow?.title?.trim();
+    const mentorName = await memberName(admin, me.id, "Your mentor");
     for (const m of mentees) {
       await notify({
         recipientId: m.member_id,
@@ -544,12 +566,30 @@ export async function scheduleClass(input: {
         targetType: "circle_class",
         targetId: input.circleId,
       });
-      await sendMentorshipEmail(
-        m.member_id,
-        "A live class has been scheduled",
-        "A live class has been scheduled",
-        `Your mentor scheduled ${classTitle} for ${whenText}. The room opens 10 minutes before it starts; open your dashboard to join.`,
-      );
+      await sendMentorshipEmail(m.member_id, {
+        subject: `New live class: ${classTitle}`,
+        preview: `${mentorName} scheduled a class${circleTitle ? ` for ${circleTitle}` : ""}. Add it to your calendar.`,
+        paragraphs: [
+          `${mentorName} scheduled a live class${circleTitle ? ` for your Circle, ${circleTitle}` : " for your Circle"}.`,
+        ],
+        details: [
+          { label: "Class", value: classTitle },
+          { label: "Mentor", value: mentorName },
+        ],
+        when: { startsAt: startsAtIso, minutes: duration },
+        calendar: {
+          uid: `session-${session.id}`,
+          title: `${classTitle} (ETEN Mentorship)`,
+        },
+        cta: {
+          label: "Open the class",
+          path: `/circles/${input.circleId}/class/${session.id}`,
+        },
+        smallPrint: [
+          "The room opens 10 minutes before the start time. The attached calendar file adds the class to your calendar.",
+        ],
+        reason: MENTEE_REASON,
+      });
     }
   }
 

@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getResendClient, escapeHtml } from "@/lib/email";
+import { getResendClient } from "@/lib/email";
+import { emailPayload } from "@/lib/email-template";
+import {
+  loadUnsubscribed,
+  unsubscribePageUrl,
+  unsubscribeOneClickUrl,
+} from "@/lib/email-unsubscribe";
 import { writeAudit } from "@/lib/eten/audit";
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
@@ -49,6 +55,12 @@ function parseManual(list: string): string[] {
   ];
 }
 
+/** Leave out everyone who unsubscribed from broadcasts. */
+async function withoutUnsubscribed(emails: string[]): Promise<string[]> {
+  const unsubscribed = await loadUnsubscribed();
+  return emails.filter((e) => !unsubscribed.has(e));
+}
+
 /** Resolve an audience to a de-duplicated list of recipient emails + a label. */
 async function resolveRecipients(
   admin: Admin,
@@ -56,7 +68,10 @@ async function resolveRecipients(
   manual: string,
 ): Promise<{ emails: string[]; label: string }> {
   if (audience === "manual") {
-    return { emails: parseManual(manual), label: "Manual list" };
+    return {
+      emails: await withoutUnsubscribed(parseManual(manual)),
+      label: "Manual list",
+    };
   }
 
   let memberIds: string[] = [];
@@ -135,7 +150,7 @@ async function resolveRecipients(
         .filter((e): e is string => Boolean(e)),
     ),
   ];
-  return { emails, label };
+  return { emails: await withoutUnsubscribed(emails), label };
 }
 
 /** Ops-only: how many recipients an audience resolves to (for the compose UI). */
@@ -154,35 +169,46 @@ export async function previewAudience(input: {
   return { count: emails.length, label };
 }
 
-function broadcastHtml(
+/** One broadcast email for one recipient, with their own unsubscribe link. */
+function broadcastPayload(
+  from: string,
+  to: string,
+  subject: string,
   body: string,
   cta: { label: string; url: string } | null,
-): string {
-  const paras = body
+) {
+  const paragraphs = body
     .split(/\n{2,}/)
-    .map(
-      (p) =>
-        `<p style="margin:0 0 14px;line-height:1.6;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`,
-    )
-    .join("");
-  const button =
-    cta && /^https?:\/\//i.test(cta.url)
-      ? `<p style="margin:22px 0;"><a href="${escapeHtml(cta.url)}" style="background:#2e5395;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">${escapeHtml(cta.label || "Open")}</a></p>`
-      : "";
-  return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;color:#111;max-width:560px;margin:0 auto;">
-      ${paras}${button}
-      <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-      <p style="margin:0;color:#888;font-size:12px;">Expervia Technology Experts Network (ETEN)</p>
-    </div>
-  `;
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const flat = body.replace(/\s+/g, " ").trim();
+  return emailPayload({
+    from,
+    to,
+    subject,
+    content: {
+      brand: "eten",
+      preview: flat.length > 110 ? `${flat.slice(0, 110)}...` : flat,
+      paragraphs,
+      ...(cta && /^https?:\/\//i.test(cta.url)
+        ? { cta: { label: cta.label || "Open", url: cta.url } }
+        : {}),
+      reason:
+        "You're receiving this ETEN announcement as a member of the Expervia Technology Experts Network.",
+      unsubscribe: {
+        pageUrl: unsubscribePageUrl(to),
+        oneClickUrl: unsubscribeOneClickUrl(to),
+      },
+    },
+  });
 }
 
 async function sendChunked(
   from: string,
   emails: string[],
   subject: string,
-  html: string,
+  body: string,
+  cta: { label: string; url: string } | null,
 ): Promise<{ sent: number; failed: number }> {
   const resend = getResendClient();
   let sent = 0;
@@ -191,7 +217,9 @@ async function sendChunked(
   for (let i = 0; i < emails.length; i += size) {
     const chunk = emails.slice(i, i + size);
     const results = await Promise.allSettled(
-      chunk.map((to) => resend.emails.send({ from, to, subject, html })),
+      chunk.map((to) =>
+        resend.emails.send(broadcastPayload(from, to, subject, body, cta)),
+      ),
     );
     for (const r of results) {
       if (r.status === "fulfilled" && !r.value.error) sent += 1;
@@ -243,9 +271,13 @@ export async function sendBroadcast(input: {
     input.ctaUrl?.trim() && input.ctaLabel?.trim()
       ? { label: input.ctaLabel.trim(), url: input.ctaUrl.trim() }
       : null;
-  const html = broadcastHtml(body, cta);
-
-  const { sent, failed } = await sendChunked(fromEmail, emails, subject, html);
+  const { sent, failed } = await sendChunked(
+    fromEmail,
+    emails,
+    subject,
+    body,
+    cta,
+  );
 
   const me = await getCurrentMember();
   await admin.from("email_broadcasts").insert({
