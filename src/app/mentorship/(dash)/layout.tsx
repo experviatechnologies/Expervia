@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { InstallAppPrompt } from "@/components/shared/install-app-prompt";
 import {
   MntDashShell,
   type MntNavItem,
@@ -177,6 +178,7 @@ export default async function MentorshipDashLayout({
   return (
     <MntDashShell user={user_} nav={navWithBadges} footer={footer}>
       {children}
+      <InstallAppPrompt />
     </MntDashShell>
   );
 }

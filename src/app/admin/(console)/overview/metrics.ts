@@ -262,3 +262,46 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
     recentActivity,
   };
 }
+
+export type AppInstallStats = {
+  /** Members who installed or opened the app on at least one device. */
+  members: number;
+  byPlatform: { android: number; ios: number; desktop: number; other: number };
+  /** Members who opened the installed app in the last 7 days. */
+  activeLast7: number;
+};
+
+/**
+ * Installed-app adoption (PWA phase 3) from public.app_installs. Returns null
+ * when the table isn't there yet (migration 61 not run).
+ */
+export async function getAppInstallStats(): Promise<AppInstallStats | null> {
+  const admin = getSupabaseAdmin();
+  const rows: {
+    member_id: string;
+    platform: string;
+    last_opened_at: string | null;
+  }[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await admin
+      .from("app_installs")
+      .select("member_id, platform, last_opened_at")
+      .range(from, from + 999);
+    if (error) return null;
+    rows.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const byPlatform = { android: 0, ios: 0, desktop: 0, other: 0 };
+  const members = new Set<string>();
+  const active = new Set<string>();
+  for (const r of rows) {
+    members.add(r.member_id);
+    const key = r.platform as keyof typeof byPlatform;
+    byPlatform[key in byPlatform ? key : "other"] += 1;
+    if (r.last_opened_at && Date.parse(r.last_opened_at) >= weekAgo) {
+      active.add(r.member_id);
+    }
+  }
+  return { members: members.size, byPlatform, activeLast7: active.size };
+}

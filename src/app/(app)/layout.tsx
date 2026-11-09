@@ -3,6 +3,7 @@ import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { needsDetails } from "@/lib/eten/member-details-server";
 import { AppNav, type NavPod } from "./app-nav";
+import { InstallAppPrompt } from "@/components/shared/install-app-prompt";
 
 /**
  * Shell for the ETEN member app: persistent navigation (Feed · Explore Pods ·
@@ -86,6 +87,7 @@ export default async function AppLayout({
           {children}
         </main>
       </div>
+      <InstallAppPrompt aboveBottomNav />
     </div>
   );
 }

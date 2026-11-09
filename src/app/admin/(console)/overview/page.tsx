@@ -18,7 +18,7 @@ import { timeAgo } from "@/lib/time";
 import { auditLabel, auditTone } from "@/lib/eten/audit-labels";
 import { toCsv } from "@/lib/csv";
 import { DownloadCsvButton } from "@/components/shared/download-csv-button";
-import { getOverviewMetrics } from "./metrics";
+import { getOverviewMetrics, getAppInstallStats } from "./metrics";
 
 export const metadata: Metadata = {
   title: "Overview",
@@ -30,8 +30,8 @@ export default async function AdminOverviewPage() {
   if (!manager) redirect("/admin/login");
   if (!(await isOperations())) redirect("/dashboard");
 
-  const { counts, pods, verification, kyc, growth, recentActivity } =
-    await getOverviewMetrics();
+  const [{ counts, pods, verification, kyc, growth, recentActivity }, app] =
+    await Promise.all([getOverviewMetrics(), getAppInstallStats()]);
 
   const addedThisMonth = growth.length ? growth[growth.length - 1].added : 0;
   const activePct = counts.totalMembers
@@ -298,7 +298,51 @@ export default async function AdminOverviewPage() {
             </div>
           )}
         </Card>
+
+        <Card
+          title="Installed app"
+          sub="Members using ETEN from their home screen"
+        >
+          {!app ? (
+            <Empty>
+              Run migration 61 (app_installs) to start counting installs.
+            </Empty>
+          ) : app.members === 0 ? (
+            <Empty>
+              No installs yet. Members are invited from their second visit.
+            </Empty>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <AppStat value={app.members} label="Members with the app" />
+                <AppStat
+                  value={app.activeLast7}
+                  label="Opened in the last 7 days"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <KycStat value={app.byPlatform.android} label="Android" />
+                <KycStat value={app.byPlatform.ios} label="iPhone / iPad" />
+                <KycStat
+                  value={app.byPlatform.desktop + app.byPlatform.other}
+                  label="Computer"
+                />
+              </div>
+            </div>
+          )}
+        </Card>
       </div>
+    </div>
+  );
+}
+
+function AppStat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="bg-eten-accent-soft rounded-xl p-4">
+      <p className="text-eten-ink text-[26px] leading-none font-extrabold tabular-nums">
+        {value}
+      </p>
+      <p className="text-eten-ink-muted mt-1.5 text-[13px]">{label}</p>
     </div>
   );
 }
