@@ -90,6 +90,11 @@ await png(svg({ size: 512, scale: 0.46, bg: null })).toFile(
   "public/icons/monochrome-512.png",
 );
 
+// Notification badge: Android's status bar shows this white silhouette.
+await png(svg({ size: 96, scale: 0.82, bg: null })).toFile(
+  "public/icons/badge-96.png",
+);
+
 // iPhone home screen (iOS rounds the corners itself; no transparency).
 await png(svg({ size: 180, scale: 0.56 })).toFile("src/app/apple-icon.png");
 

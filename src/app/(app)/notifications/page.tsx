@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -189,6 +190,15 @@ export default async function NotificationsPage() {
       ) : (
         <NotificationsList initial={items} />
       )}
+      <p className="text-eten-ink-muted mt-6 text-center text-sm">
+        Want these on your phone or computer?{" "}
+        <Link
+          href="/settings#device-notifications"
+          className="text-eten-accent font-semibold hover:underline"
+        >
+          Turn on device notifications
+        </Link>
+      </p>
     </div>
   );
 }

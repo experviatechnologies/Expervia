@@ -6,6 +6,7 @@ import { syncAllBusy } from "@/lib/tracker/server/calendar";
 import { retryFailedEventSyncs } from "@/lib/tracker/server/calendar/events";
 import { notifySystem } from "@/lib/tracker/server/events";
 import { sendTrackerEmail } from "@/lib/tracker/server/email";
+import { sendSessionReminders } from "@/lib/eten/session-reminders";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -16,10 +17,11 @@ export const maxDuration = 300;
  * "Authorization: Bearer <CRON_SECRET>". Refuses to run without the secret.
  * Each run is logged in presales_job_runs for the admin health view.
  *
- * Two jobs, logged separately so one failing never stops the other:
- *   reminders      reminders and escalations (step 7.1)
- *   calendar_sync  connected calendars' busy times, next 28 days (step 8.2),
- *                  and retries of meeting events that failed to sync (8.3)
+ * Three jobs, logged separately so one failing never stops the others:
+ *   reminders          reminders and escalations (step 7.1)
+ *   calendar_sync      connected calendars' busy times, next 28 days (step
+ *                      8.2), and retries of meeting events that failed (8.3)
+ *   session_reminders  mentorship "starts soon" push (PWA phase 4)
  */
 function authorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -122,6 +124,10 @@ async function handle(request: NextRequest) {
     ...(await syncAllBusy()),
     ...(await retryFailedEventSyncs()),
   }));
+  // Mentorship: "your session starts soon" push (PWA phase 4).
+  const sessionReminders = await logged("session_reminders", () =>
+    sendSessionReminders(admin),
+  );
 
   // Housekeeping: keep 30 days of successful runs (failures are kept).
   await admin
@@ -130,9 +136,9 @@ async function handle(request: NextRequest) {
     .eq("status", "succeeded")
     .lt("started_at", new Date(Date.now() - 30 * 86_400_000).toISOString());
 
-  const ok = reminders.ok && calendars.ok;
+  const ok = reminders.ok && calendars.ok && sessionReminders.ok;
   return NextResponse.json(
-    { ok, reminders, calendars },
+    { ok, reminders, calendars, sessionReminders },
     { status: ok ? 200 : 500 },
   );
 }

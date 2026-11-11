@@ -58,7 +58,7 @@ export function NotificationPreferences({ prefs }: { prefs: Pref[] }) {
             }`}
           >
             <span
-              className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform ${
+              className={`absolute top-0.5 left-0 size-5 rounded-full bg-white transition-transform ${
                 p.enabled ? "translate-x-5" : "translate-x-0.5"
               }`}
             />

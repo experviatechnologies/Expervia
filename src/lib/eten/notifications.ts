@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { pushLater, pushForNotification } from "@/lib/pwa/push";
 
 export type NotificationType =
   | "mention"
@@ -14,8 +15,9 @@ export type NotificationType =
  * Insert an in-app notification. Notifications are server-written (no member
  * INSERT policy), so this always uses service_role. Never notifies a member
  * about their own action, and honours a recipient's "off" preference for the
- * category. Best-effort: failures are logged, never thrown, so they can't break
- * the action that triggered them.
+ * category. Also pushed to their devices (lib/pwa/push.ts). Best-effort:
+ * failures are logged, never thrown, so they can't break the action that
+ * triggered them.
  */
 export async function notify(params: {
   recipientId: string;
@@ -37,13 +39,28 @@ export async function notify(params: {
       .maybeSingle();
     if (pref?.mode === "off") return;
 
-    await admin.from("notifications").insert({
+    const { error } = await admin.from("notifications").insert({
       recipient_id: params.recipientId,
       actor_id: params.actorId,
       type: params.type,
       target_type: params.targetType ?? null,
       target_id: params.targetId ?? null,
     });
+    if (error) {
+      console.error("notify failed", error.message);
+      return;
+    }
+
+    // Also to the recipient's phone and computer, after the response.
+    pushLater(() =>
+      pushForNotification({
+        recipientIds: [params.recipientId],
+        actorId: params.actorId,
+        type: params.type,
+        targetType: params.targetType ?? null,
+        targetId: params.targetId ?? null,
+      }),
+    );
   } catch (err) {
     console.error("notify failed", err);
   }

@@ -2,8 +2,31 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import {
+  PushSettings,
+  type PushOption,
+} from "@/components/shared/push-settings";
+import { getMutedPush } from "@/lib/pwa/push-actions";
+
+const PUSH_OPTIONS: PushOption[] = [
+  {
+    key: "mentorship",
+    label: "Mentorship updates",
+    hint: "Requests, bookings, Circle updates and payments",
+  },
+  {
+    key: "session_reminder",
+    label: "Session reminders",
+    hint: "Shortly before a session or live class starts",
+  },
+  {
+    key: "message",
+    label: "Messages",
+    hint: "When someone sends you a direct message",
+  },
+];
+import {
   mentorshipNotifText,
-  isCircleEvent,
+  mentorshipNotifHref,
 } from "@/lib/eten/mentorship-notifications";
 
 export const metadata = { title: "Notifications" };
@@ -27,17 +50,10 @@ type Notif = {
 };
 
 function render(n: Notif, actor: string): { text: string; href: string } {
-  const href =
-    isCircleEvent(n.target_type) && n.target_id
-      ? `/mentorship/circles/${n.target_id}`
-      : n.target_type === "request_received" ||
-          n.target_type === "booking_requested" ||
-          n.target_type === "booking_paid" ||
-          n.target_type === "booking_cancelled" ||
-          n.target_type === "mentor_rated"
-        ? "/mentorship/mentor"
-        : "/mentorship/dashboard";
-  return { text: mentorshipNotifText(n.target_type, actor), href };
+  return {
+    text: mentorshipNotifText(n.target_type, actor),
+    href: mentorshipNotifHref(n.target_type, n.target_id),
+  };
 }
 
 export default async function MentorshipNotificationsPage() {
@@ -80,6 +96,16 @@ export default async function MentorshipNotificationsPage() {
   return (
     <div className="mx-auto max-w-[720px] px-6 py-10">
       <h1 className="font-display text-2xl font-extrabold">Notifications</h1>
+
+      <details className="bg-mnt-panel border-mnt-line mt-6 rounded-2xl border p-5 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="cursor-pointer list-none text-[14px] font-semibold">
+          Get these on your phone or computer
+          <span className="text-mnt-faint ml-2 font-normal">Set up</span>
+        </summary>
+        <div className="mt-4">
+          <PushSettings options={PUSH_OPTIONS} muted={await getMutedPush()} />
+        </div>
+      </details>
 
       {notifications.length === 0 ? (
         <div className="border-mnt-line text-mnt-faint mt-6 rounded-2xl border border-dashed p-10 text-center text-[13px]">

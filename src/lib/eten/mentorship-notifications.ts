@@ -56,3 +56,25 @@ export function isCircleEvent(targetType: string | null): boolean {
     Boolean(targetType?.startsWith("circle_"))
   );
 }
+
+/**
+ * Where a mentorship notification leads in the mentorship area: the Circle
+ * for Circle events, the mentor dashboard for what a mentor acts on, else the
+ * mentee dashboard. Used by the notifications page and push notifications.
+ */
+export function mentorshipNotifHref(
+  targetType: string | null,
+  targetId: string | null,
+): string {
+  if (isCircleEvent(targetType) && targetId) {
+    return `/mentorship/circles/${targetId}`;
+  }
+  return targetType === "request_received" ||
+    targetType === "booking_requested" ||
+    targetType === "booking_paid" ||
+    targetType === "booking_cancelled" ||
+    targetType === "extension_paid" ||
+    targetType === "mentor_rated"
+    ? "/mentorship/mentor"
+    : "/mentorship/dashboard";
+}

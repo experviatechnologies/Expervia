@@ -9,6 +9,50 @@ import {
   type PrefCategory,
 } from "./notification-preferences";
 import { BlockedMembers, type BlockedRow } from "./blocked-members";
+import {
+  PushSettings,
+  type PushOption,
+} from "@/components/shared/push-settings";
+import { getMutedPush } from "@/lib/pwa/push-actions";
+
+const PUSH_OPTIONS: PushOption[] = [
+  {
+    key: "message",
+    label: "Messages",
+    hint: "When someone sends you a direct message",
+  },
+  {
+    key: "mentorship",
+    label: "Mentorship",
+    hint: "Requests, bookings, Circle updates and payments",
+  },
+  {
+    key: "session_reminder",
+    label: "Session reminders",
+    hint: "Shortly before a session or live class starts",
+  },
+  { key: "mention", label: "Mentions", hint: "When someone mentions you" },
+  {
+    key: "comment",
+    label: "Comments",
+    hint: "When someone comments on your post",
+  },
+  {
+    key: "reaction",
+    label: "Reactions",
+    hint: "When someone reacts to your post",
+  },
+  {
+    key: "pod_activity",
+    label: "Pod activity",
+    hint: "New posts in pods you follow",
+  },
+];
+const PRESALES_OPTION: PushOption = {
+  key: "presales",
+  label: "Presales",
+  hint: "Tracker requests, invitations and reminders",
+};
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -39,13 +83,28 @@ export default async function SettingsPage() {
 
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: prefRows }, { data: blockRows }] = await Promise.all([
+  const [
+    { data: prefRows },
+    { data: blockRows },
+    pushMuted,
+    { data: presales },
+  ] = await Promise.all([
     supabase
       .from("notification_preferences")
       .select("category, mode")
       .eq("member_id", member.id),
     supabase.from("blocks").select("blocked_id").eq("blocker_id", member.id),
+    getMutedPush(),
+    supabase
+      .from("presales_profiles")
+      .select("member_id")
+      .eq("member_id", member.id)
+      .maybeSingle(),
   ]);
+  const pushOptions =
+    presales || member.role === "operations"
+      ? [...PUSH_OPTIONS, PRESALES_OPTION]
+      : PUSH_OPTIONS;
 
   // Default is "realtime" (on) when no row exists.
   const modeByCategory = new Map(
@@ -94,6 +153,20 @@ export default async function SettingsPage() {
           Choose what shows up in your notifications.
         </p>
         <NotificationPreferences prefs={prefs} />
+      </section>
+
+      <section
+        id="device-notifications"
+        className="bg-eten-panel border-eten-line mb-6 scroll-mt-6 rounded-2xl border p-6"
+      >
+        <h2 className="font-display text-body-lg text-eten-ink mb-1 font-bold">
+          Phone and computer notifications
+        </h2>
+        <p className="text-eten-ink-muted mb-5 text-sm">
+          Alerts that reach you outside ETEN. Turn them on separately on each
+          device you use.
+        </p>
+        <PushSettings options={pushOptions} muted={pushMuted} />
       </section>
 
       <section className="bg-eten-panel border-eten-line rounded-2xl border p-6">

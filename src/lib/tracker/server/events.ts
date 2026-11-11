@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { pushLater, pushForNotification } from "@/lib/pwa/push";
 import { writeAudit } from "@/lib/eten/audit";
 import { notify } from "@/lib/eten/notifications";
 import type { PresalesEvent } from "@/lib/tracker/events";
@@ -107,6 +108,16 @@ export async function notifySystem(params: {
     if (rows.length) {
       const { error } = await admin.from("notifications").insert(rows);
       if (error) console.error("notifySystem failed", error.message);
+      else
+        pushLater(() =>
+          pushForNotification({
+            recipientIds: rows.map((r) => r.recipient_id),
+            actorId: null,
+            type: "presales",
+            targetType: params.event,
+            targetId: params.requestId ?? null,
+          }),
+        );
     }
   } catch (err) {
     console.error("notifySystem failed", err);

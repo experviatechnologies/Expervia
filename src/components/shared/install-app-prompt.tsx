@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Share, SquarePlus, X } from "lucide-react";
-import { recordAppUsage, type AppPlatform } from "@/lib/pwa/actions";
+import { recordAppUsage } from "@/lib/pwa/actions";
+import { isInAppBrowser, isInstalledApp, platformOf } from "@/lib/pwa/device";
 
 /**
  * "Get the ETEN app" card for signed-in members (PWA phase 3), shown in the
@@ -47,36 +48,6 @@ function writePrefs(p: Prefs) {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(p));
   } catch {}
-}
-
-function isIos(): boolean {
-  const ua = navigator.userAgent;
-  return (
-    /iPad|iPhone|iPod/.test(ua) ||
-    // iPadOS reports itself as a Mac with a touch screen
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
-
-function platformOf(): AppPlatform {
-  const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return "android";
-  if (isIos()) return "ios";
-  if (/Windows|Macintosh|Linux|CrOS/.test(ua)) return "desktop";
-  return "other";
-}
-
-function isInstalledApp(): boolean {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
-
-function isInAppBrowser(): boolean {
-  return /FBAN|FBAV|FB_IAB|Instagram|LinkedInApp|Twitter|Line\//i.test(
-    navigator.userAgent,
-  );
 }
 
 export function InstallAppPrompt({
