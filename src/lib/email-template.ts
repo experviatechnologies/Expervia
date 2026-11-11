@@ -44,6 +44,8 @@ export type EmailContent = {
   greeting?: string;
   /** Main message, one string per paragraph. */
   paragraphs: string[];
+  /** A one-time code, shown large so it is easy to read and type. */
+  code?: string;
   /** Key facts in a shaded box (who, when, how much). */
   details?: { label: string; value: string }[];
   /** A short list, with an optional line above it. */
@@ -140,7 +142,11 @@ export function renderEmail(content: EmailContent): {
         ${content.heading ? `<h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;color:${C.ink};">${escapeHtml(content.heading)}</h1>` : ""}
         ${content.greeting ? p(content.greeting) : ""}
         ${content.paragraphs.map((s) => p(s)).join("")}
-        ${details}${list}${button}${small}
+        ${
+          content.code
+            ? `<p style="margin:4px 0 22px;padding:16px 0;background:${C.panel};border-radius:10px;text-align:center;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:.3em;color:${C.ink};">${escapeHtml(content.code)}</p>`
+            : ""
+        }${details}${list}${button}${small}
       </td></tr>
       <tr><td style="padding:16px 28px 22px;border-top:1px solid ${C.line};font-family:${FONT};font-size:12px;line-height:1.6;color:${C.faint};">
         <p style="margin:0 0 6px;">${escapeHtml(content.reason)} Questions? Just reply to this email.</p>
@@ -162,6 +168,7 @@ export function renderEmail(content: EmailContent): {
     content.greeting,
     content.greeting ? "" : null,
     ...content.paragraphs.flatMap((s) => [s, ""]),
+    ...(content.code ? [content.code, ""] : []),
     ...(content.details?.length
       ? [...content.details.map((d) => `${d.label}: ${d.value}`), ""]
       : []),

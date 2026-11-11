@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/shared/password-input";
 import { ResendConfirmation } from "@/components/shared/resend-confirmation";
+import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 
 const inputClass =
   "w-full rounded-lg border border-white/10 bg-surface-container px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none transition-colors";
@@ -22,6 +23,8 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
   const [loading, setLoading] = useState(false);
   const [magicSentTo, setMagicSentTo] = useState<string | null>(null);
   const [unconfirmed, setUnconfirmed] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,6 +57,28 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
     router.refresh();
   }
 
+  async function sendCode(): Promise<boolean> {
+    const res = await fetch("/api/auth/sign-in-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        next,
+        [HONEYPOT_FIELD]: "",
+      }),
+    }).catch(() => null);
+    if (!res) {
+      setError("We couldn't reach ETEN. Check your connection and try again.");
+      return false;
+    }
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(data.error ?? "We couldn't send a code. Please try again.");
+      return false;
+    }
+    return true;
+  }
+
   async function handleMagicSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
@@ -62,42 +87,138 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
     }
     setLoading(true);
     setError(null);
+    if (await sendCode()) setMagicSentTo(email.trim().toLowerCase());
+    setLoading(false);
+  }
 
+  async function handleCodeSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const token = code.replace(/\D/g, "");
+    if (token.length < 6) {
+      setError("Enter the code from the email.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
     const supabase = createSupabaseBrowserClient();
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        // Don't create an account from the sign-in page — existing members only.
-        shouldCreateUser: false,
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(next)}`,
-      },
+    // "email" covers sign-in codes for confirmed and unconfirmed accounts;
+    // "magiclink" is the older name some projects still need.
+    let { error: verifyError } = await supabase.auth.verifyOtp({
+      email: magicSentTo ?? "",
+      token,
+      type: "email",
     });
-
-    if (otpError) {
-      setError(otpError.message);
+    if (verifyError) {
+      ({ error: verifyError } = await supabase.auth.verifyOtp({
+        email: magicSentTo ?? "",
+        token,
+        type: "magiclink",
+      }));
+    }
+    if (verifyError) {
+      setError(
+        "That code didn't work. Check it, or request a new one: each code works once and expires after a short time.",
+      );
       setLoading(false);
       return;
     }
-
-    setMagicSentTo(email.trim().toLowerCase());
-    setLoading(false);
+    router.push(next);
+    router.refresh();
   }
 
   if (magicSentTo) {
     return (
-      <div className="flex flex-col items-center gap-4 text-center">
-        <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
-          <MailCheck className="size-7" />
-        </span>
-        <h2 className="font-display text-body-lg text-on-surface font-bold">
-          Check your inbox
-        </h2>
-        <p className="text-on-surface-variant text-sm">
-          If an account exists for{" "}
-          <span className="text-on-surface font-medium">{magicSentTo}</span>,
-          we&apos;ve sent a one-time sign-in link. Click it to continue.
-        </p>
-      </div>
+      <form
+        onSubmit={handleCodeSubmit}
+        noValidate
+        className="flex flex-col gap-5"
+      >
+        <div className="flex flex-col items-center gap-3 text-center">
+          <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
+            <MailCheck className="size-7" />
+          </span>
+          <h2 className="font-display text-body-lg text-on-surface font-bold">
+            Check your inbox
+          </h2>
+          <p className="text-on-surface-variant text-sm">
+            If an account exists for{" "}
+            <span className="text-on-surface font-medium">{magicSentTo}</span>,
+            we&apos;ve emailed a sign-in code. Enter it below, or use the button
+            in the email.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="code" className={labelClass}>
+            Sign-in code
+          </label>
+          <input
+            id="code"
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={10}
+            autoFocus
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/[^\d\s]/g, ""))}
+            className={`${inputClass} text-center font-mono text-xl tracking-[0.3em]`}
+            placeholder="123456"
+          />
+        </div>
+
+        {error && <p className="text-destructive text-sm">{error}</p>}
+        {notice && (
+          <p role="status" className="text-on-surface-variant text-sm">
+            {notice}
+          </p>
+        )}
+
+        <Button
+          type="submit"
+          variant="brand"
+          size="pill-sm"
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </Button>
+
+        <div className="flex flex-col items-center gap-2 text-sm">
+          <button
+            type="button"
+            disabled={loading}
+            onClick={async () => {
+              setError(null);
+              setNotice(null);
+              setLoading(true);
+              if (await sendCode()) setNotice("We've sent a new code.");
+              setLoading(false);
+            }}
+            className="text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            Send a new code
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMagicSentTo(null);
+              setCode("");
+              setError(null);
+              setNotice(null);
+            }}
+            className="text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            Use a different email
+          </button>
+        </div>
+      </form>
     );
   }
 
@@ -162,10 +283,10 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
         {loading ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            {isMagic ? "Sending link…" : "Signing in…"}
+            {isMagic ? "Sending code…" : "Signing in…"}
           </>
         ) : isMagic ? (
-          "Email me a sign-in link"
+          "Email me a sign-in code"
         ) : (
           "Sign in"
         )}
@@ -181,7 +302,7 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
       >
         {isMagic
           ? "Sign in with a password instead"
-          : "Email me a sign-in link instead"}
+          : "Email me a sign-in code instead"}
       </button>
     </form>
   );

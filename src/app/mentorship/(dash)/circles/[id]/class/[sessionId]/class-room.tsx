@@ -9,6 +9,7 @@ import {
   RoomAudioRenderer,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
+import { MediaDeviceFailure } from "livekit-client";
 import { startExtensionPayment } from "./extension-actions";
 
 /** The room opens this many minutes before the scheduled start. */
@@ -81,6 +82,7 @@ export function ClassRoom({
   const [conn, setConn] = useState<{ token: string; url: string } | null>(null);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deviceIssue, setDeviceIssue] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [extBusy, setExtBusy] = useState(false);
   const [endBusy, setEndBusy] = useState(false);
@@ -224,6 +226,21 @@ export function ClassRoom({
         {actionError && (
           <p className="text-destructive text-[12px]">{actionError}</p>
         )}
+        {deviceIssue && (
+          <div
+            role="alert"
+            className="border-mnt-amber/40 bg-mnt-amber/10 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-[13px]"
+          >
+            <p>{deviceIssue}</p>
+            <button
+              type="button"
+              onClick={() => setDeviceIssue(null)}
+              className="text-mnt-faint hover:text-mnt-ink shrink-0 text-[12px] font-semibold"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         <div
           className="border-mnt-line overflow-hidden rounded-2xl border"
           style={{ height: "min(74vh, 700px)" }}
@@ -236,6 +253,9 @@ export function ClassRoom({
             audio
             video
             onDisconnected={leave}
+            onMediaDeviceFailure={(failure, kind) =>
+              setDeviceIssue(deviceMessage(failure, kind))
+            }
             style={{ height: "100%" }}
           >
             <VideoConference />
@@ -316,4 +336,31 @@ export function ClassRoom({
       {error && <p className="text-destructive mt-4 text-[13px]">{error}</p>}
     </div>
   );
+}
+
+/**
+ * Plain words for a camera or microphone problem. Installed apps ask for
+ * access separately from the browser, so a "no" there needs a pointer to
+ * where to change it.
+ */
+function deviceMessage(
+  failure: MediaDeviceFailure | undefined,
+  kind: MediaDeviceKind | undefined,
+): string {
+  const what =
+    kind === "audioinput"
+      ? "microphone"
+      : kind === "videoinput"
+        ? "camera"
+        : "camera or microphone";
+  switch (failure) {
+    case MediaDeviceFailure.PermissionDenied:
+      return `ETEN isn't allowed to use your ${what}. Allow it in your browser's site settings (on a phone: Settings, then your browser or the ETEN app), then leave and rejoin the session.`;
+    case MediaDeviceFailure.NotFound:
+      return `We couldn't find a ${what} on this device. You can still join and use the chat, or connect one and rejoin.`;
+    case MediaDeviceFailure.DeviceInUse:
+      return `Your ${what} is being used by another app. Close that app (a video call, for example), then leave and rejoin.`;
+    default:
+      return `Your ${what} couldn't start. Leave and rejoin the session, or try another browser.`;
+  }
 }

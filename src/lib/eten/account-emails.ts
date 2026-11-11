@@ -108,3 +108,28 @@ export function detailsReminderEmail(
     },
   };
 }
+
+/** Sign-in code email: a one-time code to type in, and the same as a link. */
+export function signInCodeEmail(
+  fullName: unknown,
+  code: string,
+  url: string,
+): Email {
+  return {
+    subject: `${code} is your ETEN sign-in code`,
+    content: {
+      brand: "eten",
+      preview: "Type it into ETEN, or use the button. It works once.",
+      greeting: greetingFor(typeof fullName === "string" ? fullName : null),
+      paragraphs: ["Enter this code in ETEN to sign in:"],
+      code,
+      cta: { label: "Or sign in with one tap", url },
+      smallPrint: [
+        "The code and the button work once and expire after a short time. If you use ETEN as an app on your phone, type the code there: the button opens your browser instead.",
+        "Didn't try to sign in? You can ignore this email. Nobody can sign in without this code.",
+      ],
+      reason:
+        "You're receiving this because someone asked to sign in to ETEN with this address.",
+    },
+  };
+}

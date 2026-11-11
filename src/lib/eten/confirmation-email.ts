@@ -66,8 +66,34 @@ export async function sendConfirmationEmail(params: {
   return sendEmail({ to: params.to, subject, content });
 }
 
+export type AuthUserSummary = {
+  id: string;
+  email?: string;
+  email_confirmed_at?: string | null;
+  user_metadata?: Record<string, unknown>;
+};
+
+/**
+ * The auth account for an email address, or null. Pages through the users
+ * (Supabase has no lookup by email in the admin API); fine at ETEN's size.
+ */
+export async function findAuthUserByEmail(
+  email: string,
+): Promise<AuthUserSummary | null> {
+  const admin = getSupabaseAdmin();
+  const target = email.trim().toLowerCase();
+  for (let page = 1; page < 50; page++) {
+    const { data } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    const users = data?.users ?? [];
+    const hit = users.find((u) => u.email?.toLowerCase() === target);
+    if (hit) return hit;
+    if (users.length < 1000) break;
+  }
+  return null;
+}
+
 /** Where a confirmed member lands, by how they signed up. */
-function nextFor(meta: Record<string, unknown>): string {
+export function nextFor(meta: Record<string, unknown>): string {
   if (meta.signup_source === "mentorship") {
     return meta.mentorship_intent === "mentor"
       ? "/mentorship/mentor"
@@ -89,17 +115,7 @@ export async function resendConfirmation(
 ): Promise<"sent" | "skipped" | "failed"> {
   const admin = getSupabaseAdmin();
   const target = email.trim().toLowerCase();
-  let user: {
-    email?: string;
-    email_confirmed_at?: string | null;
-    user_metadata?: Record<string, unknown>;
-  } | null = null;
-  for (let page = 1; page < 50 && !user; page++) {
-    const { data } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-    const users = data?.users ?? [];
-    user = users.find((u) => u.email?.toLowerCase() === target) ?? null;
-    if (users.length < 1000) break;
-  }
+  const user = await findAuthUserByEmail(target);
   if (!user || user.email_confirmed_at) return "skipped";
 
   const meta = user.user_metadata ?? {};
