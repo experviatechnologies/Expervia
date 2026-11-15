@@ -95,13 +95,13 @@ export const getCurrentMember = cache(
 );
 
 /**
- * True when the signed-in user is an operations (staff) member who has
- * completed two-step sign-in in this session. Every admin page, action and
- * route gates on this, so admin access always needs the authenticator code.
+ * True when the signed-in user is an operations (staff) member. Every admin
+ * page, action and route gates on this. Admin sign-in is email and password
+ * only (two-step sign-in is no longer required, owner's decision 15 Nov 2026).
  */
 export async function isOperations(): Promise<boolean> {
   const member = await getCurrentMember();
-  return member?.role === "operations" && member.aal === "aal2";
+  return member?.role === "operations";
 }
 
 /** The two-step sign-in page, returning to `next` afterwards. */
