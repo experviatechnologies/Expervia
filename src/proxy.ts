@@ -176,15 +176,11 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // --- Two-step sign-in pending: only the presales tracker still asks for
-  // the code (its staff roles require it). The admin console and member app
-  // are email and password only (owner's decision, 15 Nov 2026).
-  if (
-    needsCode &&
-    (isTrackerArea ||
-      // Supabase asks for the code before a password change on these accounts.
-      path === "/reset-password")
-  ) {
+  // --- Two-step sign-in: the admin console, member app and tracker are
+  // email and password only (owner's decisions, 15 and 16 Nov 2026). Supabase
+  // itself still asks for the code before a password change on an account
+  // that has an authenticator, so that page keeps it.
+  if (needsCode && path === "/reset-password") {
     return toMfa();
   }
 
