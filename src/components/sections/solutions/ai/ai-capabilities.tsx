@@ -1,4 +1,3 @@
-import Image from "next/image";
 import {
   Sparkles,
   TrendingUp,
@@ -8,8 +7,7 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 
 type Capability = {
@@ -73,90 +71,80 @@ const capabilities: Capability[] = [
 
 export function AiCapabilities() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">What We Build</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Enterprise AI Capabilities
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {capabilities.map(
-            ({
-              name,
-              icon: Icon,
-              description,
-              span,
-              eyebrow,
-              featured,
-              tags,
-            }) => (
-              <article
-                key={name}
-                className={cn(
-                  "glass-card hover:border-primary/50 relative flex flex-col overflow-hidden rounded-2xl p-8 transition-all",
-                  span,
-                  featured &&
-                    "from-primary/10 bg-gradient-to-br to-transparent",
-                )}
-              >
-                {/* Background image slot (featured card only). Swap in
-                    /public/images/ai-generative.jpg and update `src`. */}
-                {featured && (
-                  <div className="absolute inset-0">
-                    <Image
-                      src="/images/ai-generative.svg"
-                      alt=""
-                      fill
-                      unoptimized
-                      sizes="(min-width: 1024px) 66vw, 100vw"
-                      className="object-cover opacity-25"
-                    />
-                    <div className="from-surface-container/90 absolute inset-0 bg-gradient-to-t to-transparent" />
-                  </div>
-                )}
-
-                <div className="relative z-10 flex grow flex-col">
-                  <div className="bg-primary/10 text-primary mb-6 flex size-12 items-center justify-center rounded-lg">
-                    <Icon className="size-6" />
-                  </div>
-                  {eyebrow && (
-                    <span className="text-label-sm text-primary mb-2 font-mono tracking-wider uppercase">
-                      {eyebrow}
-                    </span>
-                  )}
-                  <h3
+    <Section id="capabilities" labelledBy="ai-cap-heading" tone="lavender">
+      <SectionIntro
+        id="ai-cap-heading"
+        eyebrow="What We Build"
+        title="Enterprise AI Capabilities"
+        center
+      />
+      <ul className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {capabilities.map(
+          ({ name, icon, description, span, eyebrow, featured, tags }) => (
+            <li
+              key={name}
+              className={cn(
+                "relative flex flex-col overflow-hidden rounded-3xl p-7 sm:p-9",
+                span,
+                featured
+                  ? "bg-brand-900 text-white shadow-[0_24px_50px_-28px_rgba(33,0,93,0.8)] md:col-span-2"
+                  : "border-brand-100 hover:border-brand-200 border bg-white transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_40px_-24px_rgba(33,0,93,0.35)]",
+              )}
+            >
+              {featured && (
+                <div
+                  aria-hidden
+                  className="bg-brand-600/40 absolute -right-24 -bottom-24 size-72 rounded-full blur-3xl"
+                />
+              )}
+              <div className="relative flex grow flex-col">
+                <IconBadge icon={icon} dark={featured} />
+                {eyebrow && (
+                  <p
                     className={cn(
-                      "font-display text-on-surface mb-2 font-semibold",
-                      featured ? "text-headline-lg" : "text-headline-md",
+                      "mt-6 text-xs font-bold tracking-[0.2em] uppercase",
+                      featured ? "text-brand-200" : "text-brand-600",
                     )}
                   >
-                    {name}
-                  </h3>
-                  <p className="text-on-surface-variant max-w-md">
-                    {description}
+                    {eyebrow}
                   </p>
-
-                  {tags && (
-                    <div className="mt-auto flex flex-wrap gap-2 pt-6">
-                      {tags.map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-full bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider uppercase"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
+                )}
+                <h3
+                  className={cn(
+                    "font-jakarta font-bold",
+                    eyebrow ? "mt-2" : "mt-5",
+                    featured
+                      ? "text-2xl text-white sm:text-3xl"
+                      : "text-brand-950 text-xl",
                   )}
-                </div>
-              </article>
-            ),
-          )}
-        </div>
-      </Container>
-    </section>
+                >
+                  {name}
+                </h3>
+                <p
+                  className={cn(
+                    "mt-3 max-w-xl leading-relaxed",
+                    featured ? "text-brand-100/90 text-lg" : "text-ink/75",
+                  )}
+                >
+                  {description}
+                </p>
+                {tags && (
+                  <ul className="mt-auto flex flex-wrap gap-2 pt-7">
+                    {tags.map((t) => (
+                      <li
+                        key={t}
+                        className="text-brand-50 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold"
+                      >
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </li>
+          ),
+        )}
+      </ul>
+    </Section>
   );
 }

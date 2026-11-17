@@ -235,23 +235,19 @@ export const leadershipRoles: Card[] = [
 export const joinSteps = [
   {
     title: "Complete Your Registration",
-    description:
-      "Submit your membership application through the ETEN registration form.",
+    body: "Submit your membership application through the ETEN registration form.",
   },
   {
     title: "Complete Your Member Verification",
-    description:
-      "Provide the required information and complete the onboarding and verification process.",
+    body: "Provide the required information and complete the onboarding and verification process.",
   },
   {
     title: "Join Your Technology Communities",
-    description:
-      "Connect with relevant specialist communities and Pods aligned with your interests and expertise.",
+    body: "Connect with relevant specialist communities and Pods aligned with your interests and expertise.",
   },
   {
     title: "Start Connecting and Contributing",
-    description:
-      "Participate in discussions, webinars, knowledge-sharing activities, projects and other community initiatives.",
+    body: "Participate in discussions, webinars, knowledge-sharing activities, projects and other community initiatives.",
   },
 ];
 

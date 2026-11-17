@@ -7,8 +7,13 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import {
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
+import { cn } from "@/lib/utils";
 
 const useCases: { icon: LucideIcon; sector: string; useCase: string }[] = [
   {
@@ -45,37 +50,26 @@ const useCases: { icon: LucideIcon; sector: string; useCase: string }[] = [
 
 export function AiUseCases() {
   return (
-    <section className="bg-surface-container-lowest py-section">
-      <Container>
-        <div className="mb-16 max-w-2xl">
-          <SectionLabel className="mb-4">AI in Action</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-            Outcomes Across Every Industry
-          </h2>
-          <p className="text-on-surface-variant text-body-lg">
-            We pair deep technical expertise with sector knowledge to apply AI
-            where it creates measurable value.
-          </p>
-        </div>
-        <div className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {useCases.map(({ icon: Icon, sector, useCase }) => (
-            <div
-              key={sector}
-              className="glass-card flex gap-4 rounded-xl p-6 transition-all hover:bg-white/5"
-            >
-              <span className="bg-primary/10 text-primary flex size-12 shrink-0 items-center justify-center rounded-lg">
-                <Icon className="size-6" />
-              </span>
-              <div>
-                <h3 className="font-display text-on-surface mb-1 font-semibold">
-                  {sector}
-                </h3>
-                <p className="text-on-surface-variant text-sm">{useCase}</p>
-              </div>
+    <Section id="use-cases" labelledBy="ai-uses-heading" tone="lavender">
+      <SectionIntro
+        id="ai-uses-heading"
+        eyebrow="AI in Action"
+        title="Outcomes Across Every Industry"
+        intro="We pair deep technical expertise with sector knowledge to apply AI where it creates measurable value."
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {useCases.map(({ icon, sector, useCase }) => (
+          <li key={sector} className={cn(cardClass, "flex gap-4")}>
+            <IconBadge icon={icon} />
+            <div>
+              <h3 className="font-jakarta text-brand-950 text-lg font-bold">
+                {sector}
+              </h3>
+              <p className="text-ink/75 mt-1 leading-relaxed">{useCase}</p>
             </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
