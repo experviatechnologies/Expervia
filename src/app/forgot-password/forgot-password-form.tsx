@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, MailCheck } from "lucide-react";
+import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
-import { Button } from "@/components/ui/button";
+import {
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+  authSubmitClass,
+} from "@/components/site/auth-shell";
 
-const inputClass =
-  "w-full rounded-lg border border-white/10 bg-surface-container px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none transition-colors";
-
-const labelClass = "text-label-sm text-on-surface-variant";
+const inputClass = authInputClass;
+const labelClass = authLabelClass;
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -55,15 +58,15 @@ export function ForgotPasswordForm() {
   if (sentTo) {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
-        <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
-          <MailCheck className="size-7" />
+        <span className="bg-lavender text-brand-700 ring-brand-200/70 flex size-14 items-center justify-center rounded-full ring-1">
+          <MailCheck aria-hidden className="size-7" />
         </span>
-        <h2 className="font-display text-body-lg text-on-surface font-bold">
+        <h2 className="font-jakarta text-brand-950 text-xl font-bold">
           Check your inbox
         </h2>
-        <p className="text-on-surface-variant text-sm">
+        <p className="text-ink/70">
           If an account exists for{" "}
-          <span className="text-on-surface font-medium">{sentTo}</span>,
+          <span className="text-brand-950 font-semibold">{sentTo}</span>,
           we&apos;ve sent a link to reset your password. It expires shortly, so
           use it soon.
         </p>
@@ -72,7 +75,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className={labelClass}>
           Email
@@ -104,24 +107,28 @@ export function ForgotPasswordForm() {
         />
       </div>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p role="alert" className={authErrorClass}>
+          {error}
+        </p>
+      )}
 
-      <Button
-        type="submit"
-        variant="brand"
-        size="pill-sm"
-        disabled={loading}
-        className="mt-2 w-full"
-      >
+      <button type="submit" disabled={loading} className={authSubmitClass}>
         {loading ? (
           <>
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 aria-hidden className="size-4 animate-spin" />
             Sending link…
           </>
         ) : (
-          "Send reset link"
+          <>
+            Send reset link
+            <ArrowRight
+              aria-hidden
+              className="size-4 transition-transform group-hover:translate-x-0.5"
+            />
+          </>
         )}
-      </Button>
+      </button>
     </form>
   );
 }

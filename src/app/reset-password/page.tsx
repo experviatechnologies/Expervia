@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MailWarning } from "lucide-react";
 import { getCurrentManager } from "@/lib/supabase-server";
 import { ResetPasswordForm } from "./reset-password-form";
+import { AuthShell, authLinkClass } from "@/components/site/auth-shell";
 
 export const metadata: Metadata = {
   title: "Set a new password",
@@ -15,17 +16,17 @@ export default async function ResetPasswordPage() {
   const user = await getCurrentManager();
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-16">
-      <div className="glass-card w-full max-w-md rounded-2xl p-8 sm:p-10">
-        <div className="mb-8 text-center">
-          <p className="text-label-sm text-primary mb-2 font-mono tracking-widest uppercase">
-            ETEN
-          </p>
-          <h1 className="font-display text-headline-md text-on-surface font-bold">
+    <AuthShell
+      eyebrow="Account help"
+      headline="Set a new password and pick up where you left off."
+    >
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="font-jakarta text-brand-950 text-3xl font-extrabold tracking-tight sm:text-[2.1rem]">
             Set a new password
           </h1>
           {user && (
-            <p className="text-on-surface-variant mt-2 text-sm">
+            <p className="text-ink/65 mt-2">
               Choose a new password for your account.
             </p>
           )}
@@ -34,23 +35,26 @@ export default async function ResetPasswordPage() {
         {user ? (
           <ResetPasswordForm />
         ) : (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
-              <MailWarning className="size-7" />
+          <div className="border-brand-100 bg-lavender flex flex-col items-start gap-4 rounded-2xl border p-6">
+            <span className="text-brand-700 ring-brand-200/70 flex size-12 items-center justify-center rounded-full bg-white ring-1">
+              <MailWarning aria-hidden className="size-6" />
             </span>
-            <p className="text-on-surface-variant text-sm">
+            <p className="text-ink/75">
               This password-reset link is invalid or has expired. Request a
               fresh one and open it from your email.
             </p>
-            <Link
-              href="/forgot-password"
-              className="text-primary text-sm hover:underline"
-            >
+            <Link href="/forgot-password" className={authLinkClass}>
               Request a new reset link
             </Link>
           </div>
         )}
+
+        <p className="border-brand-100 text-ink/70 border-t pt-6 text-[0.95rem]">
+          <Link href="/signin" className={authLinkClass}>
+            Back to sign in
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

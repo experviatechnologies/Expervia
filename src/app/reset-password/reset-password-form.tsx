@@ -2,15 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { Button } from "@/components/ui/button";
+import {
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+  authPasswordToggleClass,
+  authSubmitClass,
+} from "@/components/site/auth-shell";
 import { PasswordInput } from "@/components/shared/password-input";
 
-const inputClass =
-  "w-full rounded-lg border border-white/10 bg-surface-container px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none transition-colors";
-
-const labelClass = "text-label-sm text-on-surface-variant";
+const inputClass = authInputClass;
+const labelClass = authLabelClass;
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -67,7 +71,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <label htmlFor="password" className={labelClass}>
           New password
@@ -81,6 +85,7 @@ export function ResetPasswordForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={inputClass}
+          toggleClassName={authPasswordToggleClass}
           placeholder="At least 8 characters"
         />
       </div>
@@ -98,28 +103,33 @@ export function ResetPasswordForm() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           className={inputClass}
+          toggleClassName={authPasswordToggleClass}
           placeholder="Re-enter your new password"
         />
       </div>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p role="alert" className={authErrorClass}>
+          {error}
+        </p>
+      )}
 
-      <Button
-        type="submit"
-        variant="brand"
-        size="pill-sm"
-        disabled={loading}
-        className="mt-2 w-full"
-      >
+      <button type="submit" disabled={loading} className={authSubmitClass}>
         {loading ? (
           <>
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 aria-hidden className="size-4 animate-spin" />
             Updating…
           </>
         ) : (
-          "Set new password"
+          <>
+            Set new password
+            <ArrowRight
+              aria-hidden
+              className="size-4 transition-transform group-hover:translate-x-0.5"
+            />
+          </>
         )}
-      </Button>
+      </button>
     </form>
   );
 }
