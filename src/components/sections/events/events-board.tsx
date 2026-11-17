@@ -9,8 +9,8 @@ import {
   Radio,
   UserRound,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/shared/container";
+import { ButtonLink, Section } from "@/components/site/ui";
+import { cn } from "@/lib/utils";
 import { getPublishedEvents, type PublicEvent } from "@/lib/eten/events";
 
 type Status = "live" | "upcoming" | "past";
@@ -58,7 +58,7 @@ export async function EventsBoard() {
   const events = await getPublishedEvents();
 
   // Server component, rendered per request/revalidation (see `revalidate` on
-  // the events page) — reading the clock here is deterministic for the render,
+  // the events page). Reading the clock here is deterministic for the render,
   // not a client re-render, so the purity rule doesn't apply.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
@@ -78,55 +78,56 @@ export async function EventsBoard() {
   const [featured, ...moreUpcoming] = liveUpcoming;
 
   return (
-    <section id="upcoming" className="py-section">
-      <Container>
-        <div className="mb-10 max-w-2xl">
-          <span className="border-primary/20 bg-primary/10 text-primary text-label-sm mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono tracking-wider uppercase">
-            <Radio className="size-4" />
-            What&apos;s on
-          </span>
-          <h2 className="font-display text-on-surface text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Upcoming &amp; live sessions
-          </h2>
-          <p className="text-body-md text-on-surface-variant mt-3">
-            Live and upcoming ETEN sessions. Join links open when a session goes
-            live.
-          </p>
+    <Section id="upcoming" labelledBy="upcoming-heading">
+      <div className="mb-10 max-w-2xl">
+        <p className="text-brand-600 inline-flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase">
+          <Radio aria-hidden className="size-4" />
+          What&apos;s on
+        </p>
+        <h2
+          id="upcoming-heading"
+          className="font-jakarta text-brand-950 mt-4 text-3xl leading-tight font-extrabold tracking-tight sm:text-4xl lg:text-[2.75rem]"
+        >
+          Upcoming &amp; live sessions
+        </h2>
+        <p className="text-ink/75 mt-4 text-lg leading-relaxed">
+          Live and upcoming ETEN sessions. Join links open when a session goes
+          live.
+        </p>
+      </div>
+
+      {featured ? <FeaturedEvent event={featured} /> : <EmptyState />}
+
+      {moreUpcoming.length > 0 && (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {moreUpcoming.map((e) => (
+            <CompactEvent key={e.id} event={e} />
+          ))}
         </div>
+      )}
 
-        {featured ? <FeaturedEvent event={featured} /> : <EmptyState />}
-
-        {moreUpcoming.length > 0 && (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {moreUpcoming.map((e) => (
+      {past.length > 0 && (
+        <div className="mt-12">
+          <h3 className="text-ink/55 mb-4 text-xs font-bold tracking-[0.18em] uppercase">
+            Recent events
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {past.map((e) => (
               <CompactEvent key={e.id} event={e} />
             ))}
           </div>
-        )}
-
-        {past.length > 0 && (
-          <div className="mt-12">
-            <h3 className="text-label-sm text-on-surface-variant/70 mb-4 font-mono tracking-wider uppercase">
-              Recent events
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {past.map((e) => (
-                <CompactEvent key={e.id} event={e} />
-              ))}
-            </div>
-          </div>
-        )}
-      </Container>
-    </section>
+        </div>
+      )}
+    </Section>
   );
 }
 
 function StatusBadge({ status }: { status: Status }) {
   if (status === "live") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
         <span className="relative flex size-2">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75" />
+          <span className="absolute inline-flex size-full rounded-full bg-red-400 opacity-75 motion-safe:animate-ping" />
           <span className="relative inline-flex size-2 rounded-full bg-red-500" />
         </span>
         Live now
@@ -135,14 +136,14 @@ function StatusBadge({ status }: { status: Status }) {
   }
   if (status === "upcoming") {
     return (
-      <span className="border-primary/30 bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold">
-        <CalendarDays className="size-3.5" />
+      <span className="border-brand-200 bg-lavender text-brand-800 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold">
+        <CalendarDays aria-hidden className="size-3.5" />
         Upcoming
       </span>
     );
   }
   return (
-    <span className="border-outline-variant/50 text-on-surface-variant/70 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold">
+    <span className="border-brand-100 text-ink/55 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold">
       Ended
     </span>
   );
@@ -150,9 +151,9 @@ function StatusBadge({ status }: { status: Status }) {
 
 function FeaturedEvent({ event }: { event: EventWithStatus }) {
   return (
-    <div className="glass-card grid gap-8 rounded-3xl p-6 sm:p-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
+    <div className="border-brand-100 bg-lavender grid gap-8 rounded-[2rem] border p-6 shadow-[0_30px_60px_-40px_rgba(33,0,93,0.5)] sm:p-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
       {event.image && (
-        <div className="border-outline-variant/40 bg-surface-container relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-2xl border">
+        <div className="border-brand-100 relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-2xl border bg-white">
           <Image
             src={event.image}
             alt={`Event flyer: ${event.title}`}
@@ -166,13 +167,11 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
 
       <div className="min-w-0">
         <StatusBadge status={event.status} />
-        <h3 className="font-display text-on-surface mt-4 text-2xl leading-snug font-bold text-balance">
+        <h3 className="font-jakarta text-brand-950 mt-4 text-2xl leading-snug font-extrabold text-balance sm:text-3xl">
           {event.title}
         </h3>
         {event.blurb && (
-          <p className="text-body-md text-on-surface-variant mt-3">
-            {event.blurb}
-          </p>
+          <p className="text-ink/75 mt-3 leading-relaxed">{event.blurb}</p>
         )}
 
         <dl className="mt-6 flex flex-col gap-3">
@@ -180,9 +179,9 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
             <Detail Icon={UserRound} label="Speaker">
               {event.speaker}
               {event.speakerTitle && (
-                <span className="text-on-surface-variant">
-                  {" "}
-                  — {event.speakerTitle}
+                <span className="text-ink/60">
+                  {", "}
+                  {event.speakerTitle}
                 </span>
               )}
             </Detail>
@@ -206,17 +205,15 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
 
         {event.joinUrl && event.status !== "past" && (
           <div className="mt-8">
-            <Button asChild variant="brand" size="pill" className="font-bold">
-              <Link
-                href={event.joinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {event.status === "live" ? "Join now" : "Join the session"}
-                <ArrowRight />
-              </Link>
-            </Button>
-            <p className="text-on-surface-variant/70 mt-3 text-sm">
+            <ButtonLink
+              href={event.joinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              arrow
+            >
+              {event.status === "live" ? "Join now" : "Join the session"}
+            </ButtonLink>
+            <p className="text-ink/60 mt-3 text-sm">
               Please join a few minutes early. Opens in your meeting app or
               browser.
             </p>
@@ -225,17 +222,15 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
 
         {event.status === "past" && event.recordingUrl && (
           <div className="mt-8">
-            <Button asChild variant="brand" size="pill" className="font-bold">
-              <Link
-                href={event.recordingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <PlayCircle />
-                Watch the recording
-              </Link>
-            </Button>
-            <p className="text-on-surface-variant/70 mt-3 text-sm">
+            <ButtonLink
+              href={event.recordingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <PlayCircle aria-hidden className="size-4" />
+              Watch the recording
+            </ButtonLink>
+            <p className="text-ink/60 mt-3 text-sm">
               Missed it live? Watch the full session on YouTube.
             </p>
           </div>
@@ -247,19 +242,24 @@ function FeaturedEvent({ event }: { event: EventWithStatus }) {
 
 function CompactEvent({ event }: { event: EventWithStatus }) {
   return (
-    <div className="glass-card flex flex-col gap-3 rounded-2xl p-5">
+    <div
+      className={cn(
+        "border-brand-100 flex flex-col gap-3 rounded-3xl border bg-white p-6",
+        event.status === "past" && "bg-white/70",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <StatusBadge status={event.status} />
         {event.start && (
-          <span className="text-on-surface-variant/70 text-xs whitespace-nowrap">
+          <span className="text-ink/55 text-xs font-medium whitespace-nowrap">
             {formatDate(event.start)}
           </span>
         )}
       </div>
-      <h4 className="font-display text-on-surface font-bold text-balance">
+      <h4 className="font-jakarta text-brand-950 text-lg font-bold text-balance">
         {event.title}
       </h4>
-      <p className="text-on-surface-variant text-sm">
+      <p className="text-ink/70 text-sm">
         {event.start ? `${formatTimeRange(event.start, event.end)} · ` : ""}
         {event.platform}
       </p>
@@ -268,7 +268,7 @@ function CompactEvent({ event }: { event: EventWithStatus }) {
           href={event.joinUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary mt-1 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+          className="text-brand-700 mt-1 inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-2 hover:underline"
         >
           {event.status === "live" ? "Join now" : "Join the session"}
           <ArrowRight className="size-4" />
@@ -279,7 +279,7 @@ function CompactEvent({ event }: { event: EventWithStatus }) {
           href={event.recordingUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary mt-1 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+          className="text-brand-700 mt-1 inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-2 hover:underline"
         >
           <PlayCircle className="size-4" />
           Watch the recording
@@ -291,25 +291,22 @@ function CompactEvent({ event }: { event: EventWithStatus }) {
 
 function EmptyState() {
   return (
-    <div className="glass-card flex flex-col items-center gap-4 rounded-3xl p-12 text-center">
-      <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
-        <CalendarDays className="size-7" />
+    <div className="border-brand-200 bg-lavender flex flex-col items-center gap-4 rounded-[2rem] border border-dashed p-12 text-center">
+      <span className="text-brand-700 ring-brand-200/70 flex size-14 items-center justify-center rounded-full bg-white ring-1">
+        <CalendarDays aria-hidden className="size-7" />
       </span>
       <div>
-        <p className="text-on-surface font-semibold">
+        <p className="font-jakarta text-brand-950 text-lg font-bold">
           No sessions scheduled right now.
         </p>
-        <p className="text-on-surface-variant mx-auto mt-1 max-w-sm text-sm">
+        <p className="text-ink/70 mx-auto mt-1 max-w-sm">
           New webinars, workshops and meetups are announced here. Register your
           interest below so you don&apos;t miss the next one.
         </p>
       </div>
-      <Button asChild variant="brandOutline" size="pill" className="font-bold">
-        <Link href="#register">
-          Register your interest
-          <ArrowRight />
-        </Link>
-      </Button>
+      <ButtonLink href="#register" variant="outline" arrow>
+        Register your interest
+      </ButtonLink>
     </div>
   );
 }
@@ -325,14 +322,14 @@ function Detail({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="bg-primary/10 text-primary mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg">
+      <span className="text-brand-700 ring-brand-200/70 mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white ring-1">
         <Icon className="size-4" />
       </span>
       <div>
-        <dt className="text-label-sm text-on-surface-variant/70 font-mono tracking-wider uppercase">
+        <dt className="text-ink/55 text-xs font-bold tracking-[0.16em] uppercase">
           {label}
         </dt>
-        <dd className="text-on-surface text-sm font-medium">{children}</dd>
+        <dd className="text-brand-950 font-semibold">{children}</dd>
       </div>
     </div>
   );

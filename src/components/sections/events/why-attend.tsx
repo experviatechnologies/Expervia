@@ -7,14 +7,18 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import {
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 
 const benefits: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: GraduationCap,
     title: "Learn From Practitioners",
-    body: "Sessions led by engineers and architects who ship real systems — not theory decks.",
+    body: "Sessions led by engineers and architects who ship real systems, not theory decks.",
   },
   {
     icon: Wrench,
@@ -45,34 +49,24 @@ const benefits: { icon: LucideIcon; title: string; body: string }[] = [
 
 export function WhyAttend() {
   return (
-    <section className="bg-surface py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">
-            More Than Just Another Webinar
-          </SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Where Technology Professionals Connect and Grow
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {benefits.map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="bg-surface-container hover:border-primary/40 space-y-4 rounded-xl border border-white/5 p-8 transition-colors"
-            >
-              <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-lg">
-                <Icon className="size-6" />
-              </div>
-              <h3 className="font-display text-on-surface text-headline-md font-semibold">
-                {title}
-              </h3>
-              <p className="text-on-surface-variant text-sm">{body}</p>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="why-attend" labelledBy="why-attend-heading" tone="lavender">
+      <SectionIntro
+        id="why-attend-heading"
+        eyebrow="More Than Just Another Webinar"
+        title="Where Technology Professionals Connect and Grow"
+        center
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {benefits.map(({ icon, title, body }) => (
+          <li key={title} className={cardClass}>
+            <IconBadge icon={icon} />
+            <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+              {title}
+            </h3>
+            <p className="text-ink/75 mt-2.5 leading-relaxed">{body}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

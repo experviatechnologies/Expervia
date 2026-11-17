@@ -1,73 +1,70 @@
-import Link from "next/link";
-import { Mic, Handshake, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { Mic, Handshake } from "lucide-react";
+import {
+  ButtonLink,
+  IconBadge,
+  Section,
+  SectionIntro,
+} from "@/components/site/ui";
 
 export function GetInvolved() {
   return (
-    <section id="get-involved" className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">Get Involved</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Shape the Conversation
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 lg:grid-cols-2">
-          {/* Experts */}
-          <article className="glass-card flex flex-col rounded-2xl p-8 md:p-10">
-            <div className="bg-primary/10 text-primary mb-6 flex size-12 items-center justify-center rounded-lg">
-              <Mic className="size-6" />
-            </div>
-            <h3 className="font-display text-on-surface text-headline-md mb-3 font-semibold">
+    <Section
+      id="get-involved"
+      labelledBy="get-involved-heading"
+      tone="lavender"
+    >
+      <SectionIntro
+        id="get-involved-heading"
+        eyebrow="Get Involved"
+        title="Shape the Conversation"
+        center
+      />
+      <div className="mt-14 grid gap-5 lg:grid-cols-2">
+        <article className="bg-brand-900 relative flex flex-col overflow-hidden rounded-3xl p-8 text-white shadow-[0_24px_50px_-28px_rgba(33,0,93,0.8)] md:p-10">
+          <div
+            aria-hidden
+            className="bg-brand-600/40 absolute -right-24 -bottom-24 size-72 rounded-full blur-3xl"
+          />
+          <div className="relative flex grow flex-col">
+            <IconBadge icon={Mic} dark />
+            <h3 className="font-jakarta mt-6 text-2xl font-bold">
               Are You a Technology Expert?
             </h3>
-            <p className="text-on-surface-variant mb-8 text-sm">
+            <p className="text-brand-100/90 mt-3 mb-8 leading-relaxed">
               Share your expertise with the community. Speak on a panel, run a
-              hands-on workshop, or lead a masterclass — and get featured across
+              hands-on workshop, or lead a masterclass, and get featured across
               the ETEN network.
             </p>
-            <Button
-              asChild
-              variant="brand"
-              size="pill"
-              className="mt-auto self-start font-bold"
+            <ButtonLink
+              href="#register"
+              variant="light"
+              arrow
+              className="mt-auto self-start"
             >
-              <Link href="#register">
-                Apply to Speak
-                <ArrowRight />
-              </Link>
-            </Button>
-          </article>
+              Apply to Speak
+            </ButtonLink>
+          </div>
+        </article>
 
-          {/* Partners */}
-          <article className="glass-card flex flex-col rounded-2xl p-8 md:p-10">
-            <div className="bg-primary/10 text-primary mb-6 flex size-12 items-center justify-center rounded-lg">
-              <Handshake className="size-6" />
-            </div>
-            <h3 className="font-display text-on-surface text-headline-md mb-3 font-semibold">
-              Bring Your Challenges to the Conversation
-            </h3>
-            <p className="text-on-surface-variant mb-8 text-sm">
-              Partner with us to host sessions, sponsor events, and engage with
-              top technology talent and experts across Africa.
-            </p>
-            <Button
-              asChild
-              variant="brandOutline"
-              size="pill"
-              className="mt-auto self-start font-bold"
-            >
-              <Link href="/contact">
-                Partner With Us
-                <ArrowRight />
-              </Link>
-            </Button>
-          </article>
-        </div>
-      </Container>
-    </section>
+        <article className="border-brand-100 flex flex-col rounded-3xl border bg-white p-8 md:p-10">
+          <IconBadge icon={Handshake} />
+          <h3 className="font-jakarta text-brand-950 mt-6 text-2xl font-bold">
+            Bring Your Challenges to the Conversation
+          </h3>
+          <p className="text-ink/75 mt-3 mb-8 leading-relaxed">
+            Partner with us to host sessions, sponsor events, and engage with
+            top technology talent and experts across Africa.
+          </p>
+          <ButtonLink
+            href="/contact"
+            variant="outline"
+            arrow
+            className="mt-auto self-start"
+          >
+            Partner With Us
+          </ButtonLink>
+        </article>
+      </div>
+    </Section>
   );
 }

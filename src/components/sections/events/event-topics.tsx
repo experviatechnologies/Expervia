@@ -9,8 +9,7 @@ import {
   Compass,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const topics: { icon: LucideIcon; label: string }[] = [
   { icon: Cloud, label: "Microsoft Azure" },
@@ -25,35 +24,27 @@ const topics: { icon: LucideIcon; label: string }[] = [
 
 export function EventTopics() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">What We Cover</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-            Every Session, Grounded in Real Technology
-          </h2>
-          <p className="text-body-lg text-on-surface-variant mx-auto max-w-2xl">
-            From cloud architecture to AI adoption and security governance, ETEN
-            events span the technologies driving the modern African enterprise.
-          </p>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-2 md:grid-cols-4">
-          {topics.map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              className="glass-card hover:border-primary/50 flex flex-col items-center gap-4 rounded-2xl p-8 text-center transition-all"
-            >
-              <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-lg">
-                <Icon className="size-6" />
-              </div>
-              <span className="text-on-surface text-body-md font-semibold">
-                {label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="topics" labelledBy="topics-heading">
+      <SectionIntro
+        id="topics-heading"
+        eyebrow="What We Cover"
+        title="Every Session, Grounded in Real Technology"
+        intro="From cloud architecture to AI adoption and security governance, ETEN events span the technologies driving the modern African enterprise."
+        center
+      />
+      <ul className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {topics.map(({ icon, label }) => (
+          <li
+            key={label}
+            className="border-brand-100 hover:border-brand-300 flex flex-col items-center gap-4 rounded-3xl border bg-white p-6 text-center transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_36px_-24px_rgba(33,0,93,0.35)]"
+          >
+            <IconBadge icon={icon} />
+            <span className="font-jakarta text-brand-950 font-bold">
+              {label}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
