@@ -1,6 +1,10 @@
 import { Cloud, Server, Network, Layers, type LucideIcon } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import {
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 
 const platforms: { icon: LucideIcon; name: string; body: string }[] = [
   {
@@ -27,33 +31,24 @@ const platforms: { icon: LucideIcon; name: string; body: string }[] = [
 
 export function CloudPlatforms() {
   return (
-    <section className="bg-surface-container-lowest py-section">
-      <Container>
-        <div className="mb-16 max-w-2xl">
-          <SectionLabel className="mb-4">Platform Expertise</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-            Platforms We Master
-          </h2>
-          <p className="text-on-surface-variant text-body-lg">
-            Certified depth across the platforms that matter — so we recommend
-            the best fit for your business, not a vendor&apos;s quota.
-          </p>
-        </div>
-        <div className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {platforms.map(({ icon: Icon, name, body }) => (
-            <div
-              key={name}
-              className="bg-surface-container hover:border-primary/40 rounded-xl border border-white/5 p-8 transition-colors"
-            >
-              <Icon className="text-primary mb-6 size-8" />
-              <h3 className="font-display text-on-surface text-headline-md mb-2 font-semibold">
-                {name}
-              </h3>
-              <p className="text-on-surface-variant text-sm">{body}</p>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="platforms" labelledBy="platforms-heading" tone="lavender">
+      <SectionIntro
+        id="platforms-heading"
+        eyebrow="Platform Expertise"
+        title="Platforms We Master"
+        intro="Certified depth across the platforms that matter, so we recommend the best fit for your business, not a vendor's quota."
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {platforms.map(({ icon, name, body }) => (
+          <li key={name} className={cardClass}>
+            <IconBadge icon={icon} />
+            <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+              {name}
+            </h3>
+            <p className="text-ink/75 mt-2.5 leading-relaxed">{body}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
