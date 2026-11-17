@@ -11,6 +11,8 @@ type PasswordInputProps = Omit<
   className?: string;
   /** Classes for the relative wrapper. Put layout margins (e.g. mt-1.5) here. */
   wrapperClassName?: string;
+  /** Overrides the eye button's colours (default suits dark fields). */
+  toggleClassName?: string;
 };
 
 /**
@@ -24,6 +26,7 @@ type PasswordInputProps = Omit<
 export function PasswordInput({
   className = "",
   wrapperClassName = "",
+  toggleClassName = "text-neutral-400 hover:text-neutral-200",
   ...props
 }: PasswordInputProps) {
   const [show, setShow] = useState(false);
@@ -41,7 +44,7 @@ export function PasswordInput({
         aria-label={show ? "Hide password" : "Show password"}
         aria-pressed={show}
         tabIndex={-1}
-        className="absolute inset-y-0 right-0 flex items-center px-3 text-neutral-400 transition-colors hover:text-neutral-200"
+        className={`absolute inset-y-0 right-0 flex items-center px-3 transition-colors ${toggleClassName}`}
       >
         {show ? (
           <EyeOff className="size-[18px]" aria-hidden="true" />

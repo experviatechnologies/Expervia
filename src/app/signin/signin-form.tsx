@@ -2,17 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, MailCheck } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/shared/password-input";
 import { ResendConfirmation } from "@/components/shared/resend-confirmation";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
+import {
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+  authLinkClass,
+  authPasswordToggleClass,
+  authSubmitClass,
+} from "@/components/site/auth-shell";
 
-const inputClass =
-  "w-full rounded-lg border border-white/10 bg-surface-container px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none transition-colors";
-
-const labelClass = "text-label-sm text-on-surface-variant";
+const inputClass = authInputClass;
+const labelClass = authLabelClass;
+const secondaryClass =
+  "text-ink/65 hover:text-brand-700 text-sm font-medium transition-colors";
 
 export function SignInForm({ next = "/dashboard" }: { next?: string }) {
   const router = useRouter();
@@ -134,15 +142,15 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
         className="flex flex-col gap-5"
       >
         <div className="flex flex-col items-center gap-3 text-center">
-          <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
-            <MailCheck className="size-7" />
+          <span className="bg-lavender text-brand-700 ring-brand-200/70 flex size-14 items-center justify-center rounded-full ring-1">
+            <MailCheck aria-hidden className="size-7" />
           </span>
-          <h2 className="font-display text-body-lg text-on-surface font-bold">
+          <h2 className="font-jakarta text-brand-950 text-xl font-bold">
             Check your inbox
           </h2>
-          <p className="text-on-surface-variant text-sm">
+          <p className="text-ink/70 text-sm">
             If an account exists for{" "}
-            <span className="text-on-surface font-medium">{magicSentTo}</span>,
+            <span className="text-brand-950 font-semibold">{magicSentTo}</span>,
             we&apos;ve emailed a sign-in code. Enter it below, or use the button
             in the email.
           </p>
@@ -166,29 +174,33 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
           />
         </div>
 
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p role="alert" className={authErrorClass}>
+            {error}
+          </p>
+        )}
         {notice && (
-          <p role="status" className="text-on-surface-variant text-sm">
+          <p role="status" className="text-ink/70 text-sm">
             {notice}
           </p>
         )}
 
-        <Button
-          type="submit"
-          variant="brand"
-          size="pill-sm"
-          disabled={loading}
-          className="w-full"
-        >
+        <button type="submit" disabled={loading} className={authSubmitClass}>
           {loading ? (
             <>
-              <Loader2 className="size-4 animate-spin" />
+              <Loader2 aria-hidden className="size-4 animate-spin" />
               Signing in…
             </>
           ) : (
-            "Sign in"
+            <>
+              Sign in
+              <ArrowRight
+                aria-hidden
+                className="size-4 transition-transform group-hover:translate-x-0.5"
+              />
+            </>
           )}
-        </Button>
+        </button>
 
         <div className="flex flex-col items-center gap-2 text-sm">
           <button
@@ -201,7 +213,7 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
               if (await sendCode()) setNotice("We've sent a new code.");
               setLoading(false);
             }}
-            className="text-on-surface-variant hover:text-on-surface transition-colors"
+            className={secondaryClass}
           >
             Send a new code
           </button>
@@ -213,7 +225,7 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
               setError(null);
               setNotice(null);
             }}
-            className="text-on-surface-variant hover:text-on-surface transition-colors"
+            className={secondaryClass}
           >
             Use a different email
           </button>
@@ -228,7 +240,7 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
     <form
       onSubmit={isMagic ? handleMagicSubmit : handlePasswordSubmit}
       noValidate
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
     >
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className={labelClass}>
@@ -249,10 +261,19 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
 
       {!isMagic && (
         <div className="flex flex-col gap-2">
-          <label htmlFor="password" className={labelClass}>
-            Password
-          </label>
+          <div className="flex items-baseline justify-between gap-4">
+            <label htmlFor="password" className={labelClass}>
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className={`text-sm ${authLinkClass}`}
+            >
+              Forgot password?
+            </Link>
+          </div>
           <PasswordInput
+            toggleClassName={authPasswordToggleClass}
             id="password"
             name="password"
             autoComplete="current-password"
@@ -260,37 +281,40 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={inputClass}
-            placeholder="••••••••"
+            placeholder="Your password"
           />
         </div>
       )}
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p role="alert" className={authErrorClass}>
+          {error}
+        </p>
+      )}
       {unconfirmed && (
         <ResendConfirmation
           email={unconfirmed}
-          className="text-on-surface-variant border-outline-variant/30 rounded-xl border p-4"
+          className="text-ink/75 border-brand-100 bg-lavender rounded-xl border p-4"
+          buttonClassName="text-brand-700 font-semibold hover:underline disabled:opacity-60 disabled:no-underline"
         />
       )}
 
-      <Button
-        type="submit"
-        variant="brand"
-        size="pill-sm"
-        disabled={loading}
-        className="mt-2 w-full"
-      >
+      <button type="submit" disabled={loading} className={authSubmitClass}>
         {loading ? (
           <>
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 aria-hidden className="size-4 animate-spin" />
             {isMagic ? "Sending code…" : "Signing in…"}
           </>
-        ) : isMagic ? (
-          "Email me a sign-in code"
         ) : (
-          "Sign in"
+          <>
+            {isMagic ? "Email me a sign-in code" : "Sign in"}
+            <ArrowRight
+              aria-hidden
+              className="size-4 transition-transform group-hover:translate-x-0.5"
+            />
+          </>
         )}
-      </Button>
+      </button>
 
       <button
         type="button"
@@ -298,7 +322,7 @@ export function SignInForm({ next = "/dashboard" }: { next?: string }) {
           setMode(isMagic ? "password" : "magic");
           setError(null);
         }}
-        className="text-on-surface-variant hover:text-on-surface text-center text-sm transition-colors"
+        className={`${secondaryClass} text-center`}
       >
         {isMagic
           ? "Sign in with a password instead"
