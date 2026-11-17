@@ -17,8 +17,8 @@ const PRIVACY_HREF =
   "/contact";
 
 const fieldClass =
-  "w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 outline-none transition-colors focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/40 aria-invalid:border-destructive";
-const labelClass = "text-on-surface mb-2 block text-sm font-medium";
+  "w-full rounded-xl border border-brand-100 bg-white px-4 py-3 text-ink placeholder:text-ink/40 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 aria-invalid:border-red-500 aria-invalid:focus:ring-red-100";
+const labelClass = "text-brand-950 mb-2 block text-sm font-semibold";
 
 type Errors = Partial<
   Record<
@@ -48,7 +48,7 @@ function validate(fd: FormData, interests: string[]): Errors {
 
 function ErrorText({ name, errors }: { name: keyof Errors; errors: Errors }) {
   return errors[name] ? (
-    <p id={`${name}-error`} className="text-destructive mt-1.5 text-sm">
+    <p id={`${name}-error`} className="mt-1.5 text-sm text-red-700">
       {errors[name]}
     </p>
   ) : null;
@@ -136,11 +136,11 @@ export function ContributorForm() {
         role="status"
         className="flex flex-col items-center gap-4 py-12 text-center"
       >
-        <CheckCircle2 className="text-primary size-14" aria-hidden />
-        <h3 className="font-display text-on-surface text-headline-md font-bold">
+        <CheckCircle2 className="text-brand-600 size-14" aria-hidden />
+        <h3 className="font-jakarta text-brand-950 text-2xl font-bold">
           Thank you for your interest.
         </h3>
-        <p className="text-on-surface-variant max-w-md">
+        <p className="text-ink/75 max-w-md">
           Your expression of interest has reached the ETEN team. We review every
           submission and will be in touch by email about next steps.
         </p>
@@ -172,7 +172,7 @@ export function ContributorForm() {
       <div className="grid gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="wit-fullName" className={labelClass}>
-            Full name <span className="text-primary">*</span>
+            Full name <span className="text-brand-700">*</span>
           </label>
           <input
             id="wit-fullName"
@@ -189,7 +189,7 @@ export function ContributorForm() {
         </div>
         <div>
           <label htmlFor="wit-email" className={labelClass}>
-            Email address <span className="text-primary">*</span>
+            Email address <span className="text-brand-700">*</span>
           </label>
           <input
             id="wit-email"
@@ -209,7 +209,7 @@ export function ContributorForm() {
       <div>
         <label htmlFor="wit-role" className={labelClass}>
           Professional role or area of expertise{" "}
-          <span className="text-primary">*</span>
+          <span className="text-brand-700">*</span>
         </label>
         <input
           id="wit-role"
@@ -228,16 +228,14 @@ export function ContributorForm() {
       <fieldset aria-describedby={describe("interests")}>
         <legend className={labelClass}>
           How would you like to contribute?{" "}
-          <span className="text-primary">*</span>
-          <span className="text-on-surface-variant ml-1 font-normal">
-            (choose any)
-          </span>
+          <span className="text-brand-700">*</span>
+          <span className="text-ink/60 ml-1 font-normal">(choose any)</span>
         </legend>
         <div className="flex flex-wrap gap-3">
           {witContributionInterests.map((option) => (
             <label
               key={option}
-              className="border-outline-variant has-checked:border-brand has-checked:bg-brand/10 has-focus-visible:ring-brand/40 flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors has-focus-visible:ring-2"
+              className="border-brand-100 text-ink/80 has-checked:border-brand-600 has-checked:bg-brand-50 has-checked:text-brand-900 has-focus-visible:ring-brand-200 flex cursor-pointer items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors has-focus-visible:ring-4"
             >
               <input
                 type="checkbox"
@@ -245,7 +243,7 @@ export function ContributorForm() {
                 value={option}
                 checked={interests.includes(option)}
                 onChange={() => toggleInterest(option)}
-                className="accent-brand"
+                className="accent-brand-700"
               />
               {option}
             </label>
@@ -257,9 +255,7 @@ export function ContributorForm() {
       <div>
         <label htmlFor="wit-profile" className={labelClass}>
           LinkedIn or professional profile{" "}
-          <span className="text-on-surface-variant font-normal">
-            (optional)
-          </span>
+          <span className="text-ink/60 font-normal">(optional)</span>
         </label>
         <input
           id="wit-profile"
@@ -278,9 +274,7 @@ export function ContributorForm() {
       <div>
         <label htmlFor="wit-message" className={labelClass}>
           A short introduction{" "}
-          <span className="text-on-surface-variant font-normal">
-            (optional)
-          </span>
+          <span className="text-ink/60 font-normal">(optional)</span>
         </label>
         <textarea
           id="wit-message"
@@ -293,34 +287,37 @@ export function ContributorForm() {
       </div>
 
       <div>
-        <label className="text-on-surface-variant flex items-start gap-3 text-sm">
+        <label className="text-ink/75 flex items-start gap-3 text-sm">
           <input
             type="checkbox"
             name="privacy"
             aria-invalid={Boolean(errors.privacy)}
             aria-describedby={describe("privacy")}
             onChange={() => setErrors((e) => ({ ...e, privacy: undefined }))}
-            className="accent-brand mt-0.5 size-4 shrink-0"
+            className="accent-brand-700 mt-0.5 size-4 shrink-0"
           />
           <span>
             I agree that Expervia Technologies may use these details to review
             my interest and contact me about contributing to ETEN Women in Tech,
             as described in the{" "}
-            <Link href={PRIVACY_HREF} className="text-primary underline">
+            <Link
+              href={PRIVACY_HREF}
+              className="text-brand-700 font-semibold underline"
+            >
               privacy policy
             </Link>
-            . <span className="text-primary">*</span>
+            . <span className="text-brand-700">*</span>
           </span>
         </label>
         <ErrorText name="privacy" errors={errors} />
       </div>
 
       {TURNSTILE_ENABLED && (
-        <TurnstileWidget onToken={setCaptchaToken} theme="dark" />
+        <TurnstileWidget onToken={setCaptchaToken} theme="light" />
       )}
 
       {formError && (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-sm text-red-700">
           {formError}
         </p>
       )}
@@ -328,12 +325,12 @@ export function ContributorForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="bg-brand text-brand-foreground primary-glow focus-visible:ring-primary flex w-full items-center justify-center gap-2 rounded-full py-4 font-bold transition-all outline-none hover:brightness-110 focus-visible:ring-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+        className="bg-brand-700 hover:bg-brand-600 focus-visible:ring-brand-300 flex min-h-12 w-full items-center justify-center gap-2 rounded-full py-3.5 font-semibold text-white shadow-[0_10px_30px_-10px_rgba(100,38,220,0.7)] transition outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {submitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
         {submitting ? "Sending…" : "Submit Expression of Interest"}
       </button>
-      <p className="text-on-surface-variant/80 text-center text-xs">
+      <p className="text-ink/60 text-center text-xs">
         Submitting is an expression of interest, not an application for a role,
         appointment or paid engagement.
       </p>

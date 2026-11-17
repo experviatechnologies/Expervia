@@ -7,8 +7,7 @@ import {
   Megaphone,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 import { ContributorForm } from "./contributor-form";
 
 const roles: { icon: LucideIcon; title: string; description: string }[] = [
@@ -46,51 +45,43 @@ const roles: { icon: LucideIcon; title: string; description: string }[] = [
 
 export function WitContribute() {
   return (
-    <section id="contribute" className="py-section scroll-mt-36">
-      <Container className="max-w-7xl">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1.15fr] lg:gap-16">
-          <div>
-            <SectionLabel className="mb-4">Become a Contributor</SectionLabel>
-            <h2 className="font-display text-on-surface text-headline-lg mb-5 font-bold text-balance">
-              Your Experience Can Create{" "}
-              <span className="gradient-text">
-                Opportunities for Someone Else.
-              </span>
-            </h2>
-            <p className="text-on-surface-variant text-body-lg mb-10">
-              Experienced women and industry professionals make this community
-              stronger. Tell us how you would like to get involved and the ETEN
-              team will follow up.
-            </p>
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {roles.map(({ icon: Icon, title, description }) => (
-                <li key={title} className="flex gap-3">
-                  <span className="bg-primary/10 text-primary inline-flex size-10 shrink-0 items-center justify-center rounded-lg">
-                    <Icon className="size-5" aria-hidden />
-                  </span>
-                  <div>
-                    <h3 className="text-on-surface font-semibold">{title}</h3>
-                    <p className="text-on-surface-variant text-sm">
-                      {description}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="bg-surface-container-high relative rounded-2xl border border-white/5 p-6 shadow-xl sm:p-8 md:p-10">
-            <h3 className="font-display text-on-surface text-headline-md mb-2 font-bold">
-              Express your interest
-            </h3>
-            <p className="text-on-surface-variant mb-8 text-sm">
-              Fields marked <span className="text-primary">*</span> are
-              required.
-            </p>
-            <ContributorForm />
-          </div>
+    <Section id="contribute" labelledBy="wit-contrib-heading">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.15fr] lg:gap-16">
+        <div>
+          <SectionIntro
+            id="wit-contrib-heading"
+            eyebrow="Become a Contributor"
+            title="Your Experience Can Create Opportunities for Someone Else."
+            intro="Experienced women and industry professionals make this community stronger. Tell us how you would like to get involved and the ETEN team will follow up."
+          />
+          <ul className="mt-10 grid gap-5 sm:grid-cols-2">
+            {roles.map(({ icon, title, description }) => (
+              <li key={title} className="flex gap-4">
+                <IconBadge icon={icon} className="size-11" />
+                <div>
+                  <h3 className="font-jakarta text-brand-950 font-bold">
+                    {title}
+                  </h3>
+                  <p className="text-ink/75 mt-0.5 text-sm leading-relaxed">
+                    {description}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-      </Container>
-    </section>
+
+        <div className="border-brand-100 bg-lavender rounded-3xl border p-6 shadow-[0_24px_50px_-34px_rgba(33,0,93,0.45)] sm:p-8 md:p-10">
+          <h3 className="font-jakarta text-brand-950 text-2xl font-bold">
+            Express your interest
+          </h3>
+          <p className="text-ink/70 mt-1 mb-8 text-sm">
+            Fields marked <span className="text-brand-700">*</span> are
+            required.
+          </p>
+          <ContributorForm />
+        </div>
+      </div>
+    </Section>
   );
 }

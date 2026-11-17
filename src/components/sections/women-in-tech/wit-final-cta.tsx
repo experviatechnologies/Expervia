@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Mail, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/shared/container";
+import { buttonClass } from "@/components/site/ui";
+import { NetworkGraphic } from "@/components/site/network-graphic";
 import { siteConfig } from "@/config/site";
 import { WIT_JOIN_HREF } from "@/config/women-in-tech";
 import { TrackedLink } from "./tracking";
@@ -13,91 +13,99 @@ const MENTORSHIP_HREF = process.env.NEXT_PUBLIC_MENTORSHIP_HOST
 export function WitFinalCta() {
   const { emails, phones } = siteConfig.contact;
   return (
-    <section aria-labelledby="wit-final-heading" className="pb-section">
-      <Container className="max-w-7xl">
-        <div className="from-brand/30 relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br via-fuchsia-600/15 to-transparent px-6 py-14 text-center sm:px-12 md:py-20">
-          <div
-            aria-hidden
-            className="bg-brand/30 absolute -top-24 left-1/2 size-[420px] -translate-x-1/2 rounded-full blur-[120px]"
-          />
-          <div className="relative">
-            <p className="text-primary mb-4 font-mono text-sm tracking-widest uppercase">
-              Connect. Empower. Lead.
-            </p>
-            <h2
-              id="wit-final-heading"
-              className="font-display text-on-surface md:text-display-lg mb-5 text-4xl leading-tight font-extrabold tracking-tight text-balance"
-            >
-              Your Journey. Your Voice. Your Future.
-            </h2>
-            <p className="text-on-surface-variant text-body-lg mx-auto mb-10 max-w-2xl">
-              Join a community of women learning, connecting and leading in
-              technology, or share your experience to help others rise.
-            </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button asChild variant="brand" size="pill" className="font-bold">
-                <TrackedLink
-                  href={WIT_JOIN_HREF}
-                  event="women_in_tech_join_click"
-                  location="final_cta"
-                >
-                  Join ETEN Women in Tech
-                  <ArrowRight aria-hidden />
-                </TrackedLink>
-              </Button>
-              <Button
-                asChild
-                variant="brandOutline"
-                size="pill"
-                className="font-bold"
-              >
-                <TrackedLink
-                  href="#contribute"
-                  event="women_in_tech_contributor_click"
-                  location="final_cta"
-                >
-                  Become a Contributor
-                </TrackedLink>
-              </Button>
-            </div>
-
-            <div className="text-on-surface-variant mt-12 flex flex-col items-center justify-center gap-x-8 gap-y-3 text-sm sm:flex-row sm:flex-wrap">
-              <a
-                href={`mailto:${emails.general}?subject=${encodeURIComponent("ETEN Women in Tech")}`}
-                className="hover:text-primary inline-flex items-center gap-2 transition-colors"
-              >
-                <Mail className="size-4" aria-hidden />
-                {emails.general}
-              </a>
-              {phones.map((p) => (
-                <a
-                  key={p}
-                  href={`tel:${p.replace(/\s+/g, "")}`}
-                  className="hover:text-primary inline-flex items-center gap-2 transition-colors"
-                >
-                  <Phone className="size-4" aria-hidden />
-                  {p}
-                </a>
-              ))}
-            </div>
-            <p className="text-on-surface-variant/80 mt-6 text-sm">
-              Part of the Expervia Technologies Expert Network (ETEN). Looking
-              for one-to-one guidance? Explore{" "}
-              <Link
-                href={MENTORSHIP_HREF}
-                className="text-primary hover:underline"
-              >
-                ETEN Mentorship
-              </Link>{" "}
-              or learn more{" "}
-              <Link href="/about" className="text-primary hover:underline">
-                about Expervia
-              </Link>
-              .
-            </p>
-          </div>
+    <section
+      aria-labelledby="wit-final-heading"
+      className="bg-white px-4 pb-20 sm:px-6 sm:pb-24 lg:px-8"
+    >
+      <div className="from-brand-950 via-brand-900 to-brand-700 relative isolate mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br px-6 py-16 text-center text-white shadow-[0_40px_80px_-40px_rgba(33,0,93,0.9)] sm:px-12 sm:py-20">
+        <NetworkGraphic
+          idPrefix="wit-cta-a"
+          className="absolute -top-20 -left-24 -z-10 w-[420px] opacity-30"
+        />
+        <NetworkGraphic
+          idPrefix="wit-cta-b"
+          className="absolute -right-24 -bottom-24 -z-10 w-[420px] rotate-180 opacity-30"
+        />
+        <p className="text-brand-200 text-xs font-bold tracking-[0.2em] uppercase">
+          Connect. Empower. Lead.
+        </p>
+        <h2
+          id="wit-final-heading"
+          className="font-jakarta mx-auto mt-4 max-w-3xl text-3xl leading-tight font-extrabold tracking-tight sm:text-5xl"
+        >
+          Your Journey. Your Voice. Your Future.
+        </h2>
+        <p className="text-brand-100/90 mx-auto mt-6 max-w-2xl text-lg leading-relaxed">
+          Join a community of women learning, connecting and leading in
+          technology, or share your experience to help others rise.
+        </p>
+        <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+          <TrackedLink
+            href={WIT_JOIN_HREF}
+            event="women_in_tech_join_click"
+            location="final_cta"
+            className={buttonClass("light")}
+          >
+            Join ETEN Women in Tech
+            <ArrowRight
+              aria-hidden
+              className="size-4 transition-transform group-hover:translate-x-0.5"
+            />
+          </TrackedLink>
+          <TrackedLink
+            href="#contribute"
+            event="women_in_tech_contributor_click"
+            location="final_cta"
+            className={buttonClass("outlineLight")}
+          >
+            Become a Contributor
+          </TrackedLink>
         </div>
-      </Container>
+
+        <div className="text-brand-100 mt-12 flex flex-col items-center justify-center gap-x-8 gap-y-3 text-sm sm:flex-row sm:flex-wrap">
+          <a
+            href={`mailto:${emails.general}?subject=${encodeURIComponent("ETEN Women in Tech")}`}
+            className="inline-flex items-center gap-2 transition-colors hover:text-white"
+          >
+            <Mail aria-hidden className="size-4" />
+            {emails.general}
+          </a>
+          {phones.map((p) => (
+            <a
+              key={p}
+              href={`tel:${p.replace(/\s+/g, "")}`}
+              className="inline-flex items-center gap-2 transition-colors hover:text-white"
+            >
+              <Phone aria-hidden className="size-4" />
+              {p}
+            </a>
+          ))}
+        </div>
+        <p className="text-brand-200 mt-6 text-sm">
+          Part of the Expervia Technologies Expert Network (ETEN). Explore{" "}
+          <Link
+            href="/join-eten"
+            className="font-semibold text-white underline-offset-4 hover:underline"
+          >
+            ETEN
+          </Link>
+          ,{" "}
+          <Link
+            href={MENTORSHIP_HREF}
+            className="font-semibold text-white underline-offset-4 hover:underline"
+          >
+            ETEN Mentorship
+          </Link>{" "}
+          or learn more{" "}
+          <Link
+            href="/about"
+            className="font-semibold text-white underline-offset-4 hover:underline"
+          >
+            about Expervia
+          </Link>
+          .
+        </p>
+      </div>
     </section>
   );
 }

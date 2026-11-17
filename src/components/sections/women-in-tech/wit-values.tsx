@@ -1,5 +1,4 @@
-import { Container } from "@/components/shared/container";
-import { SectionHeading } from "./section-heading";
+import { Section, SectionIntro, cardClass } from "@/components/site/ui";
 
 const values = [
   {
@@ -36,41 +35,33 @@ const values = [
 
 export function WitValues() {
   return (
-    <section
+    <Section
       id="community-values"
-      className="bg-surface-container-low py-section scroll-mt-36"
+      labelledBy="wit-values-heading"
+      tone="lavender"
     >
-      <Container className="max-w-7xl">
-        <SectionHeading
-          label="Community Philosophy"
-          title={
-            <>
-              The Values That <span className="gradient-text">Guide Us.</span>
-            </>
-          }
-        />
-        <ol className="gap-gutter grid sm:grid-cols-2 lg:grid-cols-3">
-          {values.map((v, i) => (
-            <li
-              key={v.title}
-              className="border-outline-variant/20 bg-surface rounded-2xl border p-6"
+      <SectionIntro
+        id="wit-values-heading"
+        eyebrow="Community Philosophy"
+        title="The Values That Guide Us."
+        center
+      />
+      <ol className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {values.map((v, i) => (
+          <li key={v.title} className={cardClass}>
+            <span
+              aria-hidden
+              className="font-jakarta text-brand-300 text-sm font-bold"
             >
-              <span
-                aria-hidden
-                className="text-primary/60 mb-3 block font-mono text-sm"
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <h3 className="font-display text-on-surface mb-2 text-lg font-bold">
-                {v.title}
-              </h3>
-              <p className="text-on-surface-variant text-sm leading-relaxed">
-                {v.description}
-              </p>
-            </li>
-          ))}
-        </ol>
-      </Container>
-    </section>
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <h3 className="font-jakarta text-brand-950 mt-3 text-lg font-bold">
+              {v.title}
+            </h3>
+            <p className="text-ink/75 mt-2 leading-relaxed">{v.description}</p>
+          </li>
+        ))}
+      </ol>
+    </Section>
   );
 }

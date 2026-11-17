@@ -23,8 +23,12 @@ import {
   Star,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionHeading } from "./section-heading";
+import {
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 
 type Item = { icon: LucideIcon; title: string; description: string };
 
@@ -132,107 +136,90 @@ const audiences: Item[] = [
 ];
 
 export function WitWhyJoin() {
+  const [featured, ...rest] = benefits;
   return (
-    <section id="why-join" className="py-section scroll-mt-36">
-      <Container className="max-w-7xl">
-        <SectionHeading
-          label="Why Join"
-          title={
-            <>
-              Your Growth Deserves the{" "}
-              <span className="gradient-text">Right Support System.</span>
-            </>
-          }
-          intro="Everything in ETEN Women in Tech is built around helping you learn, connect and move forward with confidence."
-        />
-        <ul className="gap-gutter grid sm:grid-cols-2 lg:grid-cols-4">
-          {benefits.map(({ icon: Icon, title, description }) => (
-            <li key={title} className="glass-card rounded-2xl p-6">
-              <span className="bg-primary/10 text-primary mb-5 inline-flex size-11 items-center justify-center rounded-xl">
-                <Icon className="size-5" aria-hidden />
-              </span>
-              <h3 className="font-display text-on-surface mb-2 text-lg font-bold">
-                {title}
-              </h3>
-              <p className="text-on-surface-variant text-sm leading-relaxed">
-                {description}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </Container>
-    </section>
+    <Section id="why-join" labelledBy="wit-why-heading">
+      <SectionIntro
+        id="wit-why-heading"
+        eyebrow="Why Join"
+        title="Your Growth Deserves the Right Support System."
+        intro="Everything in ETEN Women in Tech is built around helping you learn, connect and move forward with confidence."
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <li className="bg-brand-900 relative overflow-hidden rounded-3xl p-7 text-white shadow-[0_24px_50px_-28px_rgba(33,0,93,0.8)] sm:col-span-2 lg:p-9">
+          <div
+            aria-hidden
+            className="bg-brand-600/40 absolute -right-24 -bottom-24 size-72 rounded-full blur-3xl"
+          />
+          <IconBadge icon={featured.icon} dark />
+          <h3 className="font-jakarta mt-6 text-2xl font-bold sm:text-3xl">
+            {featured.title}
+          </h3>
+          <p className="text-brand-100/90 mt-4 max-w-md text-lg leading-relaxed">
+            {featured.description}
+          </p>
+        </li>
+        {rest.map(({ icon, title, description }) => (
+          <li key={title} className={cardClass}>
+            <IconBadge icon={icon} />
+            <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+              {title}
+            </h3>
+            <p className="text-ink/75 mt-2.5 leading-relaxed">{description}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
 
 export function WitFocusAreas() {
   return (
-    <section
-      id="focus-areas"
-      className="bg-surface-container-low py-section scroll-mt-36"
-    >
-      <Container className="max-w-7xl">
-        <SectionHeading
-          label="Focus Areas"
-          title={
-            <>
-              Find Your Place in the{" "}
-              <span className="gradient-text">Technology Ecosystem.</span>
-            </>
-          }
-          intro="Technology is far bigger than code. Our community spans the technical, product, business and leadership disciplines that shape it."
-        />
-        <ul className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-          {focusAreas.map(({ icon: Icon, title }) => (
-            <li
-              key={title}
-              className="border-outline-variant/20 hover:border-primary/50 bg-surface flex items-center gap-4 rounded-xl border p-5 transition-colors lg:flex-col lg:items-start lg:gap-3"
-            >
-              <Icon className="text-primary size-6 shrink-0" aria-hidden />
-              <span className="text-on-surface font-semibold">{title}</span>
-            </li>
-          ))}
-        </ul>
-      </Container>
-    </section>
+    <Section id="focus-areas" labelledBy="wit-focus-heading" tone="lavender">
+      <SectionIntro
+        id="wit-focus-heading"
+        eyebrow="Focus Areas"
+        title="Find Your Place in the Technology Ecosystem."
+        intro="Technology is far bigger than code. Our community spans the technical, product, business and leadership disciplines that shape it."
+      />
+      <ul className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {focusAreas.map(({ icon, title }) => (
+          <li
+            key={title}
+            className="border-brand-100 hover:border-brand-300 flex items-center gap-4 rounded-2xl border bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_36px_-24px_rgba(33,0,93,0.35)] lg:flex-col lg:items-start"
+          >
+            <IconBadge icon={icon} className="size-11" />
+            <span className="font-jakarta text-brand-950 font-bold">
+              {title}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
 
 export function WitWhoShouldJoin() {
   return (
-    <section id="who-should-join" className="py-section scroll-mt-36">
-      <Container className="max-w-7xl">
-        <SectionHeading
-          label="Who Should Join"
-          title={
-            <>
-              There Is a <span className="gradient-text">Place for You</span>{" "}
-              Here.
-            </>
-          }
-          intro="Wherever you are in your technology journey, you belong in this community."
-        />
-        <ul className="gap-gutter grid sm:grid-cols-2 lg:grid-cols-3">
-          {audiences.map(({ icon: Icon, title, description }) => (
-            <li
-              key={title}
-              className="border-outline-variant/20 bg-surface-container-low flex gap-4 rounded-2xl border p-6"
-            >
-              <span className="bg-brand/15 text-primary inline-flex size-11 shrink-0 items-center justify-center rounded-full">
-                <Icon className="size-5" aria-hidden />
-              </span>
-              <div>
-                <h3 className="font-display text-on-surface mb-1.5 text-lg font-bold">
-                  {title}
-                </h3>
-                <p className="text-on-surface-variant text-sm leading-relaxed">
-                  {description}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Container>
-    </section>
+    <Section id="who-should-join" labelledBy="wit-who-heading">
+      <SectionIntro
+        id="wit-who-heading"
+        eyebrow="Who Should Join"
+        title="There Is a Place for You Here."
+        intro="Wherever you are in your technology journey, you belong in this community."
+        center
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {audiences.map(({ icon, title, description }) => (
+          <li key={title} className={cardClass}>
+            <IconBadge icon={icon} />
+            <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+              {title}
+            </h3>
+            <p className="text-ink/75 mt-2.5 leading-relaxed">{description}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
