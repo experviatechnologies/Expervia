@@ -1,6 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
-import { Container } from "@/components/shared/container";
+import { Section, SectionIntro } from "@/components/site/ui";
 
 const leaders = [
   {
@@ -27,50 +26,40 @@ const leaders = [
 
 export function Leadership() {
   return (
-    <section className="py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-            The Minds Behind the Intelligence
-          </h2>
-          <p className="text-body-lg text-on-surface-variant mx-auto max-w-2xl">
-            A collective of visionary leaders and technical specialists.
-          </p>
-        </div>
-        <div className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {leaders.map((leader) => (
-            <div
-              key={leader.name}
-              className="group relative aspect-[3/4] overflow-hidden rounded-xl"
-            >
+    <Section id="leadership" labelledBy="leadership-heading" tone="lavender">
+      <SectionIntro
+        id="leadership-heading"
+        eyebrow="Leadership"
+        title="The Minds Behind the Intelligence"
+        intro="A collective of visionary leaders and technical specialists."
+        center
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {leaders.map((leader) => (
+          <li
+            key={leader.name}
+            className="group border-brand-100 overflow-hidden rounded-3xl border bg-white transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_50px_-30px_rgba(33,0,93,0.45)]"
+          >
+            <div className="bg-brand-50 relative aspect-[4/5] overflow-hidden">
               <Image
                 src={leader.photo}
                 alt={`${leader.name}, ${leader.role} at Expervia`}
                 fill
                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="from-background via-background/20 absolute inset-0 bg-gradient-to-t to-transparent opacity-90" />
-              <div className="absolute bottom-0 left-0 w-full p-6">
-                <p className="text-label-sm mb-1 font-mono text-[#e1d6ff] uppercase">
-                  {leader.role}
-                </p>
-                <h4 className="font-display text-on-surface text-headline-md font-semibold">
-                  {leader.name}
-                </h4>
-                <div className="mt-2 h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:h-8 group-hover:opacity-100">
-                  <Link
-                    href="#"
-                    className="text-primary-container hover:text-on-surface transition-colors"
-                  >
-                    LinkedIn Profile
-                  </Link>
-                </div>
-              </div>
             </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+            <div className="p-6">
+              <h3 className="font-jakarta text-brand-950 text-lg font-bold">
+                {leader.name}
+              </h3>
+              <p className="text-brand-600 mt-1 text-sm font-semibold">
+                {leader.role}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

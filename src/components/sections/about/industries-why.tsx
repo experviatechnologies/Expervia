@@ -7,7 +7,7 @@ import {
   Stethoscope,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
+import { Section, SectionIntro } from "@/components/site/ui";
 
 const industries: { icon: LucideIcon; label: string }[] = [
   { icon: Landmark, label: "Financial Services" },
@@ -35,53 +35,54 @@ const reasons = [
 
 export function IndustriesWhy() {
   return (
-    <section className="bg-surface-container-high py-section relative overflow-hidden">
-      <div className="bg-primary/5 absolute top-0 right-0 -z-10 size-[500px] blur-[120px]" />
-      <Container>
-        <div className="grid grid-cols-1 gap-20 lg:grid-cols-2">
-          {/* Industries */}
-          <div>
-            <h2 className="font-display text-on-surface text-headline-lg mb-8 font-bold">
-              Industries We Empower
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {industries.map(({ icon: Icon, label }) => (
-                <div
-                  key={label}
-                  className="bg-surface border-outline-variant flex items-center gap-3 rounded-xl border p-4"
-                >
-                  <Icon className="text-primary size-6 shrink-0" />
-                  <span className="text-body-md">{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Why Expervia */}
-          <div>
-            <h2 className="font-display text-on-surface text-headline-lg mb-8 font-bold">
-              Why Expervia?
-            </h2>
-            <div className="space-y-6">
-              {reasons.map((r, i) => (
-                <div key={r.title} className="flex gap-4">
-                  <div className="bg-primary/20 text-primary flex size-10 shrink-0 items-center justify-center rounded-full font-bold">
-                    {i + 1}
-                  </div>
-                  <div>
-                    <h4 className="font-display text-on-surface text-headline-md mb-1 font-semibold">
-                      {r.title}
-                    </h4>
-                    <p className="text-body-md text-on-surface-variant">
-                      {r.body}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+    <Section id="industries-why" labelledBy="empower-heading" tone="indigo">
+      <div className="grid gap-16 lg:grid-cols-2 lg:gap-20">
+        <div>
+          <SectionIntro
+            id="empower-heading"
+            eyebrow="Where we work"
+            title="Industries We Empower"
+            dark
+          />
+          <ul className="mt-10 grid gap-3 sm:grid-cols-2">
+            {industries.map(({ icon: Icon, label }) => (
+              <li
+                key={label}
+                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-semibold backdrop-blur"
+              >
+                <Icon aria-hidden className="text-brand-200 size-6 shrink-0" />
+                {label}
+              </li>
+            ))}
+          </ul>
         </div>
-      </Container>
-    </section>
+
+        <div>
+          <SectionIntro
+            id="why-expervia-heading"
+            eyebrow="Our difference"
+            title="Why Expervia?"
+            dark
+          />
+          <ol className="mt-10 space-y-7">
+            {reasons.map((r, i) => (
+              <li key={r.title} className="flex gap-5">
+                <span className="font-jakarta text-brand-950 inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-lg font-extrabold">
+                  {i + 1}
+                </span>
+                <div>
+                  <h3 className="font-jakarta text-xl font-bold text-white">
+                    {r.title}
+                  </h3>
+                  <p className="text-brand-100/80 mt-1.5 leading-relaxed">
+                    {r.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </Section>
   );
 }

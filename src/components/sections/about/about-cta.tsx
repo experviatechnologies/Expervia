@@ -1,32 +1,38 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/shared/container";
+import { ButtonLink } from "@/components/site/ui";
+import { NetworkGraphic } from "@/components/site/network-graphic";
 
 export function AboutCta() {
   return (
-    <section className="py-section relative overflow-hidden">
-      <div className="bg-primary/5 absolute inset-0" />
-      <Container className="relative z-10 text-center">
-        <div className="glass-card relative overflow-hidden rounded-3xl p-12 md:p-24">
-          <div className="bg-primary/20 absolute top-0 right-0 size-64 blur-[100px]" />
-          <h2 className="font-display text-on-surface text-headline-lg mb-6 font-bold">
-            Building Africa&apos;s Intelligent Future
-          </h2>
-          <p className="text-body-lg text-on-surface-variant mx-auto mb-10 max-w-xl">
-            Join the forward-thinking organizations building the future on
-            Expervia&apos;s intelligence framework. Let&apos;s architect your
-            success story together.
-          </p>
-          <Button
-            asChild
-            variant="brand"
-            size="pill"
-            className="primary-glow font-bold"
-          >
-            <Link href="/contact">Schedule an Architecture Review</Link>
-          </Button>
+    <section
+      aria-labelledby="about-cta-heading"
+      className="bg-white px-4 py-20 sm:px-6 sm:py-24 lg:px-8"
+    >
+      <div className="from-brand-950 via-brand-900 to-brand-700 relative isolate mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br px-6 py-16 text-center text-white shadow-[0_40px_80px_-40px_rgba(33,0,93,0.9)] sm:px-12 sm:py-20">
+        <NetworkGraphic
+          idPrefix="about-cta-a"
+          className="absolute -top-20 -left-24 -z-10 w-[420px] opacity-30"
+        />
+        <NetworkGraphic
+          idPrefix="about-cta-b"
+          className="absolute -right-24 -bottom-24 -z-10 w-[420px] rotate-180 opacity-30"
+        />
+        <h2
+          id="about-cta-heading"
+          className="font-jakarta mx-auto max-w-3xl text-3xl leading-tight font-extrabold tracking-tight sm:text-5xl"
+        >
+          Building Africa&apos;s Intelligent Future
+        </h2>
+        <p className="text-brand-100/90 mx-auto mt-6 max-w-xl text-lg leading-relaxed">
+          Join the forward-thinking organizations building the future on
+          Expervia&apos;s intelligence framework. Let&apos;s architect your
+          success story together.
+        </p>
+        <div className="mt-9 flex justify-center">
+          <ButtonLink href="/contact" variant="light" arrow>
+            Schedule an Architecture Review
+          </ButtonLink>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

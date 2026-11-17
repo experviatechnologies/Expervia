@@ -3,10 +3,10 @@ import {
   CloudCheck,
   ShieldCheck,
   Repeat,
-  CircleCheck,
+  Check,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const areas: { icon: LucideIcon; title: string; points: string[] }[] = [
   {
@@ -49,38 +49,52 @@ const areas: { icon: LucideIcon; title: string; points: string[] }[] = [
 
 export function Expertise() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16">
-          <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-            Core Areas of Expertise
-          </h2>
-          <p className="text-body-lg text-on-surface-variant max-w-2xl">
-            Our multidisciplinary approach ensures holistic digital resilience
-            and growth.
-          </p>
-        </div>
-        <div className="gap-gutter grid grid-cols-1 md:grid-cols-2">
-          {areas.map(({ icon: Icon, title, points }) => (
-            <div key={title} className="glass-card space-y-4 rounded-2xl p-10">
-              <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-lg">
-                <Icon className="size-7" />
-              </div>
-              <h3 className="font-display text-on-surface text-headline-md font-semibold">
-                {title}
-              </h3>
-              <ul className="text-on-surface-variant space-y-2">
-                {points.map((point) => (
-                  <li key={point} className="flex items-start gap-2">
-                    <CircleCheck className="text-primary mt-1 size-4 shrink-0" />
-                    {point}
-                  </li>
-                ))}
-              </ul>
+    <Section id="expertise" labelledBy="expertise-heading" tone="lavender">
+      <SectionIntro
+        id="expertise-heading"
+        eyebrow="What we do"
+        title="Core Areas of Expertise"
+        intro="Our multidisciplinary approach ensures holistic digital resilience and growth."
+      />
+      <ul className="mt-14 grid gap-5 md:grid-cols-2">
+        {areas.map(({ icon, title, points }, i) => (
+          <li
+            key={title}
+            className="group border-brand-100 hover:border-brand-300 relative overflow-hidden rounded-3xl border bg-white p-7 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_50px_-30px_rgba(33,0,93,0.45)] sm:p-9"
+          >
+            <span
+              aria-hidden
+              className="from-brand-900 via-brand-600 to-brand-300 absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-0 transition-opacity group-hover:opacity-100"
+            />
+            <div className="flex items-start justify-between gap-4">
+              <IconBadge icon={icon} />
+              <span
+                aria-hidden
+                className="font-jakarta text-brand-200 text-sm font-bold"
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
             </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+            <h3 className="font-jakarta text-brand-950 mt-5 text-xl font-bold">
+              {title}
+            </h3>
+            <ul className="border-brand-100 mt-5 space-y-2.5 border-t pt-5">
+              {points.map((point) => (
+                <li
+                  key={point}
+                  className="text-ink/80 flex items-start gap-2.5"
+                >
+                  <Check
+                    aria-hidden
+                    className="text-brand-600 mt-1 size-4 shrink-0"
+                  />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
