@@ -8,10 +8,10 @@ import {
   LayoutGrid,
   Headset,
   BarChart3,
+  ArrowRight,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 type Solution = {
   icon: LucideIcon;
@@ -79,44 +79,62 @@ const solutions: Solution[] = [
 
 export function Solutions() {
   return (
-    <section
-      id="solutions"
-      className="bg-surface-container-lowest py-section relative overflow-hidden"
-    >
-      <Container>
-        <div className="mb-20 text-center">
-          <SectionLabel className="mb-2">Our Solutions</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Integrated Technology Ecosystem
-          </h2>
-        </div>
-        <div className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {solutions.map(({ icon: Icon, title, description, href }) => {
-            const className =
-              "glass-panel hover-lift border-t-primary/40 group block rounded-xl border-t-2 p-8";
-            const content = (
-              <>
-                <div className="bg-primary/10 group-hover:bg-primary/20 mb-6 flex size-12 items-center justify-center rounded-lg transition-colors">
-                  <Icon className="text-primary size-6" />
-                </div>
-                <h3 className="font-display text-on-surface text-headline-md mb-3 font-semibold">
-                  {title}
-                </h3>
-                <p className="text-on-surface-variant text-sm">{description}</p>
-              </>
-            );
-            return href ? (
-              <Link key={title} href={href} className={className}>
-                {content}
-              </Link>
-            ) : (
-              <div key={title} className={className}>
-                {content}
+    <Section id="solutions" labelledBy="solutions-heading">
+      <SectionIntro
+        id="solutions-heading"
+        eyebrow="Our Solutions"
+        title="Integrated Technology Ecosystem"
+        center
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {solutions.map(({ icon, title, description, href }, i) => {
+          const body = (
+            <>
+              <span
+                aria-hidden
+                className="from-brand-900 via-brand-600 to-brand-300 absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-0 transition-opacity group-hover:opacity-100"
+              />
+              <div className="flex items-start justify-between gap-4">
+                <IconBadge icon={icon} />
+                <span
+                  aria-hidden
+                  className="font-jakarta text-brand-200 text-sm font-bold"
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
               </div>
-            );
-          })}
-        </div>
-      </Container>
-    </section>
+              <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+                {title}
+              </h3>
+              <p className="text-ink/75 mt-2.5 flex-1 leading-relaxed">
+                {description}
+              </p>
+              {href && (
+                <span className="text-brand-700 mt-5 inline-flex items-center gap-1.5 text-sm font-semibold">
+                  Learn more
+                  <ArrowRight
+                    aria-hidden
+                    className="size-4 transition-transform group-hover:translate-x-0.5"
+                  />
+                </span>
+              )}
+            </>
+          );
+          const className =
+            "group border-brand-100 hover:border-brand-300 focus-visible:ring-brand-400 relative flex h-full flex-col overflow-hidden rounded-3xl border bg-white p-7 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_50px_-30px_rgba(33,0,93,0.45)] focus-visible:ring-2 focus-visible:outline-none";
+          return (
+            <li key={title}>
+              {href ? (
+                <Link href={href} className={className}>
+                  {body}
+                </Link>
+              ) : (
+                <div className={className}>{body}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
   );
 }

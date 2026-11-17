@@ -6,8 +6,7 @@ import {
   Globe,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { Section, SectionIntro } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 
 const reasons = [
@@ -37,52 +36,60 @@ const metrics: { icon: LucideIcon; value: string; label: string }[] = [
 
 export function WhyExpervia() {
   return (
-    <section className="bg-surface-container-high py-section border-y border-white/5">
-      <Container>
-        <div className="grid grid-cols-1 gap-20 md:grid-cols-2">
-          <div className="flex flex-col justify-center">
-            <SectionLabel className="mb-2">Why Expervia</SectionLabel>
-            <h2 className="font-display text-on-surface text-headline-lg mb-8 font-bold">
-              The Partner for{" "}
-              <span className="text-primary">
-                High-Stakes Digital Transformation.
-              </span>
-            </h2>
-            <ul className="space-y-6">
-              {reasons.map((r) => (
-                <li key={r.title} className="flex gap-4">
-                  <div className="bg-primary/20 mt-1 flex size-6 shrink-0 items-center justify-center rounded-full">
-                    <Check className="text-primary size-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-on-surface font-bold">{r.title}</h4>
-                    <p className="text-on-surface-variant text-sm">
-                      {r.description}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {metrics.map(({ icon: Icon, value, label }, i) => (
-              <div
-                key={label}
-                className={cn(
-                  "bg-surface-container flex aspect-square flex-col justify-center rounded-2xl border border-white/5 p-8 text-center",
-                  i === 1 && "mt-12",
-                  i === 2 && "-mt-12",
-                )}
-              >
-                <Icon className="text-primary mx-auto mb-4 size-9" />
-                <h4 className="mb-2 font-bold">{value}</h4>
-                <p className="text-on-surface-variant text-xs">{label}</p>
-              </div>
+    <Section id="why-expervia" labelledBy="why-heading" tone="indigo">
+      <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
+        <div>
+          <SectionIntro
+            id="why-heading"
+            eyebrow="Why Expervia"
+            title={
+              <>
+                The Partner for{" "}
+                <span className="text-brand-200">
+                  High-Stakes Digital Transformation.
+                </span>
+              </>
+            }
+            dark
+          />
+          <ul className="mt-10 space-y-6">
+            {reasons.map((r) => (
+              <li key={r.title} className="flex gap-4">
+                <span className="bg-brand-600/50 mt-1 flex size-7 shrink-0 items-center justify-center rounded-full ring-1 ring-white/15">
+                  <Check aria-hidden className="text-brand-100 size-4" />
+                </span>
+                <div>
+                  <h3 className="font-jakarta text-lg font-bold text-white">
+                    {r.title}
+                  </h3>
+                  <p className="text-brand-100/80 mt-1 leading-relaxed">
+                    {r.description}
+                  </p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-      </Container>
-    </section>
+
+        <ul className="grid grid-cols-2 gap-4">
+          {metrics.map(({ icon: Icon, value, label }, i) => (
+            <li
+              key={label}
+              className={cn(
+                "flex aspect-square flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-center backdrop-blur",
+                i === 1 && "sm:mt-12",
+                i === 2 && "sm:-mt-12",
+              )}
+            >
+              <Icon aria-hidden className="text-brand-200 mb-4 size-9" />
+              <p className="font-jakarta text-2xl font-extrabold text-white sm:text-3xl">
+                {value}
+              </p>
+              <p className="text-brand-100/75 mt-2 text-sm">{label}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
   );
 }

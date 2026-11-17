@@ -6,7 +6,8 @@ import { Industries } from "@/components/sections/industries";
 import { WhyExpervia } from "@/components/sections/why-expervia";
 import { Community } from "@/components/sections/community";
 import { FinalCta } from "@/components/sections/final-cta";
-import { VideoFeature, CMO_VIDEOS } from "@/components/shared/video-feature";
+import { VideoPanel } from "@/components/site/video-panel";
+import { CMO_VIDEOS } from "@/components/shared/video-feature";
 
 export default function HomePage() {
   return (
@@ -14,13 +15,13 @@ export default function HomePage() {
       <Hero />
       <TrustBar />
       <WhoWeAre />
-      <VideoFeature
+      <VideoPanel
         id="how-we-help"
-        label="How We Help"
+        eyebrow="How We Help"
         title={
           <>
             Solving Real Problems for{" "}
-            <span className="text-primary">African Enterprises</span>
+            <span className="text-brand-600">African Enterprises</span>
           </>
         }
         description="Our Chief Marketing Officer walks through how Expervia partners with businesses to deliver AI, cloud, and security solutions that move the needle."

@@ -10,8 +10,12 @@ import {
   ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import {
+  ButtonLink,
+  IconBadge,
+  Section,
+  SectionIntro,
+} from "@/components/site/ui";
 
 const industries: { icon: LucideIcon; label: string }[] = [
   { icon: Landmark, label: "Financial Services" },
@@ -27,30 +31,31 @@ const industries: { icon: LucideIcon; label: string }[] = [
 
 export function Industries() {
   return (
-    <section id="industries" className="bg-surface py-section">
-      <Container>
-        <div className="mb-16 max-w-2xl">
-          <SectionLabel className="mb-2">Industry Expertise</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Industries We Serve
-          </h2>
-          <p className="text-on-surface-variant mt-4">
-            We deliver vertical-specific digital solutions that address the
-            unique challenges of major sectors across Africa.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {industries.map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              className="border-outline-variant/20 hover:border-primary/50 bg-surface-container-low flex items-center gap-4 rounded-xl border p-6 transition-colors"
-            >
-              <Icon className="text-primary size-6 shrink-0" />
-              <span className="min-w-0 font-bold break-words">{label}</span>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="industries" labelledBy="industries-heading" tone="lavender">
+      <SectionIntro
+        id="industries-heading"
+        eyebrow="Industry Expertise"
+        title="Industries We Serve"
+        intro="We deliver vertical-specific digital solutions that address the unique challenges of major sectors across Africa."
+      />
+      <ul className="mt-14 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {industries.map(({ icon, label }) => (
+          <li
+            key={label}
+            className="border-brand-100 hover:border-brand-300 flex items-center gap-4 rounded-2xl border bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_36px_-24px_rgba(33,0,93,0.35)]"
+          >
+            <IconBadge icon={icon} className="size-11" />
+            <span className="font-jakarta text-brand-950 min-w-0 font-bold break-words">
+              {label}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-10">
+        <ButtonLink href="/industries" variant="outline" arrow>
+          Explore Industries
+        </ButtonLink>
+      </div>
+    </Section>
   );
 }

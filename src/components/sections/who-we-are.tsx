@@ -1,6 +1,5 @@
-import { Building2 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import Image from "next/image";
+import { Section, SectionIntro } from "@/components/site/ui";
 
 const stats = [
   { value: "40+", label: "Years Combined Expertise" },
@@ -9,55 +8,60 @@ const stats = [
 
 export function WhoWeAre() {
   return (
-    <section id="about" className="bg-surface py-section">
-      <Container>
-        <div className="grid grid-cols-1 items-center gap-16 md:grid-cols-2">
-          <div>
-            <SectionLabel className="mb-2">Our Identity</SectionLabel>
-            <h2 className="font-display text-on-surface text-headline-lg mb-8 leading-tight font-bold">
-              Strategy, Innovation, <br />
-              Execution, People, <span className="text-primary">Do.</span>
-            </h2>
-            <div className="mb-10 space-y-6">
-              <p className="text-body-lg text-on-surface-variant">
-                Expervia Technologies bridges the gap between complex global
-                innovation and local market realities. We don&apos;t just
-                consult; we execute.
-              </p>
-              <p className="text-body-md text-on-surface-variant/80">
-                Our philosophy is built on five pillars: deep strategic insight,
-                relentless innovation, flawless execution, a focus on
-                people-centric results, and a bias for action. We combine global
-                technical excellence with a nuanced understanding of the African
-                business landscape.
-              </p>
-            </div>
-            <div className="border-outline-variant/20 grid grid-cols-2 gap-8 border-y py-6">
-              {stats.map((s) => (
-                <div key={s.label}>
-                  <div className="text-primary font-display text-headline-lg mb-1 font-bold">
-                    {s.value}
-                  </div>
-                  <p className="text-on-surface-variant text-sm">{s.label}</p>
-                </div>
-              ))}
-            </div>
+    <Section id="about" labelledBy="identity-heading">
+      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <SectionIntro
+            id="identity-heading"
+            eyebrow="Our Identity"
+            title={
+              <>
+                Strategy, Innovation, Execution, People,{" "}
+                <span className="text-brand-600">Do.</span>
+              </>
+            }
+          />
+          <div className="text-ink/80 mt-7 space-y-5 text-lg leading-relaxed">
+            <p>
+              Expervia Technologies bridges the gap between complex global
+              innovation and local market realities. We don&apos;t just consult;
+              we execute.
+            </p>
+            <p>
+              Our philosophy is built on five pillars: deep strategic insight,
+              relentless innovation, flawless execution, a focus on
+              people-centric results, and a bias for action. We combine global
+              technical excellence with a nuanced understanding of the African
+              business landscape.
+            </p>
           </div>
-
-          {/* Image placeholder — TODO: replace with real asset via next/image */}
-          <div className="relative">
-            <div className="relative z-10 flex items-center justify-center overflow-hidden rounded-2xl">
-              {/* <Building2 className="text-on-surface-variant/30 size-24" /> */}
-              <img
-                src="/identity.jpg"
-                alt="identity image"
-                className="rounded-2xl"
-              />
-            </div>
-            <div className="bg-primary/10 absolute -right-10 -bottom-10 z-0 size-64 rounded-full blur-[100px]" />
-          </div>
+          <dl className="border-brand-100 mt-9 grid grid-cols-2 gap-8 border-y py-6">
+            {stats.map((s) => (
+              <div key={s.label} className="flex flex-col">
+                <dt className="text-ink/70 order-2 text-sm">{s.label}</dt>
+                <dd className="font-jakarta text-brand-700 order-1 mb-1 text-4xl font-extrabold">
+                  {s.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
-      </Container>
-    </section>
+
+        <div className="relative">
+          <div
+            aria-hidden
+            className="from-brand-200 to-brand-50 absolute -inset-2 -z-0 rounded-[2rem] bg-gradient-to-br opacity-70 sm:-inset-4"
+          />
+          <Image
+            src="/identity.jpg"
+            alt="Expervia team members collaborating on laptops in a technology workshop"
+            width={512}
+            height={342}
+            sizes="(min-width: 1024px) 40vw, 100vw"
+            className="relative h-auto w-full rounded-3xl shadow-[0_30px_60px_-30px_rgba(33,0,93,0.6)]"
+          />
+        </div>
+      </div>
+    </Section>
   );
 }

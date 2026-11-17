@@ -1,61 +1,85 @@
-import { CalendarDays } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/shared/container";
-import Link from "next/link";
+import {
+  BarChart3,
+  BrainCircuit,
+  Cloud,
+  LayoutGrid,
+  Network,
+  ShieldCheck,
+} from "lucide-react";
+import { ButtonLink } from "@/components/site/ui";
+import { NetworkGraphic } from "@/components/site/network-graphic";
 
+const domains = [
+  { icon: BrainCircuit, label: "AI" },
+  { icon: Cloud, label: "Cloud" },
+  { icon: ShieldCheck, label: "Security" },
+  { icon: BarChart3, label: "Data" },
+  { icon: LayoutGrid, label: "Microsoft" },
+  { icon: Network, label: "Huawei" },
+];
+
+/** Home hero in the Join ETEN look (sits under the fixed 80px header). */
 export function Hero() {
   return (
-    <section className="relative flex min-h-[90vh] items-center overflow-hidden bg-[linear-gradient(to_bottom,rgba(0,0,0,0.6),rgba(0,0,0,0.6)),url('/hero_background.png')] bg-cover bg-center bg-no-repeat pt-20">
-      {/* Ambient backdrop — placeholder for the hero image.
-          TODO: drop a real asset in /public and swap to next/image. */}
-
-      {/*         
-      <div className="absolute inset-0 z-0">
-        <div className="bg-surface-container-low absolute inset-0" />
-        <div className="bg-brand/20 absolute -top-40 left-1/4 size-[600px] rounded-full blur-[140px]" />
-        <div className="bg-secondary-container/20 absolute right-1/4 -bottom-40 size-[500px] rounded-full blur-[140px]" />
-        <div className="from-surface/40 to-surface absolute inset-0 bg-gradient-to-b" />
-      </div> */}
-
-      <Container className="relative z-20 w-full py-24">
-        <div className="max-w-4xl">
-          <span className="text-label-sm text-primary border-primary/30 mb-6 inline-block rounded-full border px-3 py-1 font-mono tracking-widest uppercase">
+    <section
+      aria-labelledby="home-hero-heading"
+      className="bg-brand-950 relative isolate overflow-hidden pt-20 text-white"
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_600px_at_85%_-10%,rgba(100,38,220,0.65),transparent_60%),radial-gradient(800px_500px_at_-10%_110%,rgba(124,77,255,0.35),transparent_60%),linear-gradient(160deg,#21005D_0%,#2D006B_55%,#1A0049_100%)]"
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)] bg-[size:56px_56px]"
+      />
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pt-16 pb-20 sm:px-6 sm:pt-20 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8 lg:px-8 lg:pt-24 lg:pb-28">
+        <div>
+          <p className="text-brand-100 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-[0.18em] uppercase">
+            <span aria-hidden className="bg-brand-300 size-1.5 rounded-full" />
             Enterprise Intelligence
-          </span>
-          <h1 className="font-display text-on-surface md:text-display-lg mb-8 text-4xl leading-[1.1] font-extrabold tracking-tight sm:text-5xl">
+          </p>
+          <h1
+            id="home-hero-heading"
+            className="font-jakarta mt-6 text-[2.4rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-[3.6rem]"
+          >
             Powering Africa&apos;s Intelligent Enterprise Through{" "}
-            <span className="text-primary">
+            <span className="text-brand-200">
               AI, Cloud &amp; Digital Transformation.
             </span>
           </h1>
-          <p className="text-body-lg text-on-surface-variant mb-10 max-w-2xl">
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/90 sm:text-xl">
             As a Microsoft AI Cloud Partner, Microsoft Cloud Solutions Partner,
             and Huawei Enterprise Partner, we deliver the global expertise and
             local market knowledge required to thrive.
           </p>
-          <div className="flex flex-wrap gap-4">
-            <Button
-              asChild
-              variant="brand"
-              size="pill"
-              className="primary-glow font-bold"
-            >
-              <Link href="/contact">
-                Book a Consultation
-                <CalendarDays />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="brandOutline"
-              size="pill"
-              className="font-bold"
-            >
-              <Link href="/services">Explore Solutions</Link>
-            </Button>
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <ButtonLink href="/contact" variant="light" arrow>
+              Book a Consultation
+            </ButtonLink>
+            <ButtonLink href="/services" variant="outlineLight">
+              Explore Solutions
+            </ButtonLink>
           </div>
         </div>
-      </Container>
+        <div className="relative mx-auto hidden w-full max-w-[520px] sm:block">
+          <NetworkGraphic idPrefix="home-hero" className="w-full" />
+          <ul
+            aria-label="What we deliver"
+            className="absolute inset-x-0 bottom-0 flex flex-wrap justify-center gap-2"
+          >
+            {domains.map(({ icon: Icon, label }) => (
+              <li
+                key={label}
+                className="bg-brand-950/60 text-brand-50 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium backdrop-blur"
+              >
+                <Icon aria-hidden className="text-brand-200 size-3.5" />
+                {label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </section>
   );
 }
