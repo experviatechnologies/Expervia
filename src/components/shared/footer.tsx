@@ -82,6 +82,14 @@ export function Footer() {
                   Mentorship
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/women-in-tech"
+                  className="text-on-surface-variant hover:text-primary text-sm transition-colors"
+                >
+                  Women in Tech
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -10,13 +10,18 @@ import {
   TurnstileWidget,
   TURNSTILE_ENABLED,
 } from "@/components/shared/turnstile-widget";
+import type { CommunityInterest } from "@/lib/eten/community-interest";
 
 const inputClass =
   "w-full rounded-lg border border-white/10 bg-surface-container px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none transition-colors";
 
 const labelClass = "text-label-sm text-on-surface-variant";
 
-export function JoinForm() {
+export function JoinForm({
+  community = null,
+}: {
+  community?: CommunityInterest | null;
+}) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +64,7 @@ export function JoinForm() {
           fullName: fullName.trim(),
           email: email.trim().toLowerCase(),
           password,
+          community,
           [HONEYPOT_FIELD]: String(fd.get(HONEYPOT_FIELD) ?? ""),
           turnstileToken: captchaToken,
         }),

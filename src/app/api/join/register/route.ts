@@ -7,6 +7,7 @@ import {
   checkRateLimit,
 } from "@/lib/eten/spam-guard";
 import { verifyTurnstile } from "@/lib/eten/turnstile";
+import { parseCommunityInterest } from "@/lib/eten/community-interest";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -54,6 +55,8 @@ export async function POST(request: Request) {
   const fullName = body.fullName?.trim() ?? "";
   const email = body.email?.trim() ?? "";
   const password = body.password ?? "";
+  // Optional community interest from a landing page (allowlisted slug).
+  const community = parseCommunityInterest(body.community);
 
   if (fullName.length < 2) {
     return Response.json(
@@ -108,7 +111,10 @@ export async function POST(request: Request) {
     email: email.toLowerCase(),
     password,
     options: {
-      data: { full_name: fullName },
+      data: {
+        full_name: fullName,
+        ...(community ? { community_interest: community } : {}),
+      },
       redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
     },
   });

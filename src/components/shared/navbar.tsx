@@ -18,6 +18,7 @@ import {
   Workflow,
   Shield,
   GraduationCap,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,12 @@ const communityMenu: SolutionLink[] = [
     href: MENTORSHIP_HREF,
     description: "Grow with verified mentors & Circles",
     icon: GraduationCap,
+  },
+  {
+    title: "Women in Tech",
+    href: "/women-in-tech",
+    description: "Connect, grow and lead in technology",
+    icon: Sparkles,
   },
   {
     title: "Huawei Professionals",
