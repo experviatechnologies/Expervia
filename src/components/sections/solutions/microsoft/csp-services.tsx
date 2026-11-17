@@ -5,8 +5,7 @@ import {
   Lightbulb,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const benefits: { icon: LucideIcon; title: string; body: string }[] = [
   {
@@ -28,87 +27,74 @@ const benefits: { icon: LucideIcon; title: string; body: string }[] = [
 
 export function CspServices() {
   return (
-    <section className="bg-surface py-section">
-      <Container>
-        <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
-          <div>
-            <SectionLabel className="mb-4">
-              Microsoft Cloud Solutions Partner
-            </SectionLabel>
-            <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-              Streamline Your Cloud Operations
-            </h2>
-            <p className="text-on-surface-variant text-body-lg mb-8">
-              Avoid the complexity of direct billing and fragmented support.
-              Expervia provides unified licensing management and technical
-              expertise tailored to your business needs.
-            </p>
-            <ul className="space-y-6">
-              {benefits.map(({ icon: Icon, title, body }) => (
-                <li key={title} className="flex items-start gap-4">
-                  <span className="bg-primary/20 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
-                    <Icon className="size-5" />
-                  </span>
-                  <div>
-                    <div className="text-on-surface font-bold">{title}</div>
-                    <div className="text-on-surface-variant">{body}</div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+    <Section id="csp" labelledBy="csp-heading" tone="indigo">
+      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <SectionIntro
+            id="csp-heading"
+            eyebrow="Microsoft Cloud Solutions Partner"
+            title="Streamline Your Cloud Operations"
+            intro="Avoid the complexity of direct billing and fragmented support. Expervia provides unified licensing management and technical expertise tailored to your business needs."
+            dark
+          />
+          <ul className="mt-10 space-y-6">
+            {benefits.map(({ icon, title, body }) => (
+              <li key={title} className="flex items-start gap-4">
+                <IconBadge icon={icon} dark className="size-11" />
+                <div>
+                  <h3 className="font-jakarta font-bold text-white">{title}</h3>
+                  <p className="text-brand-100/80 mt-1 leading-relaxed">
+                    {body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          {/* Hand-built dashboard visual (no external image). */}
-          <div className="relative">
-            <div className="bg-primary/10 absolute -inset-4 rounded-3xl blur-2xl" />
-            <div
-              className="glass-panel relative rounded-3xl p-8 md:p-10"
-              role="img"
-              aria-label="Illustrative Expervia cloud management dashboard showing 94% license utilization and $12.4k in cost saved"
-            >
-              <div className="mb-8 flex items-center justify-between">
-                <div className="text-primary font-bold">Expervia Dashboard</div>
-                <div className="text-on-surface-variant flex items-center gap-2 text-xs">
-                  <span className="size-2 rounded-full bg-emerald-400" />
-                  Cloud Health: Optimal
-                </div>
-              </div>
-              <div className="space-y-6">
-                <div className="bg-surface-container-high h-2 w-full overflow-hidden rounded-full">
-                  <div className="bg-primary h-full w-3/4 rounded-full" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-white/5 bg-white/5 p-4">
-                    <div className="text-on-surface-variant text-xs">
-                      License Utilization
-                    </div>
-                    <div className="text-on-surface text-2xl font-bold">
-                      94%
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-white/5 bg-white/5 p-4">
-                    <div className="text-on-surface-variant text-xs">
-                      Cost Saved
-                    </div>
-                    <div className="text-primary text-2xl font-bold">
-                      $12.4k
-                    </div>
-                  </div>
-                </div>
-                <div className="border-primary/20 bg-primary/5 rounded-xl border p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Lightbulb className="text-primary size-4" />
-                    Optimization Recommendation
-                  </div>
-                  <div className="text-on-surface-variant mt-1 text-xs">
-                    3 underutilized Azure VMs detected. Recommending downsizing.
-                  </div>
-                </div>
-              </div>
+        {/* Hand-built dashboard visual (illustrative, no external image). */}
+        <div
+          role="img"
+          aria-label="Illustrative Expervia cloud management dashboard showing 94% license utilization and $12.4k in cost saved"
+          className="rounded-3xl border border-white/10 bg-white/[0.05] p-7 backdrop-blur md:p-9"
+        >
+          <div className="flex items-center justify-between">
+            <p className="font-jakarta font-bold text-white">
+              Expervia Dashboard
+            </p>
+            <p className="text-brand-100/80 flex items-center gap-2 text-xs">
+              <span className="size-2 rounded-full bg-emerald-300" />
+              Cloud Health: Optimal
+            </p>
+          </div>
+          <div className="mt-7 h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="from-brand-400 to-brand-200 h-full w-3/4 rounded-full bg-gradient-to-r" />
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="rounded-2xl bg-white/[0.06] p-4">
+              <p className="text-brand-100/70 text-xs">License Utilization</p>
+              <p className="font-jakarta mt-1 text-2xl font-extrabold text-white">
+                94%
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/[0.06] p-4">
+              <p className="text-brand-100/70 text-xs">Cost Saved</p>
+              <p className="font-jakarta text-brand-200 mt-1 text-2xl font-extrabold">
+                $12.4k
+              </p>
             </div>
           </div>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Lightbulb className="text-brand-200 size-4" />
+              Optimization Recommendation
+            </p>
+            <p className="text-brand-100/75 mt-1 text-xs">
+              3 underutilized Azure VMs detected. Recommending downsizing.
+            </p>
+          </div>
         </div>
-      </Container>
-    </section>
+      </div>
+    </Section>
   );
 }

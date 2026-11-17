@@ -5,8 +5,12 @@ import {
   LineChart,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import {
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 
 const values: { icon: LucideIcon; title: string; body: string }[] = [
   {
@@ -33,35 +37,26 @@ const values: { icon: LucideIcon; title: string; body: string }[] = [
 
 export function WhyPartner() {
   return (
-    <section className="bg-surface py-section">
-      <Container>
-        <div className="gap-gutter grid grid-cols-1 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <SectionLabel className="mb-4">Why Expervia</SectionLabel>
-            <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-              Your Trusted Microsoft Partner
-            </h2>
-            <p className="text-on-surface-variant text-body-lg">
-              We don&apos;t just implement software; we engineer competitive
-              advantages using the world&apos;s most powerful ecosystem.
-            </p>
-          </div>
-          <div className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:col-span-2">
-            {values.map(({ icon: Icon, title, body }) => (
-              <div
-                key={title}
-                className="bg-surface-container hover:border-primary/40 space-y-4 rounded-xl border border-white/5 p-8 transition-colors"
-              >
-                <Icon className="text-primary size-8" />
-                <h3 className="font-display text-on-surface text-headline-md font-semibold">
-                  {title}
-                </h3>
-                <p className="text-on-surface-variant">{body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Container>
-    </section>
+    <Section id="why-partner" labelledBy="why-partner-heading">
+      <div className="grid gap-12 lg:grid-cols-3 lg:gap-16">
+        <SectionIntro
+          id="why-partner-heading"
+          eyebrow="Why Expervia"
+          title="Your Trusted Microsoft Partner"
+          intro="We don't just implement software; we engineer competitive advantages using the world's most powerful ecosystem."
+        />
+        <ul className="grid gap-5 sm:grid-cols-2 lg:col-span-2">
+          {values.map(({ icon, title, body }) => (
+            <li key={title} className={cardClass}>
+              <IconBadge icon={icon} />
+              <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+                {title}
+              </h3>
+              <p className="text-ink/75 mt-2.5 leading-relaxed">{body}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
   );
 }

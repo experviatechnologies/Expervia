@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import { Check, type LucideIcon } from "lucide-react";
 import {
   IconBadge,
   Section,
@@ -16,6 +16,8 @@ export type Capability = {
   eyebrow?: string;
   /** Shown as the large indigo card. */
   featured?: boolean;
+  /** Short checklist under the description. */
+  features?: string[];
   tags?: string[];
 };
 
@@ -53,6 +55,7 @@ export function CapabilityBento({
             span,
             eyebrow: kicker,
             featured,
+            features,
             tags,
           }) => (
             <li
@@ -102,6 +105,28 @@ export function CapabilityBento({
                 >
                   {description}
                 </p>
+                {features && (
+                  <ul className="mt-5 space-y-2">
+                    {features.map((f) => (
+                      <li
+                        key={f}
+                        className={cn(
+                          "flex items-center gap-2 text-sm font-medium",
+                          featured ? "text-brand-100" : "text-ink/80",
+                        )}
+                      >
+                        <Check
+                          aria-hidden
+                          className={cn(
+                            "size-4 shrink-0",
+                            featured ? "text-brand-200" : "text-brand-600",
+                          )}
+                        />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {tags && (
                   <ul className="mt-auto flex flex-wrap gap-2 pt-7">
                     {tags.map((t) => (
