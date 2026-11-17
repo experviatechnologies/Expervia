@@ -1,51 +1,52 @@
-import Link from "next/link";
-import { LayoutGrid, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/shared/container";
+import { ButtonLink } from "@/components/site/ui";
+import { NetworkGraphic } from "@/components/site/network-graphic";
 
 export function ServicesHero() {
   return (
-    <section className="pb-section relative overflow-hidden pt-40">
-      <div className="absolute inset-0 -z-10">
-        <div className="hero-mesh absolute inset-0" />
-        <div className="primary-glow absolute -top-32 right-0 size-[40rem] opacity-40" />
-        <div className="from-surface absolute inset-0 bg-gradient-to-t to-transparent" />
-      </div>
-
-      <Container className="relative z-10">
+    <section
+      aria-labelledby="services-hero-heading"
+      className="bg-brand-950 relative isolate overflow-hidden pt-20 text-white"
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_600px_at_85%_-10%,rgba(100,38,220,0.65),transparent_60%),radial-gradient(800px_500px_at_-10%_110%,rgba(124,77,255,0.35),transparent_60%),linear-gradient(160deg,#21005D_0%,#2D006B_55%,#1A0049_100%)]"
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)] bg-[size:56px_56px]"
+      />
+      <NetworkGraphic
+        idPrefix="services-hero"
+        className="absolute top-24 -right-16 -z-10 hidden w-[520px] opacity-50 lg:block"
+      />
+      <div className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24 lg:pb-28">
         <div className="max-w-3xl">
-          <span className="border-primary/20 bg-primary/10 text-primary text-label-sm mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono tracking-wider uppercase">
-            <LayoutGrid className="size-4" />
+          <p className="text-brand-100 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-[0.18em] uppercase">
+            <span aria-hidden className="bg-brand-300 size-1.5 rounded-full" />
             Enterprise Portfolio
-          </span>
-          <h1 className="font-display text-on-surface md:text-display-lg mb-6 text-4xl leading-[1.1] font-extrabold tracking-tight sm:text-5xl">
-            One Partner for AI, Cloud, Security &{" "}
-            <span className="gradient-text">Digital Transformation</span>
+          </p>
+          <h1
+            id="services-hero-heading"
+            className="font-jakarta mt-6 text-[2.4rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-[3.6rem]"
+          >
+            One Partner for AI, Cloud, Security &amp;{" "}
+            <span className="text-brand-200">Digital Transformation</span>
           </h1>
-          <p className="text-body-lg text-on-surface-variant mb-8 max-w-xl">
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/90 sm:text-xl">
             A full portfolio of specialized engineering and strategic
-            implementation — powering Africa&apos;s intelligent enterprise from
+            implementation, powering Africa&apos;s intelligent enterprise from
             frontier technology to measurable business outcomes.
           </p>
-
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Button asChild variant="brand" size="pill" className="font-bold">
-              <Link href="/contact">
-                Book a Consultation
-                <ArrowRight />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="brandOutline"
-              size="pill"
-              className="font-bold"
-            >
-              <Link href="/contact">Request an Assessment</Link>
-            </Button>
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <ButtonLink href="/contact" variant="light" arrow>
+              Book a Consultation
+            </ButtonLink>
+            <ButtonLink href="/contact" variant="outlineLight">
+              Request an Assessment
+            </ButtonLink>
           </div>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

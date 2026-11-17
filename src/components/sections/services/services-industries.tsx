@@ -6,11 +6,9 @@ import {
   ShoppingBag,
   Zap,
   Building2,
-  ArrowRight,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { ButtonLink, Section, SectionIntro } from "@/components/site/ui";
 
 const sectors: { icon: LucideIcon; label: string }[] = [
   { icon: Landmark, label: "FSI & Banking" },
@@ -23,41 +21,39 @@ const sectors: { icon: LucideIcon; label: string }[] = [
 
 export function ServicesIndustries() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div className="max-w-2xl">
-            <SectionLabel className="mb-4">Sector Expertise</SectionLabel>
-            <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-              Industries We Support
-            </h2>
-            <p className="text-on-surface-variant text-body-lg">
-              Specialized solutions tailored to the unique regulatory and
-              operational needs of your sector.
-            </p>
-          </div>
-          <Link
-            href="/industries"
-            className="text-primary inline-flex shrink-0 items-center gap-2 font-bold hover:gap-3"
-          >
-            View all industries
-            <ArrowRight className="size-4 transition-all" />
-          </Link>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-          {sectors.map(({ icon: Icon, label }) => (
+    <Section id="sectors" labelledBy="sectors-heading" tone="indigo">
+      <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
+        <SectionIntro
+          id="sectors-heading"
+          eyebrow="Sector Expertise"
+          title="Industries We Support"
+          intro="Specialized solutions tailored to the unique regulatory and operational needs of your sector."
+          dark
+        />
+        <ButtonLink
+          href="/industries"
+          variant="light"
+          arrow
+          className="shrink-0"
+        >
+          View all industries
+        </ButtonLink>
+      </div>
+      <ul className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        {sectors.map(({ icon: Icon, label }) => (
+          <li key={label}>
             <Link
-              key={label}
               href="/industries"
-              className="bg-surface-container hover:border-primary/40 flex flex-col items-center rounded-xl border border-transparent p-6 text-center transition-colors"
+              className="focus-visible:ring-brand-300 flex h-full flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-center font-semibold backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:outline-none"
             >
-              <Icon className="text-primary mb-4 size-8" />
-              <span className="text-body-md text-on-surface">{label}</span>
+              <span className="text-brand-100 inline-flex size-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                <Icon aria-hidden className="size-6" />
+              </span>
+              {label}
             </Link>
-          ))}
-        </div>
-      </Container>
-    </section>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

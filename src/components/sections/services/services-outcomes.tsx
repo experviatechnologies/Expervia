@@ -5,8 +5,7 @@ import {
   PiggyBank,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const stats: { icon: LucideIcon; value: string; label: string }[] = [
   { icon: TrendingUp, value: "40%", label: "Productivity Gains" },
@@ -17,34 +16,27 @@ const stats: { icon: LucideIcon; value: string; label: string }[] = [
 
 export function ServicesOutcomes() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16 max-w-3xl">
-          <SectionLabel className="mb-4">Why Expervia</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-            Technology Alone Doesn&apos;t Create Transformation
-          </h2>
-          <p className="text-on-surface-variant text-body-lg">
-            True evolution happens at the intersection of robust infrastructure
-            and human-centric design. Every engagement is measured by the
-            tangible business outcomes it delivers — not the tools we deploy.
-          </p>
-        </div>
-        <div className="gap-gutter grid grid-cols-2 lg:grid-cols-4">
-          {stats.map(({ icon: Icon, value, label }) => (
-            <div
-              key={label}
-              className="glass-card rounded-2xl p-8 text-center sm:text-left"
-            >
-              <Icon className="text-primary mx-auto mb-6 size-8 sm:mx-0" />
-              <div className="font-display text-on-surface mb-1 text-4xl font-extrabold sm:text-5xl">
-                {value}
-              </div>
-              <div className="text-on-surface-variant text-sm">{label}</div>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="outcomes" labelledBy="outcomes-heading">
+      <SectionIntro
+        id="outcomes-heading"
+        eyebrow="Why Expervia"
+        title="Technology Alone Doesn't Create Transformation"
+        intro="True evolution happens at the intersection of robust infrastructure and human-centric design. Every engagement is measured by the tangible business outcomes it delivers, not the tools we deploy."
+      />
+      <ul className="mt-14 grid grid-cols-2 gap-5 lg:grid-cols-4">
+        {stats.map(({ icon, value, label }) => (
+          <li
+            key={label}
+            className="border-brand-100 rounded-3xl border bg-white p-6 shadow-[0_24px_50px_-34px_rgba(33,0,93,0.45)] sm:p-8"
+          >
+            <IconBadge icon={icon} />
+            <p className="font-jakarta text-brand-700 mt-6 text-4xl font-extrabold sm:text-5xl">
+              {value}
+            </p>
+            <p className="text-ink/70 mt-1 text-sm font-medium">{label}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

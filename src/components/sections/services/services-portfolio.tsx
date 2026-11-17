@@ -12,9 +12,7 @@ import {
   Check,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
-import { cn } from "@/lib/utils";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 type Service = {
   icon: LucideIcon;
@@ -44,7 +42,7 @@ const services: Service[] = [
     icon: CloudCheck,
     title: "Cloud Services",
     description:
-      "Resilient, elastic environments — migrated securely and engineered to scale with your business in real time.",
+      "Resilient, elastic environments, migrated securely and engineered to scale with your business in real time.",
     capabilities: [
       "Hybrid & multi-cloud architecture",
       "Low-risk workload migration",
@@ -100,9 +98,9 @@ const services: Service[] = [
     icon: Repeat,
     title: "Digital Transformation",
     description:
-      "Beyond the code — reimagining business models, experiences, and ways of working for a digital-first economy.",
+      "Beyond the code: reimagining business models, experiences, and ways of working for a digital-first economy.",
     capabilities: [
-      "Strategic 3–5 year roadmap",
+      "Strategic 3 to 5 year roadmap",
       "UX/UI innovation & rapid prototyping",
       "Change management & upskilling",
     ],
@@ -113,7 +111,7 @@ const services: Service[] = [
     icon: Server,
     title: "Enterprise Infrastructure",
     description:
-      "The foundational stack engineered for high-scale African operations — networking, compute, and continuity.",
+      "The foundational stack engineered for high-scale African operations: networking, compute, and continuity.",
     capabilities: [
       "SD-WAN & high-performance networking",
       "HCI & virtualization",
@@ -126,7 +124,7 @@ const services: Service[] = [
     icon: Headset,
     title: "Managed Services",
     description:
-      "We run the complexity for you — proactive operations and DevOps with strict, measurable SLAs.",
+      "We run the complexity for you: proactive operations and DevOps with strict, measurable SLAs.",
     capabilities: [
       "24/7 managed operations & SLAs",
       "Proactive monitoring & patching",
@@ -139,81 +137,87 @@ const services: Service[] = [
 
 export function ServicesPortfolio() {
   return (
-    <section className="bg-surface py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">The Portfolio</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Eight Disciplines, One Integrated Partner
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 md:grid-cols-2">
-          {services.map(
-            (
-              { icon: Icon, title, description, capabilities, benefit, href },
-              i,
-            ) => {
-              const body = (
-                <>
-                  <div className="mb-6 flex items-center justify-between">
-                    <div className="bg-primary/10 text-primary group-hover:bg-primary/20 flex size-12 items-center justify-center rounded-lg transition-colors">
-                      <Icon className="size-6" />
-                    </div>
-                    <span className="font-display text-primary/20 text-4xl font-extrabold">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <h3 className="font-display text-on-surface text-headline-md mb-2 font-semibold">
-                    {title}
-                  </h3>
-                  <p className="text-on-surface-variant mb-6">{description}</p>
-
-                  <ul className="mb-6 space-y-2">
-                    {capabilities.map((c) => (
-                      <li
-                        key={c}
-                        className="text-on-surface-variant flex items-start gap-2 text-sm"
-                      >
-                        <Check className="text-primary mt-0.5 size-4 shrink-0" />
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-auto border-t border-white/5 pt-6">
-                    <span className="text-label-sm text-on-surface/50 mb-1 block font-mono uppercase">
-                      Business Benefit
-                    </span>
-                    <p className="text-on-surface-variant text-sm">{benefit}</p>
-                    {href && (
-                      <span className="text-primary mt-4 inline-flex items-center gap-2 font-bold group-hover:gap-3">
-                        Explore {title}
-                        <ArrowRight className="size-4 transition-all" />
-                      </span>
-                    )}
-                  </div>
-                </>
-              );
-
-              const className = cn(
-                "glass-card group flex h-full flex-col rounded-2xl p-8 transition-all",
-                href ? "hover:border-primary/50" : "border-white/5",
-              );
-
-              return href ? (
-                <Link key={title} href={href} className={className}>
-                  {body}
-                </Link>
-              ) : (
-                <div key={title} className={className}>
-                  {body}
+    <Section id="portfolio" labelledBy="portfolio-heading" tone="lavender">
+      <SectionIntro
+        id="portfolio-heading"
+        eyebrow="The Portfolio"
+        title="Eight Disciplines, One Integrated Partner"
+        center
+      />
+      <ul className="mt-14 grid gap-5 md:grid-cols-2">
+        {services.map(
+          ({ icon, title, description, capabilities, benefit, href }, i) => {
+            const body = (
+              <>
+                <span
+                  aria-hidden
+                  className="from-brand-900 via-brand-600 to-brand-300 absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-0 transition-opacity group-hover:opacity-100"
+                />
+                <div className="flex items-start justify-between gap-4">
+                  <IconBadge icon={icon} />
+                  <span
+                    aria-hidden
+                    className="font-jakarta text-brand-200 text-3xl font-extrabold"
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                 </div>
-              );
-            },
-          )}
-        </div>
-      </Container>
-    </section>
+                <h3 className="font-jakarta text-brand-950 mt-5 text-xl font-bold">
+                  {title}
+                </h3>
+                <p className="text-ink/75 mt-2.5 leading-relaxed">
+                  {description}
+                </p>
+                <ul className="border-brand-100 mt-5 space-y-2.5 border-t pt-5">
+                  {capabilities.map((c) => (
+                    <li
+                      key={c}
+                      className="text-ink/80 flex items-start gap-2.5 text-[0.95rem]"
+                    >
+                      <Check
+                        aria-hidden
+                        className="text-brand-600 mt-0.5 size-4 shrink-0"
+                      />
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+                <div aria-hidden className="flex-1" />
+                <div className="bg-lavender mt-6 rounded-2xl p-5">
+                  <p className="text-brand-600 text-xs font-bold tracking-[0.18em] uppercase">
+                    Business Benefit
+                  </p>
+                  <p className="text-ink/80 mt-1.5 text-sm leading-relaxed">
+                    {benefit}
+                  </p>
+                </div>
+                {href && (
+                  <span className="text-brand-700 mt-5 inline-flex items-center gap-1.5 text-sm font-semibold">
+                    Explore {title}
+                    <ArrowRight
+                      aria-hidden
+                      className="size-4 transition-transform group-hover:translate-x-0.5"
+                    />
+                  </span>
+                )}
+              </>
+            );
+            const className =
+              "group border-brand-100 hover:border-brand-300 focus-visible:ring-brand-400 relative flex h-full flex-col overflow-hidden rounded-3xl border bg-white p-7 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_50px_-30px_rgba(33,0,93,0.45)] focus-visible:ring-2 focus-visible:outline-none sm:p-9";
+            return (
+              <li key={title}>
+                {href ? (
+                  <Link href={href} className={className}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div className={className}>{body}</div>
+                )}
+              </li>
+            );
+          },
+        )}
+      </ul>
+    </Section>
   );
 }
