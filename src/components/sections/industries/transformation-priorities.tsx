@@ -6,9 +6,10 @@ import {
   BarChart3,
   Rocket,
   LayoutGrid,
+  ArrowRight,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 type Priority = { icon: LucideIcon; label: string; href?: string };
 
@@ -31,46 +32,50 @@ const priorities: Priority[] = [
   },
 ];
 
-const cardClasses =
-  "bg-surface-container hover:bg-surface-container-high flex flex-col items-center rounded-xl p-6 text-center transition-colors";
-
 export function TransformationPriorities() {
   return (
-    <section className="bg-surface py-section relative overflow-hidden">
-      <Container className="relative z-10">
-        <div className="mb-16 text-center">
-          <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-            Core Transformation Priorities
-          </h2>
-          <p className="text-body-lg text-on-surface-variant mx-auto max-w-2xl">
-            Expertise that spans sectors to deliver universal value across the
-            enterprise landscape.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
-          {priorities.map(({ icon: Icon, label, href }) => {
-            const content = (
-              <>
-                <Icon className="text-primary mb-4 size-8" />
-                <span className="text-body-md text-on-surface">{label}</span>
-              </>
-            );
-            return href ? (
-              <Link
-                key={label}
-                href={href}
-                className={`${cardClasses} hover:border-primary/40 border border-transparent`}
-              >
-                {content}
-              </Link>
-            ) : (
-              <div key={label} className={cardClasses}>
-                {content}
-              </div>
-            );
-          })}
-        </div>
-      </Container>
-    </section>
+    <Section id="priorities" labelledBy="priorities-heading" tone="lavender">
+      <SectionIntro
+        id="priorities-heading"
+        eyebrow="Across every sector"
+        title="Core Transformation Priorities"
+        intro="Expertise that spans sectors to deliver universal value across the enterprise landscape."
+        center
+      />
+      <ul className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        {priorities.map(({ icon, label, href }) => {
+          const content = (
+            <>
+              <IconBadge icon={icon} />
+              <span className="font-jakarta text-brand-950 font-bold">
+                {label}
+              </span>
+              {href && (
+                <ArrowRight
+                  aria-hidden
+                  className="text-brand-600 size-4 transition-transform group-hover:translate-x-0.5"
+                />
+              )}
+            </>
+          );
+          const className =
+            "group border-brand-100 flex h-full flex-col items-center gap-3 rounded-3xl border bg-white p-6 text-center";
+          return (
+            <li key={label}>
+              {href ? (
+                <Link
+                  href={href}
+                  className={`${className} hover:border-brand-300 focus-visible:ring-brand-400 transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_40px_-24px_rgba(33,0,93,0.35)] focus-visible:ring-2 focus-visible:outline-none`}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div className={className}>{content}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
   );
 }

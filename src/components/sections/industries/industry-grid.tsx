@@ -10,7 +10,7 @@ import {
   Briefcase,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 type Industry = {
   icon: LucideIcon;
@@ -107,77 +107,66 @@ const industries: Industry[] = [
 
 export function IndustryGrid() {
   return (
-    <section className="bg-surface-container-lowest py-section">
-      <Container>
-        <div className="mb-16 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div className="max-w-2xl">
-            <h2 className="font-display text-on-surface text-headline-lg mb-4 font-bold">
-              Transforming Your Sector
-            </h2>
-            <p className="text-body-lg text-on-surface-variant">
-              We bring deep domain expertise to help you navigate specific
-              digital transitions within your industry landscape.
-            </p>
-          </div>
-          <div className="text-label-sm text-on-surface-variant bg-surface-container shrink-0 rounded-full border border-white/5 px-4 py-2 font-mono tracking-widest uppercase">
-            {industries.length} Core Specializations
-          </div>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {industries.map(
-            ({
-              icon: Icon,
-              title,
-              tagline,
-              description,
-              solutions,
-              outcome,
-            }) => (
-              <article
-                key={title}
-                className="glass-card flex h-full flex-col rounded-xl p-8"
-              >
-                <Icon className="text-primary mb-6 size-9" />
-                <h3 className="font-display text-on-surface text-headline-md mb-1 font-semibold">
-                  {title}
-                </h3>
-                <p className="text-label-sm text-secondary mb-4 font-mono">
-                  {tagline}
-                </p>
-                <p className="text-body-md text-on-surface-variant mb-6 grow">
-                  {description}
-                </p>
-                <div className="space-y-4 border-t border-white/5 pt-4">
-                  <div>
-                    <span className="text-label-sm text-on-surface/60 mb-2 block font-mono uppercase">
-                      Solutions Include
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {solutions.map((s) => (
-                        <span
-                          key={s}
-                          className="bg-surface-container-high text-on-surface-variant rounded px-2 py-1 text-[10px] font-bold uppercase"
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-label-sm text-on-surface/60 mb-2 block font-mono uppercase">
-                      Outcomes
-                    </span>
-                    <p className="text-primary text-body-md font-medium">
-                      {outcome}
-                    </p>
-                  </div>
+    <Section id="sectors" labelledBy="sectors-heading">
+      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+        <SectionIntro
+          id="sectors-heading"
+          eyebrow="Our sectors"
+          title="Transforming Your Sector"
+          intro="We bring deep domain expertise to help you navigate specific digital transitions within your industry landscape."
+        />
+        <p className="bg-lavender text-brand-800 shrink-0 rounded-full px-4 py-2 text-xs font-bold tracking-[0.18em] uppercase">
+          {industries.length} Core Specializations
+        </p>
+      </div>
+      <ul className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {industries.map(
+          ({ icon, title, tagline, description, solutions, outcome }) => (
+            <li
+              key={title}
+              className="group border-brand-100 hover:border-brand-300 relative flex h-full flex-col overflow-hidden rounded-3xl border bg-white p-7 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_50px_-30px_rgba(33,0,93,0.45)]"
+            >
+              <span
+                aria-hidden
+                className="from-brand-900 via-brand-600 to-brand-300 absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-0 transition-opacity group-hover:opacity-100"
+              />
+              <IconBadge icon={icon} />
+              <h3 className="font-jakarta text-brand-950 mt-5 text-xl font-bold">
+                {title}
+              </h3>
+              <p className="text-brand-600 mt-1 text-sm font-semibold">
+                {tagline}
+              </p>
+              <p className="text-ink/75 mt-3 flex-1 leading-relaxed">
+                {description}
+              </p>
+              <div className="border-brand-100 mt-6 space-y-4 border-t pt-5">
+                <div>
+                  <p className="text-ink/50 text-xs font-bold tracking-[0.16em] uppercase">
+                    Solutions include
+                  </p>
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {solutions.map((s) => (
+                      <li
+                        key={s}
+                        className="bg-lavender text-brand-800 rounded-full px-3 py-1 text-xs font-semibold"
+                      >
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </article>
-            ),
-          )}
-        </div>
-      </Container>
-    </section>
+                <div>
+                  <p className="text-ink/50 text-xs font-bold tracking-[0.16em] uppercase">
+                    Outcomes
+                  </p>
+                  <p className="text-brand-700 mt-1 font-semibold">{outcome}</p>
+                </div>
+              </div>
+            </li>
+          ),
+        )}
+      </ul>
+    </Section>
   );
 }
