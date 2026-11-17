@@ -19,9 +19,9 @@ import {
   Shield,
   GraduationCap,
   Sparkles,
+  Network,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +74,12 @@ const MENTORSHIP_HREF = process.env.NEXT_PUBLIC_MENTORSHIP_HOST
   : "/mentorship";
 
 const communityMenu: SolutionLink[] = [
+  {
+    title: "ETEN Expert Network",
+    href: "/join-eten",
+    description: "What ETEN is and why professionals join",
+    icon: Network,
+  },
   {
     title: "Mentorship",
     href: MENTORSHIP_HREF,
@@ -138,8 +144,7 @@ const communityMenu: SolutionLink[] = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
-  const [communityOpen, setCommunityOpen] = useState(false);
+  const [menu, setMenu] = useState<"solutions" | "community" | null>(null);
   const pathname = usePathname();
 
   // Homepage-section links (/#solutions…) highlight the first item while on the
@@ -147,309 +152,233 @@ export function Navbar() {
   const isActive = (href: string, index: number) =>
     href.includes("#") ? pathname === "/" && index === 0 : pathname === href;
 
+  const sectionActive = {
+    solutions: pathname.startsWith("/solutions/"),
+    community:
+      pathname.startsWith("/community/") ||
+      pathname === "/join-eten" ||
+      pathname === "/women-in-tech",
+  };
+
+  const linkClass = (active: boolean) =>
+    cn(
+      "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[0.95rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
+      active ? "text-brand-300" : "text-white/75 hover:text-white",
+    );
+
+  const megaItems =
+    menu === "solutions"
+      ? solutionsMenu
+      : menu === "community"
+        ? communityMenu
+        : [];
+
   return (
-    <nav
-      onMouseLeave={() => {
-        setSolutionsOpen(false);
-        setCommunityOpen(false);
+    <header
+      onMouseLeave={() => setMenu(null)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setMenu(null);
       }}
-      className="bg-surface/60 fixed top-0 z-50 w-full border-b border-white/10 shadow-sm backdrop-blur-xl"
+      className="bg-night/95 fixed top-0 z-50 w-full border-b border-white/10 text-white backdrop-blur-md"
     >
-      <div className="px-margin-mobile md:px-margin-desktop mx-auto flex h-20 max-w-7xl items-center justify-between">
+      <a
+        href="#main"
+        className="bg-brand-600 sr-only rounded-md px-4 py-2 text-white focus:not-sr-only focus:absolute focus:top-3 focus:left-4 focus:z-10"
+      >
+        Skip to content
+      </a>
+      <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
         <Link
           href="/"
-          className="font-display text-headline-md text-primary font-bold"
+          aria-label="Expervia Technologies home"
+          className="focus-visible:ring-brand-300 shrink-0 rounded-md focus-visible:ring-2 focus-visible:outline-none"
         >
-          {siteConfig.name}
+          <span className="flex flex-col leading-none">
+            <span className="text-[1.05rem] font-bold tracking-tight text-white">
+              Expervia Technologies
+            </span>
+            <span className="text-brand-200 mt-1 text-[0.62rem] font-semibold tracking-[0.22em] uppercase">
+              Expert Network · ETEN
+            </span>
+          </span>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-8 md:flex">
-          {siteConfig.navLinks.map((link, i) => {
-            const active = isActive(link.href, i);
-
-            // "Solutions" opens the full-width mega-menu below the bar on hover.
-            if (link.title === "Solutions") {
-              const solutionsActive =
-                active || pathname.startsWith("/solutions/");
+        <nav aria-label="Main" className="hidden xl:block">
+          <ul className="flex items-center gap-1">
+            {siteConfig.navLinks.map((link, i) => {
+              const key =
+                link.title === "Solutions"
+                  ? "solutions"
+                  : link.title === "Community"
+                    ? "community"
+                    : null;
+              if (key) {
+                const expanded = menu === key;
+                return (
+                  <li key={link.href} onMouseEnter={() => setMenu(key)}>
+                    <button
+                      type="button"
+                      aria-expanded={expanded}
+                      aria-controls="site-mega-menu"
+                      onClick={() => setMenu(expanded ? null : key)}
+                      className={linkClass(
+                        expanded ||
+                          sectionActive[key] ||
+                          isActive(link.href, i),
+                      )}
+                    >
+                      {link.title}
+                      <ChevronDown
+                        aria-hidden
+                        className={cn(
+                          "size-4 transition-transform",
+                          expanded && "rotate-180",
+                        )}
+                      />
+                    </button>
+                  </li>
+                );
+              }
               return (
-                <div
-                  key={link.href}
-                  onMouseEnter={() => {
-                    setCommunityOpen(false);
-                    setSolutionsOpen(true);
-                  }}
-                  onFocus={() => setSolutionsOpen(true)}
-                >
+                <li key={link.href} onMouseEnter={() => setMenu(null)}>
                   <Link
                     href={link.href}
-                    className={cn(
-                      "text-body-md flex items-center gap-1 transition-colors",
-                      solutionsActive || solutionsOpen
-                        ? "text-primary font-bold"
-                        : "text-on-surface/80 hover:text-primary",
-                    )}
+                    aria-current={isActive(link.href, i) ? "page" : undefined}
+                    className={linkClass(isActive(link.href, i))}
                   >
                     {link.title}
-                    <ChevronDown
-                      className={cn(
-                        "size-4 transition-transform duration-200",
-                        solutionsOpen && "rotate-180",
-                      )}
-                    />
                   </Link>
-                </div>
+                </li>
               );
-            }
+            })}
+          </ul>
+        </nav>
 
-            // "Community" opens its own mega-menu of membership tracks.
-            if (link.title === "Community") {
-              const communityActive =
-                active || pathname.startsWith("/community/");
-              return (
-                <div
-                  key={link.href}
-                  onMouseEnter={() => {
-                    setSolutionsOpen(false);
-                    setCommunityOpen(true);
-                  }}
-                  onFocus={() => setCommunityOpen(true)}
-                >
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      "text-body-md flex items-center gap-1 transition-colors",
-                      communityActive || communityOpen
-                        ? "text-primary font-bold"
-                        : "text-on-surface/80 hover:text-primary",
-                    )}
-                  >
-                    {link.title}
-                    <ChevronDown
-                      className={cn(
-                        "size-4 transition-transform duration-200",
-                        communityOpen && "rotate-180",
-                      )}
-                    />
-                  </Link>
-                </div>
-              );
-            }
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onMouseEnter={() => {
-                  setSolutionsOpen(false);
-                  setCommunityOpen(false);
-                }}
-                className={cn(
-                  "text-body-md transition-colors",
-                  active
-                    ? "text-primary border-primary border-b-2 pb-1 font-bold"
-                    : "text-on-surface/80 hover:text-primary",
-                )}
-              >
-                {link.title}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            asChild
-            variant="brandOutline"
-            size="pill-sm"
-            className="hidden md:inline-flex"
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/join"
+            className="hidden min-h-11 items-center rounded-full border border-white/25 px-5 text-sm font-semibold whitespace-nowrap text-white transition hover:border-white/60 hover:bg-white/5 sm:inline-flex"
           >
-            <Link href="/join">Join ETEN</Link>
-          </Button>
-          <Button
-            asChild
-            variant="brand"
-            size="pill-sm"
-            className="hidden md:inline-flex"
+            Join ETEN
+          </Link>
+          <Link
+            href="/contact"
+            className="bg-brand-400 hover:bg-brand-500 hidden min-h-11 items-center rounded-full px-5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_10px_30px_-12px_rgba(138,92,246,0.9)] transition md:inline-flex"
           >
-            <Link href="/contact">Book a Consultation</Link>
-          </Button>
-
-          {/* Mobile menu toggle */}
+            Book a Consultation
+          </Link>
           <button
             type="button"
-            aria-label="Toggle menu"
+            aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
+            aria-controls="site-mobile-menu"
             onClick={() => setOpen((v) => !v)}
-            className="text-on-surface hover:text-primary inline-flex size-10 items-center justify-center rounded-lg transition-colors md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-full text-white hover:bg-white/10 xl:hidden"
           >
-            {open ? <X className="size-6" /> : <Menu className="size-6" />}
+            {open ? (
+              <X aria-hidden className="size-6" />
+            ) : (
+              <Menu aria-hidden className="size-6" />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Desktop mega-menu: the navbar itself expands downward on hover. */}
+      {/* Desktop mega-menu panel (Solutions / Community). */}
       <div
-        className={cn(
-          "hidden overflow-hidden transition-all duration-300 ease-out md:block",
-          solutionsOpen
-            ? "max-h-[32rem] border-t border-white/10 opacity-100"
-            : "max-h-0 opacity-0",
-        )}
+        id="site-mega-menu"
+        hidden={!menu}
+        className="hidden border-t border-white/10 xl:block"
       >
-        <div className="px-margin-mobile md:px-margin-desktop mx-auto max-w-7xl py-6">
-          <p className="text-label-sm text-on-surface-variant mb-4 font-mono tracking-widest uppercase">
-            Our Solutions
+        <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-10">
+          <p className="text-brand-200 mb-4 text-xs font-bold tracking-[0.2em] uppercase">
+            {menu === "solutions" ? "Our Solutions" : "ETEN Communities"}
           </p>
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-            {solutionsMenu.map(({ title, href, description, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setSolutionsOpen(false)}
-                className="hover:bg-surface-container-high group/item flex flex-col gap-3 rounded-xl p-4 transition-colors"
-              >
-                <span className="bg-primary/10 text-primary group-hover/item:bg-primary/20 flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors">
-                  <Icon className="size-5" />
-                </span>
-                <span className="flex flex-col gap-1">
-                  <span className="text-on-surface text-body-md font-semibold">
-                    {title}
+          <ul className="grid grid-cols-5 gap-2">
+            {megaItems.map(({ title, href, description, icon: Icon }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  onClick={() => setMenu(null)}
+                  className="group/item flex h-full flex-col gap-3 rounded-2xl p-4 transition-colors hover:bg-white/5"
+                >
+                  <span className="text-brand-200 group-hover/item:bg-brand-600/40 flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10 transition-colors">
+                    <Icon aria-hidden className="size-5" />
                   </span>
-                  <span className="text-on-surface-variant text-sm">
-                    {description}
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-white">{title}</span>
+                    <span className="text-sm text-white/55">{description}</span>
                   </span>
-                </span>
-              </Link>
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop mega-menu: Community membership tracks. */}
-      <div
-        className={cn(
-          "hidden overflow-hidden transition-all duration-300 ease-out md:block",
-          communityOpen
-            ? "max-h-[32rem] border-t border-white/10 opacity-100"
-            : "max-h-0 opacity-0",
-        )}
-      >
-        <div className="px-margin-mobile md:px-margin-desktop mx-auto max-w-7xl py-6">
-          <p className="text-label-sm text-on-surface-variant mb-4 font-mono tracking-widest uppercase">
-            Membership Tracks
-          </p>
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-            {communityMenu.map(({ title, href, description, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setCommunityOpen(false)}
-                className="hover:bg-surface-container-high group/item flex flex-col gap-3 rounded-xl p-4 transition-colors"
-              >
-                <span className="bg-primary/10 text-primary group-hover/item:bg-primary/20 flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors">
-                  <Icon className="size-5" />
-                </span>
-                <span className="flex flex-col gap-1">
-                  <span className="text-on-surface text-body-md font-semibold">
-                    {title}
-                  </span>
-                  <span className="text-on-surface-variant text-sm">
-                    {description}
-                  </span>
-                </span>
-              </Link>
-            ))}
-          </div>
+          </ul>
         </div>
       </div>
 
       {/* Mobile menu */}
       {open && (
-        <div className="bg-surface/95 px-margin-mobile border-t border-white/10 py-6 backdrop-blur-xl md:hidden">
-          <div className="flex flex-col gap-4">
-            {siteConfig.navLinks.map((link) => {
-              if (link.title === "Solutions") {
+        <div
+          id="site-mobile-menu"
+          className="bg-night max-h-[calc(100dvh-80px)] overflow-y-auto border-t border-white/10 px-4 pt-2 pb-6 sm:px-6 xl:hidden"
+        >
+          <nav aria-label="Main mobile">
+            <ul className="flex flex-col">
+              {siteConfig.navLinks.map((link) => {
+                const sub =
+                  link.title === "Solutions"
+                    ? solutionsMenu
+                    : link.title === "Community"
+                      ? communityMenu
+                      : null;
                 return (
-                  <div key={link.href} className="flex flex-col gap-3">
+                  <li key={link.href} className="border-b border-white/5">
                     <Link
                       href={link.href}
                       onClick={() => setOpen(false)}
-                      className="text-on-surface/80 hover:text-primary text-body-md transition-colors"
+                      className="block px-2 py-3.5 text-base font-medium text-white"
                     >
                       {link.title}
                     </Link>
-                    <div className="border-outline-variant/40 ml-2 flex flex-col gap-3 border-l pl-4">
-                      {solutionsMenu.map(({ title, href }) => (
-                        <Link
-                          key={href}
-                          href={href}
-                          onClick={() => setOpen(false)}
-                          className="text-on-surface-variant hover:text-primary text-sm transition-colors"
-                        >
-                          {title}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
+                    {sub && (
+                      <ul className="pb-3 pl-2">
+                        {sub.map(({ title, href }) => (
+                          <li key={href}>
+                            <Link
+                              href={href}
+                              onClick={() => setOpen(false)}
+                              className="block rounded-lg px-3 py-2.5 text-white/75 hover:bg-white/5 hover:text-white"
+                            >
+                              {title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
                 );
-              }
-
-              if (link.title === "Community") {
-                return (
-                  <div key={link.href} className="flex flex-col gap-3">
-                    <Link
-                      href={link.href}
-                      onClick={() => setOpen(false)}
-                      className="text-on-surface/80 hover:text-primary text-body-md transition-colors"
-                    >
-                      {link.title}
-                    </Link>
-                    <div className="border-outline-variant/40 ml-2 flex flex-col gap-3 border-l pl-4">
-                      {communityMenu.map(({ title, href }) => (
-                        <Link
-                          key={href}
-                          href={href}
-                          onClick={() => setOpen(false)}
-                          className="text-on-surface-variant hover:text-primary text-sm transition-colors"
-                        >
-                          {title}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="text-on-surface/80 hover:text-primary text-body-md transition-colors"
-                >
-                  {link.title}
-                </Link>
-              );
-            })}
-            <Button
-              asChild
-              variant="brandOutline"
-              size="pill-sm"
-              className="mt-2 w-full"
+              })}
+            </ul>
+          </nav>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Link
+              href="/join"
+              onClick={() => setOpen(false)}
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 font-semibold text-white hover:bg-white/5"
             >
-              <Link href="/join" onClick={() => setOpen(false)}>
-                Join ETEN
-              </Link>
-            </Button>
-            <Button asChild variant="brand" size="pill-sm" className="w-full">
-              <Link href="/contact" onClick={() => setOpen(false)}>
-                Book a Consultation
-              </Link>
-            </Button>
+              Join ETEN
+            </Link>
+            <Link
+              href="/contact"
+              onClick={() => setOpen(false)}
+              className="bg-brand-400 hover:bg-brand-500 inline-flex min-h-12 items-center justify-center rounded-full font-semibold text-white"
+            >
+              Book a Consultation
+            </Link>
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

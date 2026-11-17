@@ -1,156 +1,131 @@
 import Link from "next/link";
-import { Globe, AtSign, Share2 } from "lucide-react";
+import { ArrowRight, Mail, Phone } from "lucide-react";
 import { siteConfig } from "@/config/site";
-
-const socials = [
-  { icon: Globe, label: "Website", href: "#" },
-  { icon: AtSign, label: "Email", href: "#" },
-  { icon: Share2, label: "Share", href: "#" },
-];
-
-const partners = [
-  "Microsoft AI Cloud Partner",
-  "Microsoft Cloud Solutions Partner",
-  "Huawei Partner",
-];
-
-const regions = ["Africa", "Europe", "Global"];
 
 // Link to the mentorship subdomain when it's configured, else the path.
 const MENTORSHIP_HREF = process.env.NEXT_PUBLIC_MENTORSHIP_HOST
   ? `https://${process.env.NEXT_PUBLIC_MENTORSHIP_HOST}`
   : "/mentorship";
 
-export function Footer() {
+const partners = [
+  "Microsoft AI Cloud Partner",
+  "Microsoft Cloud Solutions Partner",
+  "Huawei Enterprise Partner",
+];
+
+const communityLinks = [
+  { title: "ETEN Expert Network", href: "/join-eten" },
+  { title: "Women in Tech", href: "/women-in-tech" },
+  { title: "Mentorship", href: MENTORSHIP_HREF },
+  { title: "Member sign in", href: "/signin" },
+];
+
+const linkClass =
+  "text-brand-100/85 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 rounded";
+
+function Column({
+  title,
+  links,
+}: {
+  title: string;
+  links: readonly { title: string; href: string }[];
+}) {
   return (
-    <footer className="bg-surface-container-lowest border-outline-variant border-t">
-      <div className="px-margin-mobile py-section md:px-margin-desktop overflox-x-hidden mx-auto w-full">
-        <div className="mb-16 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5">
-          {/* Brand column */}
-          <div className="lg:col-span-2">
-            <div className="font-display text-headline-md text-on-surface mb-6 font-bold">
-              {siteConfig.name}
-            </div>
-            <p className="text-on-surface-variant text-body-md mb-8 max-w-sm">
-              Empowering Africa&apos;s digital future through strategic
-              innovation, enterprise technology, and security-first managed
-              services.
-            </p>
-            <div className="mb-8 flex gap-4">
-              {socials.map(({ icon: Icon, label, href }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="border-outline-variant hover:bg-primary hover:text-surface inline-flex size-10 items-center justify-center rounded-full border transition-all"
-                >
-                  <Icon className="size-4" />
-                </Link>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-4 opacity-60">
-              {partners.map((p) => (
-                <div
-                  key={p}
-                  className="border-outline-variant font-label-sm rounded border px-3 py-1 text-[10px] font-bold tracking-wider uppercase"
-                >
-                  {p}
-                </div>
-              ))}
-            </div>
-          </div>
+    <nav aria-label={title}>
+      <h2 className="text-brand-200 text-xs font-bold tracking-[0.2em] uppercase">
+        {title}
+      </h2>
+      <ul className="mt-5 space-y-3 text-sm">
+        {links.map((link) => (
+          <li key={link.title}>
+            <Link href={link.href} className={linkClass}>
+              {link.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
 
-          {/* Company links */}
-          <div>
-            <h4 className="text-on-surface mb-6 font-bold">Company</h4>
-            <ul className="space-y-4">
-              {siteConfig.footerNav.company.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-on-surface-variant hover:text-primary text-sm transition-colors"
-                  >
-                    {link.title}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href={MENTORSHIP_HREF}
-                  className="text-on-surface-variant hover:text-primary text-sm transition-colors"
-                >
-                  Mentorship
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/women-in-tech"
-                  className="text-on-surface-variant hover:text-primary text-sm transition-colors"
-                >
-                  Women in Tech
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Legal links */}
-          <div>
-            <h4 className="text-on-surface mb-6 font-bold">Legal</h4>
-            <ul className="space-y-4">
-              {siteConfig.footerNav.legal.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-on-surface-variant hover:text-primary text-sm transition-colors"
-                  >
-                    {link.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Newsletter */}
-          <div>
-            <h4 className="text-on-surface mb-6 font-bold">Newsletter</h4>
-            <p className="text-on-surface-variant mb-4 text-sm">
-              Stay ahead of Africa&apos;s digital transformation curve.
-            </p>
-            <form className="flex">
-              <input
-                type="email"
-                placeholder="Work email"
-                aria-label="Work email"
-                className="bg-surface border-outline-variant focus:border-brand flex-1 rounded-l-lg border p-2 text-xs outline-none"
-              />
-              <button
-                type="submit"
-                className="bg-primary text-on-primary rounded-r-lg px-2 font-semibold"
-              >
-                Join
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="border-outline-variant/30 flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
-          <p className="text-on-surface-variant text-sm">
-            © {new Date().getFullYear()} {siteConfig.name} Technologies. All
-            rights reserved.
+export function Footer() {
+  const { emails, phones } = siteConfig.contact;
+  return (
+    <footer className="bg-brand-950 text-brand-100">
+      <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr] lg:px-8">
+        <div>
+          <span className="flex flex-col leading-none">
+            <span className="text-[1.05rem] font-bold tracking-tight text-white">
+              Expervia Technologies
+            </span>
+            <span className="text-brand-200 mt-1 text-[0.62rem] font-semibold tracking-[0.22em] uppercase">
+              Expert Network · ETEN
+            </span>
+          </span>
+          <p className="text-brand-100/80 mt-6 max-w-sm leading-relaxed">
+            Empowering Africa&apos;s digital future through strategic
+            innovation, enterprise technology and security-first managed
+            services.
           </p>
-          <div className="text-on-surface-variant flex gap-8 text-sm">
-            {regions.map((r) => (
-              <Link
-                key={r}
-                href="#"
-                className="hover:text-primary transition-colors"
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {partners.map((p) => (
+              <li
+                key={p}
+                className="text-brand-100/80 rounded-full border border-white/15 px-3 py-1 text-[0.65rem] font-semibold tracking-wider uppercase"
               >
-                {r}
-              </Link>
+                {p}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
+
+        <Column title="Company" links={siteConfig.footerNav.company} />
+        <Column title="Community" links={communityLinks} />
+        <Column title="Legal" links={siteConfig.footerNav.legal} />
+
+        <div>
+          <h2 className="text-brand-200 text-xs font-bold tracking-[0.2em] uppercase">
+            Become a member
+          </h2>
+          <p className="text-brand-100/85 mt-5 text-sm">
+            Apply through the official ETEN registration page.
+          </p>
+          <Link
+            href="/join"
+            className="text-brand-950 hover:bg-brand-50 mt-5 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold tracking-[0.08em] uppercase transition"
+          >
+            Join ETEN
+            <ArrowRight aria-hidden className="size-4" />
+          </Link>
+          <ul className="mt-8 space-y-2 text-sm">
+            <li>
+              <a
+                href={`mailto:${emails.general}`}
+                className={`${linkClass} inline-flex items-center gap-2`}
+              >
+                <Mail aria-hidden className="size-4" />
+                {emails.general}
+              </a>
+            </li>
+            {phones.map((p) => (
+              <li key={p}>
+                <a
+                  href={`tel:${p.replace(/\s+/g, "")}`}
+                  className={`${linkClass} inline-flex items-center gap-2`}
+                >
+                  <Phone aria-hidden className="size-4" />
+                  {p}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div className="border-t border-white/10">
+        <p className="text-brand-100/70 mx-auto max-w-7xl px-4 py-6 text-sm sm:px-6 lg:px-8">
+          © {new Date().getFullYear()} Expervia Technologies. ETEN is an
+          initiative of Expervia Technologies.
+        </p>
       </div>
     </footer>
   );

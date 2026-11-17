@@ -13,7 +13,7 @@ export const siteConfig = {
     { title: "Solutions", href: "/#solutions" },
     { title: "Industries", href: "/industries" },
     { title: "Services", href: "/services" },
-    { title: "Community", href: "/community/huawei" },
+    { title: "Community", href: "/join-eten" },
     { title: "Events", href: "/events" },
     { title: "About Us", href: "/about" },
   ],

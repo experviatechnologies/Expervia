@@ -108,6 +108,27 @@
   --color-brand: #8a5cf5;
   --color-brand-foreground: #ffffff;
 
+  /* ---- New public-site look (Join ETEN design, Nov 2026) ----
+     Indigo/white/lavender palette from join_eten/. Pages move to it one at a
+     time; `bg-brand` above stays for the not-yet-redesigned dark pages. */
+  --color-brand-50: #f3eeff;
+  --color-brand-100: #e6dcff;
+  --color-brand-200: #cbb8ff;
+  --color-brand-300: #a98bff;
+  --color-brand-400: #8a5cf6;
+  --color-brand-500: #7440ea;
+  --color-brand-600: #6426dc;
+  --color-brand-700: #5016c4;
+  --color-brand-800: #3b0a91;
+  --color-brand-900: #2d006b;
+  --color-brand-950: #21005d;
+  --color-night: #0e0b1a;
+  --color-ink: #171323;
+  --color-lavender: #f3eeff;
+  /* Plus Jakarta Sans is loaded at runtime by the root layout. */
+  --font-jakarta:
+    "Plus Jakarta Sans", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
   /* Surfaces (tonal elevation steps). */
   --color-surface: #101415;
   --color-surface-container-lowest: #0b0f10;
@@ -570,4 +591,15 @@
   filter: invert(0.8);
   cursor: pointer;
   opacity: 0.9;
+}
+
+/* Join ETEN design: soft pulse on the network illustration's nodes. */
+@keyframes pulse-node {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }

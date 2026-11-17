@@ -63,7 +63,9 @@ export function SiteChrome({
   return (
     <>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main id="main" className="flex-1">
+        {children}
+      </main>
       <Footer />
       <ConsultFab />
       <Script
