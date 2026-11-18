@@ -44,6 +44,7 @@ export function PodLeadershipControl({
           podId={podId}
           slot={slot}
           holder={current[slot]}
+          otherHolderId={current[slot === "lead" ? "co_lead" : "lead"]?.id}
           candidates={candidates}
         />
       ))}
@@ -55,11 +56,14 @@ function SlotEditor({
   podId,
   slot,
   holder,
+  otherHolderId,
   candidates,
 }: {
   podId: string;
   slot: Slot;
   holder?: Person;
+  /** Whoever holds the other slot: one person can't be Lead and backup. */
+  otherHolderId?: string;
   candidates: Person[];
 }) {
   const router = useRouter();
@@ -75,7 +79,7 @@ function SlotEditor({
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     return candidates
-      .filter((c) => c.id !== holder?.id)
+      .filter((c) => c.id !== holder?.id && c.id !== otherHolderId)
       .filter(
         (c) =>
           !q ||
@@ -83,7 +87,21 @@ function SlotEditor({
           c.headline?.toLowerCase().includes(q),
       )
       .slice(0, 60);
-  }, [candidates, query, holder]);
+  }, [candidates, query, holder, otherHolderId]);
+
+  // The effective pick: an explicit click, or the only match left by the
+  // search. A pick hidden by a later search no longer counts.
+  const picked = matches.some((c) => c.id === choice)
+    ? choice
+    : matches.length === 1
+      ? matches[0].id
+      : "";
+  const reasonOk = reason.trim().length >= 3;
+  const missing = !picked
+    ? "Choose a member from the list."
+    : !reasonOk
+      ? "Add a reason of at least 3 characters."
+      : null;
 
   function save(memberId: string | null) {
     setError(null);
@@ -137,7 +155,7 @@ function SlotEditor({
           className="mt-3 flex flex-col gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (choice) save(choice);
+            if (picked && reasonOk) save(picked);
           }}
         >
           <label className="sr-only" htmlFor={`${slot}-search`}>
@@ -150,25 +168,48 @@ function SlotEditor({
             placeholder="Search this pod's members"
             className={inputClass}
           />
-          <label className="sr-only" htmlFor={`${slot}-choice`}>
-            Choose a member
-          </label>
-          <select
-            id={`${slot}-choice`}
-            value={choice}
-            onChange={(e) => setChoice(e.target.value)}
-            className={inputClass}
-            size={Math.min(6, Math.max(2, matches.length))}
-          >
-            {matches.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.headline ? ` · ${c.headline}` : ""}
-              </option>
-            ))}
-          </select>
+          <fieldset>
+            <legend className="sr-only">Choose a member</legend>
+            <div className="border-eten-line max-h-48 overflow-y-auto rounded-lg border">
+              {matches.map((c) => {
+                const on = c.id === picked;
+                return (
+                  <label
+                    key={c.id}
+                    className={
+                      "flex cursor-pointer items-start gap-2 px-2.5 py-1.5 text-sm " +
+                      (on
+                        ? "bg-eten-accent/10 text-eten-ink"
+                        : "text-eten-ink-muted hover:bg-eten-panel-hi")
+                    }
+                  >
+                    <input
+                      type="radio"
+                      name={`${slot}-choice`}
+                      value={c.id}
+                      checked={on}
+                      onChange={() => setChoice(c.id)}
+                      className="accent-eten-accent mt-0.5"
+                    />
+                    <span className="min-w-0">
+                      <span className="font-semibold">{c.name}</span>
+                      {c.headline && (
+                        <span className="text-eten-faint block truncate text-xs">
+                          {c.headline}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
           {matches.length === 0 && (
-            <p className="text-eten-faint text-xs">No active members match.</p>
+            <p className="text-eten-faint text-xs">
+              {query.trim()
+                ? "No active members match."
+                : "No other active, activated members in this pod to choose from."}
+            </p>
           )}
           <label className="sr-only" htmlFor={`${slot}-reason`}>
             Reason
@@ -184,7 +225,7 @@ function SlotEditor({
             {holder && (
               <button
                 type="button"
-                disabled={busy || reason.trim().length < 3}
+                disabled={busy || !reasonOk}
                 onClick={() => save(null)}
                 className="text-destructive mr-auto text-sm font-semibold disabled:opacity-50"
               >
@@ -203,13 +244,21 @@ function SlotEditor({
             </button>
             <button
               type="submit"
-              disabled={busy || !choice || reason.trim().length < 3}
+              disabled={busy || Boolean(missing)}
               className="bg-eten-accent inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {busy && <Loader2 className="size-4 animate-spin" />}
               Save
             </button>
           </div>
+          {missing && !busy && (
+            <p
+              className="text-eten-faint text-right text-xs"
+              aria-live="polite"
+            >
+              {missing}
+            </p>
+          )}
         </form>
       )}
       {error && <p className="text-destructive mt-2 text-xs">{error}</p>}

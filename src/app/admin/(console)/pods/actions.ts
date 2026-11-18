@@ -66,6 +66,12 @@ export async function setPodLeader(input: {
       return { error: "Only active, activated members can lead a pod." };
     }
     if (membership.role_in_pod === input.slot) return { ok: true };
+    if (membership.role_in_pod !== "member") {
+      return {
+        error:
+          "This person already holds the other leadership slot. Pick someone else.",
+      };
+    }
   }
 
   // Free the slot: its current holder becomes a member again.
