@@ -8,7 +8,13 @@ import {
   Globe,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
+import {
+  ButtonLink,
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 import { siteConfig } from "@/config/site";
 
 const channels: {
@@ -54,93 +60,111 @@ export function ContactChannels() {
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodedQuery}`;
 
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="gap-gutter grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-          {channels.map(({ icon: Icon, title, description, email }) => (
-            <div
-              key={title}
-              className="glass-card border-t-primary group hover:bg-surface-container flex h-full min-w-0 flex-col rounded-xl border-t-2 p-8 transition-all"
+    <Section id="channels" labelledBy="channels-heading">
+      <SectionIntro
+        id="channels-heading"
+        eyebrow="Contact channels"
+        title="Reach the Right Team"
+      />
+      <ul className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        {channels.map(({ icon, title, description, email }) => (
+          <li key={title} className={`${cardClass} flex min-w-0 flex-col`}>
+            <IconBadge icon={icon} />
+            <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+              {title}
+            </h3>
+            <p className="text-ink/75 mt-2.5 mb-6 grow leading-relaxed">
+              {description}
+            </p>
+            <a
+              href={`mailto:${email}`}
+              className="text-brand-700 mt-auto inline-flex items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
             >
-              <div className="bg-primary/10 text-primary mb-6 flex size-12 items-center justify-center rounded-lg transition-transform group-hover:scale-110">
-                <Icon className="size-6" />
-              </div>
-              <h3 className="font-display text-on-surface text-headline-md mb-4 font-semibold">
-                {title}
-              </h3>
-              <p className="text-on-surface-variant mb-6 grow text-sm">
-                {description}
-              </p>
-              <a
-                href={`mailto:${email}`}
-                className="text-primary mt-auto inline-flex items-center gap-2 text-sm font-bold hover:underline"
-              >
-                <Mail className="size-4 shrink-0" />
-                <span className="min-w-0 break-all">{email}</span>
-              </a>
-            </div>
-          ))}
-        </div>
+              <Mail aria-hidden className="size-4 shrink-0" />
+              <span className="min-w-0 break-words">
+                {email.split("@")[0]}@
+                <wbr />
+                {email.split("@")[1]}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
 
-        {/* Head office */}
-        <div className="glass-card mt-gutter gap-gutter grid grid-cols-1 items-center rounded-xl p-10 md:grid-cols-2">
-          <div>
-            <h3 className="font-display text-on-surface text-headline-md mb-6 font-semibold">
+      {/* Head office */}
+      <div className="bg-brand-950 mt-5 grid overflow-hidden rounded-[2rem] text-white md:grid-cols-2">
+        <div className="relative p-8 sm:p-10">
+          <div
+            aria-hidden
+            className="bg-brand-600/40 absolute -top-24 -left-24 size-72 rounded-full blur-3xl"
+          />
+          <div className="relative">
+            <h3 className="font-jakarta text-2xl font-bold">
               Global Head Office
             </h3>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <MapPin className="text-primary mt-1 size-5 shrink-0" />
-                <p className="text-on-surface-variant">{address}</p>
-              </div>
-              <div className="flex items-start gap-4">
-                <Phone className="text-primary mt-1 size-5 shrink-0" />
-                <div className="flex flex-col gap-1">
+            <ul className="mt-7 space-y-5">
+              <li className="flex items-start gap-4">
+                <MapPin
+                  aria-hidden
+                  className="text-brand-200 mt-0.5 size-5 shrink-0"
+                />
+                <span className="text-brand-100/90">{address}</span>
+              </li>
+              <li className="flex items-start gap-4">
+                <Phone
+                  aria-hidden
+                  className="text-brand-200 mt-0.5 size-5 shrink-0"
+                />
+                <span className="flex flex-col gap-1">
                   {phones.map((phone) => (
                     <a
                       key={phone}
                       href={`tel:${phone.replace(/[^+\d]/g, "")}`}
-                      className="text-on-surface-variant hover:text-primary transition-colors"
+                      className="text-brand-100/90 transition-colors hover:text-white"
                     >
                       {phone}
                     </a>
                   ))}
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <Globe className="text-primary mt-1 size-5 shrink-0" />
+                </span>
+              </li>
+              <li className="flex items-start gap-4">
+                <Globe
+                  aria-hidden
+                  className="text-brand-200 mt-0.5 size-5 shrink-0"
+                />
                 <a
                   href={`https://${website}`}
-                  className="text-on-surface-variant hover:text-primary transition-colors"
+                  className="text-brand-100/90 transition-colors hover:text-white"
                 >
                   {website}
                 </a>
-              </div>
-            </div>
-            <a
+              </li>
+            </ul>
+            <ButtonLink
               href={directionsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary mt-8 inline-flex items-center gap-2 font-bold hover:underline"
+              variant="light"
+              arrow
+              className="mt-8"
             >
-              <MapPin className="size-4" />
               Get directions
-            </a>
-          </div>
-          {/* Embedded map. Center it precisely by setting an exact
-              "lat,lng" in siteConfig.contact.mapQuery. */}
-          <div className="bg-surface-container-high h-64 overflow-hidden rounded-xl md:h-full md:min-h-80">
-            <iframe
-              title="Expervia Global Head Office location"
-              src={mapEmbedSrc}
-              className="size-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
+            </ButtonLink>
           </div>
         </div>
-      </Container>
-    </section>
+        {/* Embedded map. Center it precisely by setting an exact
+            "lat,lng" in siteConfig.contact.mapQuery. */}
+        <div className="bg-brand-900 h-72 md:h-full md:min-h-96">
+          <iframe
+            title="Expervia Global Head Office location"
+            src={mapEmbedSrc}
+            className="size-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    </Section>
   );
 }

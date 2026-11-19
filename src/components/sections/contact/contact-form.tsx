@@ -82,9 +82,9 @@ const selectFields = [
 ] as const;
 
 const fieldClasses =
-  "w-full rounded-lg border border-outline-variant bg-surface p-4 text-on-surface outline-none transition-all focus:border-brand";
+  "w-full rounded-xl border border-brand-100 bg-white px-4 py-3 text-ink placeholder:text-ink/40 shadow-[0_1px_2px_rgba(33,0,93,0.04)] outline-none transition hover:border-brand-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
 
-export function ContactForm() {
+export function ContactForm({ focus }: { focus?: string }) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +105,7 @@ export function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
+          focus,
           elapsedMs: Date.now() - shownAt,
           turnstileToken: captchaToken,
         }),
@@ -130,21 +131,27 @@ export function ContactForm() {
   }
 
   return (
-    <div className="bg-surface-container-high rounded-2xl p-8 shadow-xl md:p-12">
-      <h2 className="font-display text-on-surface text-headline-md mb-8 font-semibold">
+    <div className="border-brand-100 bg-lavender rounded-[2rem] border p-6 shadow-[0_24px_50px_-34px_rgba(33,0,93,0.45)] sm:p-8 md:p-10">
+      <h2 className="font-jakarta text-brand-950 text-2xl font-bold">
         Tell Us About Your Project
       </h2>
+      {focus && (
+        <p className="border-brand-200 text-brand-800 mt-3 inline-flex rounded-full border bg-white px-3 py-1 text-sm font-semibold">
+          Focus: {focus}
+        </p>
+      )}
+      <div className="mb-8" />
 
       {submitted ? (
         <div
           role="status"
           className="flex flex-col items-center gap-4 py-16 text-center"
         >
-          <CheckCircle2 className="text-primary size-14" />
-          <h3 className="font-display text-on-surface text-headline-md font-semibold">
-            Thank you — your inquiry has been logged.
+          <CheckCircle2 aria-hidden className="text-brand-600 size-14" />
+          <h3 className="font-jakarta text-brand-950 text-2xl font-bold">
+            Thank you. Your inquiry has been logged.
           </h3>
-          <p className="text-on-surface-variant max-w-md">
+          <p className="text-ink/75 max-w-md">
             Our strategy team will reach out within 24 hours.
           </p>
         </div>
@@ -177,7 +184,7 @@ export function ContactForm() {
             <div key={f.id} className="space-y-2">
               <label
                 htmlFor={f.id}
-                className="text-label-sm text-on-surface-variant font-mono uppercase"
+                className="text-brand-950 block text-sm font-semibold"
               >
                 {f.label}
               </label>
@@ -196,7 +203,7 @@ export function ContactForm() {
             <div key={f.id} className="space-y-2">
               <label
                 htmlFor={f.id}
-                className="text-label-sm text-on-surface-variant font-mono uppercase"
+                className="text-brand-950 block text-sm font-semibold"
               >
                 {f.label}
               </label>
@@ -221,7 +228,7 @@ export function ContactForm() {
           <div className="space-y-2 md:col-span-2">
             <label
               htmlFor="message"
-              className="text-label-sm text-on-surface-variant font-mono uppercase"
+              className="text-brand-950 block text-sm font-semibold"
             >
               Your Message
             </label>
@@ -237,21 +244,26 @@ export function ContactForm() {
 
           {TURNSTILE_ENABLED && (
             <div className="md:col-span-2">
-              <TurnstileWidget onToken={setCaptchaToken} />
+              <TurnstileWidget onToken={setCaptchaToken} theme="light" />
             </div>
           )}
           <div className="pt-4 md:col-span-2">
             {error && (
-              <p role="alert" className="text-destructive mb-4 text-sm">
+              <p
+                role="alert"
+                className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              >
                 {error}
               </p>
             )}
             <button
               type="submit"
               disabled={submitting}
-              className="bg-brand text-brand-foreground primary-glow flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+              className="bg-brand-700 hover:bg-brand-600 focus-visible:outline-brand-500 flex min-h-13 w-full items-center justify-center gap-2 rounded-full py-3.5 font-semibold text-white shadow-[0_12px_30px_-12px_rgba(100,38,220,0.8)] transition focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitting && <Loader2 className="size-4 animate-spin" />}
+              {submitting && (
+                <Loader2 aria-hidden className="size-4 animate-spin" />
+              )}
               {submitting ? "Sending…" : "Submit Request"}
             </button>
           </div>

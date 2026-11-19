@@ -15,6 +15,8 @@ type ContactPayload = {
   service?: string;
   budget?: string;
   timeline?: string;
+  /** Strategic consultation focus picked beside the form. */
+  focus?: string;
   message: string;
 };
 
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
     service,
     budget,
     timeline,
+    focus,
     message,
   } = body;
 
@@ -101,6 +104,11 @@ export async function POST(request: Request) {
     ["Service of Interest", service],
     ["Project Budget", budget],
     ["Timeline", timeline],
+    // Only a short, plain label is expected; cap it so it can't bloat the email.
+    [
+      "Consultation Focus",
+      typeof focus === "string" ? focus.slice(0, 80) : undefined,
+    ],
   ]
     .filter(([, value]) => value)
     .map(
