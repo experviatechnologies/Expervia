@@ -6,8 +6,12 @@ import {
   Radio,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import {
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 
 type Pillar = {
   icon: LucideIcon;
@@ -56,45 +60,36 @@ const pillars: Pillar[] = [
 
 export function WhoShouldJoin() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">Who Should Join</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Five Technical Pillars
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {pillars.map(({ icon: Icon, title, tagline, tags }) => (
-            <article
-              key={title}
-              className="glass-card hover:border-primary/50 flex flex-col rounded-2xl p-8 transition-all"
-            >
-              <div className="bg-primary/10 text-primary mb-6 flex size-12 items-center justify-center rounded-lg">
-                <Icon className="size-6" />
-              </div>
-              <h3 className="font-display text-on-surface text-headline-md mb-2 font-semibold">
-                {title}
-              </h3>
-              <p className="text-on-surface-variant text-sm">{tagline}</p>
-
-              {tags.length > 0 && (
-                <div className="mt-auto flex flex-wrap gap-2 pt-6">
-                  {tags.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-full bg-white/5 px-3 py-1 font-mono text-[10px] tracking-wider uppercase"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="pillars" labelledBy="pillars-heading">
+      <SectionIntro
+        id="pillars-heading"
+        eyebrow="Who Should Join"
+        title="Five Technical Pillars"
+        center
+      />
+      <ul className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {pillars.map(({ icon, title, tagline, tags }) => (
+          <li key={title} className={`${cardClass} flex flex-col`}>
+            <IconBadge icon={icon} />
+            <h3 className="font-jakarta text-brand-950 mt-5 text-xl font-bold">
+              {title}
+            </h3>
+            <p className="text-ink/75 mt-1.5">{tagline}</p>
+            {tags.length > 0 && (
+              <ul className="mt-auto flex flex-wrap gap-2 pt-6">
+                {tags.map((t) => (
+                  <li
+                    key={t}
+                    className="bg-lavender text-brand-800 rounded-full px-3 py-1 text-xs font-semibold"
+                  >
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

@@ -6,8 +6,12 @@ import {
   Eye,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import {
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 
 const advantages: { icon: LucideIcon; title: string; body: string }[] = [
   {
@@ -39,32 +43,24 @@ const advantages: { icon: LucideIcon; title: string; body: string }[] = [
 
 export function ProfessionalAdvantage() {
   return (
-    <section className="bg-surface py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">
-            The Professional Advantage
-          </SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            What Membership Unlocks
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-          {advantages.map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="bg-surface-container hover:border-primary/40 space-y-4 rounded-xl border border-white/5 p-8 transition-colors"
-            >
-              <Icon className="text-primary size-8" />
-              <h3 className="font-display text-on-surface text-headline-md font-semibold">
-                {title}
-              </h3>
-              <p className="text-on-surface-variant text-sm">{body}</p>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="advantage" labelledBy="advantage-heading" tone="lavender">
+      <SectionIntro
+        id="advantage-heading"
+        eyebrow="The Professional Advantage"
+        title="What Membership Unlocks"
+        center
+      />
+      <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        {advantages.map(({ icon, title, body }) => (
+          <li key={title} className={cardClass}>
+            <IconBadge icon={icon} />
+            <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+              {title}
+            </h3>
+            <p className="text-ink/75 mt-2 text-sm leading-relaxed">{body}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

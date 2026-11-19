@@ -4,8 +4,7 @@ import {
   Waypoints,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const tracks: { icon: LucideIcon; title: string; body: string }[] = [
   {
@@ -27,30 +26,28 @@ const tracks: { icon: LucideIcon; title: string; body: string }[] = [
 
 export function SpecializationTracks() {
   return (
-    <section className="bg-surface py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">Specialization Tracks</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Go Deeper Where It Matters
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 lg:grid-cols-3">
-          {tracks.map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="bg-surface-container hover:border-primary/40 space-y-4 rounded-xl border border-white/5 p-8 transition-colors"
-            >
-              <Icon className="text-primary size-8" />
-              <h3 className="font-display text-on-surface text-headline-md font-semibold">
-                {title}
-              </h3>
-              <p className="text-on-surface-variant">{body}</p>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="tracks" labelledBy="tracks-heading" tone="indigo">
+      <SectionIntro
+        id="tracks-heading"
+        eyebrow="Specialization Tracks"
+        title="Go Deeper Where It Matters"
+        center
+        dark
+      />
+      <ul className="mt-14 grid gap-5 lg:grid-cols-3">
+        {tracks.map(({ icon, title, body }) => (
+          <li
+            key={title}
+            className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur transition duration-300 hover:border-white/25 hover:bg-white/[0.08]"
+          >
+            <IconBadge icon={icon} dark />
+            <h3 className="font-jakarta mt-5 text-xl font-bold text-white">
+              {title}
+            </h3>
+            <p className="text-brand-100/80 mt-2 leading-relaxed">{body}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
