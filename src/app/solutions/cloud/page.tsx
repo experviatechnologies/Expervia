@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { CloudHero } from "@/components/sections/solutions/cloud/cloud-hero";
 import { CloudCapabilities } from "@/components/sections/solutions/cloud/cloud-capabilities";
 import { CloudJourney } from "@/components/sections/solutions/cloud/cloud-journey";
@@ -6,12 +5,9 @@ import { CloudPlatforms } from "@/components/sections/solutions/cloud/cloud-plat
 import { CloudResilience } from "@/components/sections/solutions/cloud/cloud-resilience";
 import { CloudAssessments } from "@/components/sections/solutions/cloud/cloud-assessments";
 import { CloudCta } from "@/components/sections/solutions/cloud/cloud-cta";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Cloud Transformation",
-  description:
-    "Cloud transformation from Expervia — hybrid and multi-cloud strategy, secure migration, cloud-native modernization, managed operations, and FinOps on Microsoft Azure and Huawei Cloud.",
-};
+export const metadata = pageMeta("/solutions/cloud");
 
 export default function CloudSolutionsPage() {
   return (

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { CyberHero } from "@/components/sections/solutions/cybersecurity/cyber-hero";
 import { CyberCapabilities } from "@/components/sections/solutions/cybersecurity/cyber-capabilities";
 import { CyberApproach } from "@/components/sections/solutions/cybersecurity/cyber-approach";
@@ -6,12 +5,9 @@ import { CyberStack } from "@/components/sections/solutions/cybersecurity/cyber-
 import { CyberSoc } from "@/components/sections/solutions/cybersecurity/cyber-soc";
 import { CyberAssessments } from "@/components/sections/solutions/cybersecurity/cyber-assessments";
 import { CyberCta } from "@/components/sections/solutions/cybersecurity/cyber-cta";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Cybersecurity",
-  description:
-    "Cybersecurity from Expervia — Zero-Trust architecture, a 24/7 managed SOC, identity and threat protection, and compliance built on Microsoft Defender, Sentinel, Entra, and Purview.",
-};
+export const metadata = pageMeta("/solutions/cybersecurity");
 
 export default function CybersecuritySolutionsPage() {
   return (

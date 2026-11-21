@@ -1,6 +1,4 @@
-import type { Metadata } from "next";
 import { Check, Info, Target } from "lucide-react";
-import { siteConfig } from "@/config/site";
 import {
   audiences,
   benefits,
@@ -26,35 +24,9 @@ import { NetworkGraphic } from "@/components/site/network-graphic";
 import { FaqList } from "@/components/site/faq-list";
 import { StepTrack } from "@/components/site/step-track";
 import { cn } from "@/lib/utils";
+import { pageMeta } from "@/lib/seo";
 
-const TITLE = "Join ETEN | Expervia Technologies Expert Network";
-const DESCRIPTION =
-  "Join the Expervia Technologies Expert Network (ETEN): a professional community connecting technology professionals, emerging talents and industry experts across Africa and beyond.";
-const URL = `${siteConfig.url}/join-eten`;
-
-export const metadata: Metadata = {
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
-  alternates: { canonical: URL },
-  openGraph: {
-    type: "website",
-    url: URL,
-    siteName: "Expervia Technologies",
-    title: TITLE,
-    description: DESCRIPTION,
-    images: [
-      {
-        url: `${siteConfig.url}/join-eten/og-image.png`,
-        alt: "Join ETEN: Connect. Collaborate. Build. Grow.",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-  },
-};
+export const metadata = pageMeta("/join-eten");
 
 const JOIN_HREF = "/join";
 

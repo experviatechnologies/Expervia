@@ -1,8 +1,28 @@
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { BookingView } from "@/app/mentorship/book/[mentorId]/page";
+import type { Metadata } from "next";
+import {
+  BookingView,
+  mentorBookingMeta,
+} from "@/app/mentorship/book/[mentorId]/page";
 
-export const metadata = { title: "Book a session" };
+async function mentorIdFor(handle: string): Promise<string | null> {
+  const { data } = await getSupabaseAdmin()
+    .from("mentor_profiles")
+    .select("member_id")
+    .eq("handle", handle.toLowerCase())
+    .maybeSingle();
+  return data?.member_id ?? null;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}): Promise<Metadata> {
+  const id = await mentorIdFor((await params).handle);
+  return id ? mentorBookingMeta(id) : { title: "Book a session" };
+}
 
 /**
  * A mentor's short, shareable booking link: /mentorship/m/<handle> (and, on the
@@ -16,12 +36,7 @@ export default async function HandleBookingPage({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
-  const admin = getSupabaseAdmin();
-  const { data } = await admin
-    .from("mentor_profiles")
-    .select("member_id")
-    .eq("handle", handle.toLowerCase())
-    .maybeSingle();
-  if (!data) notFound();
-  return <BookingView mentorId={data.member_id} />;
+  const mentorId = await mentorIdFor(handle);
+  if (!mentorId) notFound();
+  return <BookingView mentorId={mentorId} />;
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -6,6 +7,9 @@ import {
   MntDashShell,
   type MntNavItem,
 } from "@/components/mentorship/mnt-dash-shell";
+
+// Signed-in dashboards: never in search results.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /**
  * Shared shell for the authenticated mentorship area. Rendering the sidebar here

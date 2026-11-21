@@ -5,7 +5,10 @@ import { settleChargeByReference } from "@/lib/eten/payment-settlement";
 import { sendGuestBookingWelcome } from "@/lib/eten/guest-booking-email";
 import { requestOrigin } from "@/lib/eten/request-origin";
 
-export const metadata = { title: "Booking" };
+export const metadata = {
+  title: "Booking",
+  robots: { index: false, follow: false },
+};
 
 type State = "success" | "pending" | "failed" | "unknown";
 

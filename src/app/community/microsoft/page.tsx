@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { MicrosoftHero } from "@/components/sections/community/microsoft/microsoft-hero";
 import { CommunityStats } from "@/components/sections/community/microsoft/community-stats";
 import { WhatIsEmpc } from "@/components/sections/community/microsoft/what-is-empc";
@@ -8,12 +7,9 @@ import { FocusInitiatives } from "@/components/sections/community/microsoft/focu
 import { CommunityPrinciples } from "@/components/sections/community/microsoft/community-principles";
 import { ApplicationForm } from "@/components/sections/community/microsoft/application-form";
 import { VideoPanel, CMO_VIDEOS } from "@/components/site/video-panel";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Microsoft Professionals Community",
-  description:
-    "Join the Expervia Microsoft Professionals Community (EMPC), a Pan-African network of Azure, Security, Data & AI, and Modern Work professionals connecting certified talent with high-value enterprise projects.",
-};
+export const metadata = pageMeta("/community/microsoft");
 
 export default function MicrosoftCommunityPage() {
   return (

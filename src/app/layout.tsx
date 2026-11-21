@@ -5,6 +5,7 @@ import "./globals.css";
 import { SiteChrome } from "@/components/shared/site-chrome";
 import { ServiceWorkerManager } from "@/components/shared/service-worker-manager";
 import { siteConfig } from "@/config/site";
+import { OrganizationJsonLd } from "@/components/seo/organization-json-ld";
 
 // Self-hosted (not next/font/google): the fonts are stored in ./fonts and
 // bundled at build, so the build never fetches from Google — which was failing
@@ -32,6 +33,8 @@ const jetbrainsMono = localFont({
 });
 
 export const metadata: Metadata = {
+  // Resolves relative Open Graph / canonical URLs to the primary domain.
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: `${siteConfig.name} | Powering Africa's Intelligent Enterprise`,
     template: `%s | ${siteConfig.name}`,
@@ -103,6 +106,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface flex min-h-full flex-col">
+        <OrganizationJsonLd />
         <SiteChrome forceBare={isMentorshipHost || isTrackerHost}>
           {children}
         </SiteChrome>

@@ -11,6 +11,7 @@ import { PageHero } from "@/components/site/page-hero";
 import { CtaPanel } from "@/components/site/cta-panel";
 import { cn } from "@/lib/utils";
 import { getPodLanding, POD_LANDING_SLUGS } from "@/lib/eten/pod-landings";
+import { buildMeta } from "@/lib/seo";
 
 export function generateStaticParams() {
   return POD_LANDING_SLUGS.map((slug) => ({ slug }));
@@ -24,10 +25,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const pod = getPodLanding(slug);
   if (!pod) return { title: "Community" };
-  return {
-    title: `${pod.name} | ETEN Community`,
+  return buildMeta({
+    title: `${pod.name} Community in Africa | ETEN`,
+    absoluteTitle: true,
     description: pod.intro,
-  };
+    path: `/community/${pod.slug}`,
+  });
 }
 
 export default async function PodLandingPage({

@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/seo";
 import { Hero } from "@/components/sections/hero";
 import { TrustBar } from "@/components/sections/trust-bar";
 import { WhoWeAre } from "@/components/sections/who-we-are";
@@ -7,6 +8,8 @@ import { WhyExpervia } from "@/components/sections/why-expervia";
 import { Community } from "@/components/sections/community";
 import { FinalCta } from "@/components/sections/final-cta";
 import { VideoPanel, CMO_VIDEOS } from "@/components/site/video-panel";
+
+export const metadata = pageMeta("/");
 
 export default function HomePage() {
   return (

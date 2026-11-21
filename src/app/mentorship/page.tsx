@@ -43,6 +43,7 @@ import {
   cardClass,
 } from "@/components/site/ui";
 import { siteConfig } from "@/config/site";
+import { pageMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 /*
@@ -357,6 +358,8 @@ function BenefitList({
 
 const rise = (ms: number) =>
   ({ "--rise-delay": `${ms}ms` }) as React.CSSProperties;
+
+export const metadata = pageMeta("/mentorship");
 
 export default function MentorshipLandingPage() {
   return (

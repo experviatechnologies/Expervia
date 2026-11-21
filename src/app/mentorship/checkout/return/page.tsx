@@ -4,7 +4,10 @@ import { getCurrentMember } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { settleChargeByReference } from "@/lib/eten/payment-settlement";
 
-export const metadata = { title: "Payment" };
+export const metadata = {
+  title: "Payment",
+  robots: { index: false, follow: false },
+};
 
 type State = "success" | "pending" | "failed" | "unknown";
 

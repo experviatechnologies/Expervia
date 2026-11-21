@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Briefcase, MapPin, ShieldCheck, Star } from "lucide-react";
@@ -10,12 +11,58 @@ import { mentorBookingUrl } from "@/lib/eten/booking-url";
 import { summarizeRatings, canRateMentor } from "@/lib/eten/ratings";
 import { RatingForm } from "../../(dash)/mentors/[id]/rating-form";
 import { ShareLink } from "@/components/shared/share-link";
+import { buildMeta } from "@/lib/seo";
 import {
   GuestBookingWidget,
   type SessionTypeOption,
 } from "./guest-booking-widget";
 
-export const metadata = { title: "Book a session" };
+/**
+ * Title, description and canonical URL for a mentor's public booking page.
+ * The canonical is the mentor's short /mentorship/m/<handle> link when they
+ * have one, so the id link and the handle link don't compete in search.
+ */
+export async function mentorBookingMeta(mentorId: string): Promise<Metadata> {
+  const admin = getSupabaseAdmin();
+  const [{ data: mentor }, { data: profile }] = await Promise.all([
+    admin
+      .from("mentor_profiles")
+      .select("mentor_status, handle")
+      .eq("member_id", mentorId)
+      .maybeSingle(),
+    admin
+      .from("profiles")
+      .select("full_name, headline")
+      .eq("member_id", mentorId)
+      .maybeSingle(),
+  ]);
+  if (!mentor || mentor.mentor_status === "candidate") {
+    return { title: "Book a session" };
+  }
+  const name = profile?.full_name?.trim() || "an ETEN mentor";
+  const role = profile?.headline?.trim();
+  return buildMeta({
+    title: `Book a Mentorship Session with ${name} | ETEN`,
+    absoluteTitle: true,
+    description:
+      `${role ? `${name}, ${role}. ` : ""}Book a 1:1 mentorship session with ${name}, a verified ETEN mentor helping technology professionals across Africa grow.`.slice(
+        0,
+        300,
+      ),
+    path: mentor.handle
+      ? `/mentorship/m/${mentor.handle}`
+      : `/mentorship/book/${mentorId}`,
+  });
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ mentorId: string }>;
+}): Promise<Metadata> {
+  const { mentorId } = await params;
+  return mentorBookingMeta(mentorId);
+}
 
 const TIER_LABEL: Record<string, string> = {
   verified: "Verified Mentor",
