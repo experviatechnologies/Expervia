@@ -21,6 +21,7 @@ export const siteConfig = {
   footerNav: {
     company: [
       { title: "About Us", href: "/about" },
+      { title: "Where We Work", href: "/africa" },
       { title: "Careers", href: "#careers" },
       { title: "Newsroom", href: "#newsroom" },
       { title: "Events", href: "/events" },

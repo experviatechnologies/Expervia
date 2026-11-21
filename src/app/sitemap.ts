@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { PAGE_SEO } from "@/config/seo";
 import { POD_LANDING_SLUGS } from "@/lib/eten/pod-landings";
+import { COUNTRIES } from "@/config/countries";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -8,7 +9,7 @@ import { absoluteUrl } from "@/lib/seo";
 export const revalidate = 3600;
 
 /** Pages in PAGE_SEO that are not live yet (added in later SEO steps). */
-const NOT_YET_LIVE = new Set<string>(["/africa"]);
+const NOT_YET_LIVE = new Set<string>([]);
 
 const PRIORITY: Record<string, number> = {
   "/": 1,
@@ -20,6 +21,8 @@ const PRIORITY: Record<string, number> = {
   "/solutions/microsoft": 0.9,
   "/contact": 0.8,
   "/mentorship": 0.8,
+  "/africa": 0.8,
+  "/africa/nigeria": 0.95,
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -28,12 +31,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...Object.keys(PAGE_SEO).filter((p) => !NOT_YET_LIVE.has(p)),
     "/women-in-tech",
     ...POD_LANDING_SLUGS.map((s) => `/community/${s}`),
+    ...COUNTRIES.map((c) => `/africa/${c.slug}`),
   ];
   const entries: MetadataRoute.Sitemap = staticPaths.map((path) => ({
     url: absoluteUrl(path),
     lastModified: now,
     changeFrequency: path === "/events" ? "weekly" : "monthly",
-    priority: PRIORITY[path] ?? 0.7,
+    priority: PRIORITY[path] ?? (path.startsWith("/africa/") ? 0.8 : 0.7),
   }));
 
   // Public mentor booking pages (verified mentors with a short handle).
