@@ -1,29 +1,91 @@
-import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, GraduationCap, Check } from "lucide-react";
+import {
+  Award,
+  BadgeCheck,
+  BrainCircuit,
+  Briefcase,
+  Building2,
+  CalendarCheck,
+  Check,
+  ClipboardCheck,
+  Cloud,
+  CodeXml,
+  Compass,
+  Crown,
+  Globe2,
+  Hammer,
+  Handshake,
+  LayoutGrid,
+  Layers,
+  Lightbulb,
+  Rocket,
+  Route,
+  Search,
+  ShieldCheck,
+  Target,
+  TrendingUp,
+  UserCheck,
+  Users,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
 import { MntNav } from "@/components/mentorship/mnt-nav";
+import { MntFooter } from "@/components/mentorship/mnt-footer";
+import { CtaPanel } from "@/components/site/cta-panel";
+import { FaqList } from "@/components/site/faq-list";
+import { NetworkGraphic } from "@/components/site/network-graphic";
+import { Reveal } from "@/components/site/reveal";
+import {
+  ButtonLink,
+  IconBadge,
+  Section,
+  SectionIntro,
+  cardClass,
+} from "@/components/site/ui";
 import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
 
-const PERSPECTIVE_FEATURES = [
-  { t: "100% Direct Practitioner Mentorship", d: "Active enterprise leaders." },
-  { t: "Enterprise Project Readiness", d: "Real architectural rigour." },
-  { t: "Pan-African Ecosystem Network", d: "Cross-continental reach." },
+/*
+ * Public ETEN Mentorship landing, in the Expervia site's new look (Nov 2026):
+ * indigo hero and feature bands, white and lavender content sections, the
+ * shared site components, and scroll-reveal motion (Reveal) throughout.
+ */
+
+const PERSPECTIVE_FEATURES: { icon: LucideIcon; t: string; d: string }[] = [
+  {
+    icon: UserCheck,
+    t: "100% direct practitioner mentorship",
+    d: "Learn from active enterprise leaders, not theory.",
+  },
+  {
+    icon: Briefcase,
+    t: "Enterprise project readiness",
+    d: "Real architectural rigour and delivery standards.",
+  },
+  {
+    icon: Globe2,
+    t: "Pan-African ecosystem network",
+    d: "Connections that reach across the continent.",
+  },
 ];
 
-const GROWTH_MODEL = [
-  { n: "01", t: "Connect", d: "Find the right mentor or mentee." },
-  { n: "02", t: "Learn", d: "Gain knowledge, guidance and perspective." },
+const GROWTH_MODEL: { icon: LucideIcon; t: string; d: string }[] = [
+  { icon: Handshake, t: "Connect", d: "Find the right mentor or mentee." },
   {
-    n: "03",
+    icon: Lightbulb,
+    t: "Learn",
+    d: "Gain knowledge, guidance and perspective.",
+  },
+  {
+    icon: Hammer,
     t: "Build",
     d: "Develop practical skills through projects and real-world challenges.",
   },
-  { n: "04", t: "Verify", d: "Demonstrate your growing capability." },
+  { icon: BadgeCheck, t: "Verify", d: "Demonstrate your growing capability." },
   {
-    n: "05",
+    icon: TrendingUp,
     t: "Grow",
     d: "Build professional visibility, confidence and career opportunities.",
-    green: true,
   },
 ];
 
@@ -61,32 +123,46 @@ const MENTOR_BENEFITS = [
   "Contribute to Africa's technology ecosystem",
 ];
 
-const SPECIALIZATIONS = [
+const SPECIALIZATIONS: { icon: LucideIcon; t: string; d: string }[] = [
   {
+    icon: Cloud,
     t: "Cloud & Infrastructure",
-    d: "Azure • Cloud Architecture • Networking • Infrastructure",
+    d: "Azure, cloud architecture, networking and infrastructure.",
   },
-  { t: "Modern Work", d: "Microsoft 365 • Collaboration • Productivity" },
-  { t: "Cybersecurity", d: "Security • Identity • Compliance • Risk" },
   {
+    icon: LayoutGrid,
+    t: "Modern Work",
+    d: "Microsoft 365, collaboration and productivity.",
+  },
+  {
+    icon: ShieldCheck,
+    t: "Cybersecurity",
+    d: "Security, identity, compliance and risk.",
+  },
+  {
+    icon: BrainCircuit,
     t: "Data & AI",
-    d: "Data Engineering • Analytics • AI • Machine Learning",
+    d: "Data engineering, analytics, AI and machine learning.",
   },
   {
+    icon: Layers,
     t: "Business Applications",
-    d: "Dynamics 365 • Power Platform • Enterprise Applications",
+    d: "Dynamics 365, Power Platform and enterprise applications.",
   },
   {
+    icon: CodeXml,
     t: "Software Development",
-    d: "Software Engineering • DevOps • Application Development",
+    d: "Software engineering, DevOps and application development.",
   },
   {
+    icon: Workflow,
     t: "Digital Transformation",
-    d: "Enterprise Architecture • Digital Strategy • Technology Consulting",
+    d: "Enterprise architecture, digital strategy and consulting.",
   },
   {
+    icon: Crown,
     t: "Technology Leadership",
-    d: "CIO • CTO • IT Leadership • Technology Management",
+    d: "CIO, CTO, IT leadership and technology management.",
   },
 ];
 
@@ -104,73 +180,79 @@ const CANDIDATES = [
   "Professionals preparing for leadership",
 ];
 
-const HOW_IT_WORKS = [
+const HOW_IT_WORKS: { icon: LucideIcon; t: string; d: string }[] = [
   {
-    n: "01",
+    icon: ClipboardCheck,
     t: "Apply",
     d: "Tell us about your experience, goals, interests and areas of expertise.",
   },
   {
-    n: "02",
+    icon: Search,
     t: "Assessment",
     d: "We review your profile, objectives and development needs.",
   },
   {
-    n: "03",
+    icon: Handshake,
     t: "Match",
-    d: "We identify a suitable mentor-mentee pairing based on expertise, goals and compatibility.",
+    d: "We pair mentor and mentee on expertise, goals and compatibility.",
   },
   {
-    n: "04",
-    t: "Set Goals",
-    d: "Mentor and mentee establish clear development objectives and a mentorship plan.",
+    icon: Target,
+    t: "Set goals",
+    d: "Mentor and mentee agree clear objectives and a mentorship plan.",
   },
   {
-    n: "05",
-    t: "Meet & Develop",
-    d: "Regular mentorship sessions focused on practical learning, career development and professional growth.",
+    icon: CalendarCheck,
+    t: "Meet & develop",
+    d: "Regular sessions focused on practical learning and career growth.",
   },
   {
-    n: "06",
+    icon: Hammer,
     t: "Build",
-    d: "Where appropriate, mentees work on practical projects, case studies or technology challenges.",
+    d: "Where appropriate, mentees work on projects, case studies or challenges.",
   },
   {
-    n: "07",
+    icon: BadgeCheck,
     t: "Review",
-    d: "Progress is reviewed against agreed objectives.",
+    d: "Progress is reviewed against the agreed objectives.",
   },
   {
-    n: "08",
+    icon: Rocket,
     t: "Progress",
-    d: "Successful mentees continue within the wider Expervia ecosystem and access relevant opportunities.",
+    d: "Successful mentees continue in the wider Expervia ecosystem and its opportunities.",
   },
 ];
 
-const DIFFERENTIATORS = [
+const DIFFERENTIATORS: { icon: LucideIcon; t: string; d: string }[] = [
   {
-    t: "Experienced Mentors",
+    icon: Award,
+    t: "Experienced mentors",
     d: "Learn directly from professionals with practical industry experience.",
   },
   {
-    t: "Structured Development",
+    icon: Route,
+    t: "Structured development",
     d: "Set clear goals rather than relying on informal conversations.",
   },
   {
-    t: "Practical Exposure",
-    d: "Where appropriate, connect learning with projects, case studies and real technology challenges.",
+    icon: Hammer,
+    t: "Practical exposure",
+    d: "Connect learning with projects, case studies and real technology challenges.",
   },
   {
-    t: "Technology Specialisation",
-    d: "Develop within Cloud, AI, Cybersecurity, Data, Microsoft technologies and Digital Transformation.",
+    icon: Layers,
+    t: "Technology specialisation",
+    d: "Grow within Cloud, AI, Cybersecurity, Data, Microsoft technologies and Digital Transformation.",
   },
   {
-    t: "Professional Network",
-    d: "Become part of a broader ecosystem of technology professionals across Africa.",
+    icon: Users,
+    t: "Professional network",
+    d: "Join a broader ecosystem of technology professionals across Africa.",
   },
   {
-    t: "Enterprise Orientation",
-    d: "Develop capabilities relevant to real enterprise environments and technology projects.",
+    icon: Building2,
+    t: "Enterprise orientation",
+    d: "Build capabilities that matter in real enterprise environments and projects.",
   },
 ];
 
@@ -180,12 +262,8 @@ const JOURNEY = [
   { t: "Learn", d: "Develop knowledge and perspective." },
   { t: "Build", d: "Apply skills through practice." },
   { t: "Verify", d: "Demonstrate your capability." },
-  { t: "Grow", d: "Build visibility and professional confidence." },
-  {
-    t: "Opportunity",
-    d: "Projects, consulting, training and career.",
-    green: true,
-  },
+  { t: "Grow", d: "Build visibility and confidence." },
+  { t: "Opportunity", d: "Projects, consulting, training and career." },
 ];
 
 const ENTERPRISE_SERVICES = [
@@ -199,60 +277,77 @@ const ENTERPRISE_SERVICES = [
 ];
 
 const FOOTPRINT_TOPICS = [
-  "Mentor Testimonials",
-  "Mentee Spotlights",
-  "Career Progression Paths",
-  "Certification Milestones",
-  "Enterprise Delivery Impact",
+  "Mentor testimonials",
+  "Mentee spotlights",
+  "Career progression paths",
+  "Certification milestones",
+  "Enterprise delivery impact",
 ];
 
 const FAQS = [
   {
-    q: "Who can become a mentor?",
-    a: "Experienced professionals with relevant technical, consulting, leadership or enterprise experience can apply to become mentors.",
+    question: "Who can become a mentor?",
+    answer:
+      "Experienced professionals with relevant technical, consulting, leadership or enterprise experience can apply to become mentors.",
   },
   {
-    q: "Who can become a mentee?",
-    a: "Technology professionals at different stages of their careers can apply, particularly those seeking structured professional or technical development.",
+    question: "Who can become a mentee?",
+    answer:
+      "Technology professionals at different stages of their careers can apply, particularly those seeking structured professional or technical development.",
   },
   {
-    q: "Is mentorship one-to-one?",
-    a: "The programme can support one-to-one mentorship as well as structured group or cohort-based mentorship where appropriate.",
+    question: "Is mentorship one-to-one?",
+    answer:
+      "The programme can support one-to-one mentorship as well as structured group or cohort-based mentorship where appropriate.",
   },
   {
-    q: "How are mentors matched with mentees?",
-    a: "Matching can consider professional experience, technical specialisation, career goals, development needs and availability.",
+    question: "How are mentors matched with mentees?",
+    answer:
+      "Matching can consider professional experience, technical specialisation, career goals, development needs and availability.",
   },
   {
-    q: "How long does a mentorship relationship last?",
-    a: "Each mentorship cycle has defined objectives and a structured review period.",
+    question: "How long does a mentorship relationship last?",
+    answer:
+      "Each mentorship cycle has defined objectives and a structured review period.",
   },
   {
-    q: "Does joining guarantee a job or project?",
-    a: "No. The programme is designed for development, guidance and professional growth. Participation does not guarantee employment, contracts or project opportunities.",
+    question: "Does joining guarantee a job or project?",
+    answer:
+      "No. The programme is designed for development, guidance and professional growth. Participation does not guarantee employment, contracts or project opportunities.",
   },
   {
-    q: "Do I need to be Microsoft certified?",
-    a: "Not necessarily. Eligibility depends on the specific mentorship track and programme requirements.",
+    question: "Do I need to be Microsoft certified?",
+    answer:
+      "Not necessarily. Eligibility depends on the specific mentorship track and programme requirements.",
   },
 ];
 
-const eyebrow =
-  "text-mnt-faint text-label-sm font-mono tracking-widest uppercase";
-const sectionH =
-  "font-display text-mnt-ink text-[28px] font-extrabold leading-tight tracking-tight sm:text-headline-lg";
-const lead = "text-mnt-ink-muted text-body-lg";
-const card = "bg-mnt-panel border-mnt-line rounded-2xl border";
-
-function BenefitList({ items }: { items: string[] }) {
+function BenefitList({
+  items,
+  dark = false,
+}: {
+  items: string[];
+  dark?: boolean;
+}) {
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="grid gap-3">
       {items.map((b) => (
-        <li key={b} className="text-body-md text-mnt-ink-muted flex gap-2.5">
-          <Check
-            className="text-mnt-green mt-0.5 size-4 shrink-0"
-            aria-hidden="true"
-          />
+        <li
+          key={b}
+          className={cn(
+            "flex gap-3 leading-relaxed",
+            dark ? "text-brand-50/90" : "text-ink/80",
+          )}
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full",
+              dark ? "bg-white/15 text-white" : "bg-brand-100 text-brand-700",
+            )}
+          >
+            <Check className="size-3" strokeWidth={3} />
+          </span>
           <span>{b}</span>
         </li>
       ))}
@@ -260,577 +355,608 @@ function BenefitList({ items }: { items: string[] }) {
   );
 }
 
+const rise = (ms: number) =>
+  ({ "--rise-delay": `${ms}ms` }) as React.CSSProperties;
+
 export default function MentorshipLandingPage() {
   return (
-    <>
+    <div className="text-ink bg-white">
       <MntNav />
 
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-24 right-0 h-[560px] w-[900px] opacity-70 [background:radial-gradient(600px_400px_at_80%_0,rgba(167,140,250,0.18),transparent_60%)]"
-        />
-        <div className="mx-auto grid max-w-[1140px] items-center gap-12 px-6 pt-16 pb-8 lg:grid-cols-[1.05fr_0.95fr] lg:pt-20">
-          <div>
-            <span className="border-mnt-brand/30 bg-mnt-brand/10 text-mnt-brand text-label-sm inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono tracking-widest uppercase">
-              ETEN Mentorship Programme
-            </span>
-            <h1 className="text-mnt-ink font-display md:text-display-lg mt-5 text-4xl leading-[1.1] font-extrabold tracking-tight text-balance sm:text-5xl">
-              Learn From Experience. Build Your Capability.{" "}
-              <span className="text-mnt-brand">Shape Your Future.</span>
-            </h1>
-            <p className="text-body-lg text-mnt-ink-muted mt-5 max-w-[34rem]">
-              Connect with experienced technology professionals who can help you
-              develop the skills, confidence and practical experience needed to
-              thrive in Africa&apos;s evolving technology ecosystem.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/mentorship/register?role=mentee"
-                className="bg-mnt-brand text-mnt-on-brand text-body-md inline-flex items-center gap-2 rounded-full px-[22px] py-3.5 font-bold transition hover:-translate-y-0.5 hover:brightness-110"
+      <main id="main">
+        {/* HERO */}
+        <section
+          aria-labelledby="mnt-hero-heading"
+          className="bg-brand-950 relative isolate overflow-hidden pt-20 text-white"
+        >
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_600px_at_85%_-10%,rgba(100,38,220,0.65),transparent_60%),radial-gradient(800px_500px_at_-10%_110%,rgba(124,77,255,0.35),transparent_60%),linear-gradient(160deg,#21005D_0%,#2D006B_55%,#1A0049_100%)]"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)] bg-[size:56px_56px]"
+          />
+          <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 pt-16 pb-20 sm:px-6 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:pt-24 lg:pb-28">
+            <div>
+              <p
+                className="site-rise text-brand-100 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-[0.18em] uppercase"
+                style={rise(0)}
               >
-                Become a Mentee
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-              <Link
-                href="/mentorship/register?role=mentor"
-                className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand text-body-md inline-flex items-center gap-2 rounded-full border px-[22px] py-3.5 font-bold transition hover:-translate-y-0.5"
+                <span
+                  aria-hidden
+                  className="bg-brand-300 size-1.5 rounded-full"
+                />
+                ETEN Mentorship Programme
+              </p>
+              <h1
+                id="mnt-hero-heading"
+                className="site-rise font-jakarta mt-6 text-[2.4rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-[3.5rem]"
+                style={rise(90)}
               >
-                <GraduationCap className="size-4" aria-hidden="true" />
-                Become a Mentor
-              </Link>
-            </div>
-            <p className="text-mnt-faint text-label-sm mt-6 font-mono tracking-wide uppercase">
-              Part of the Expervia Technology Experts Network (ETEN)
-            </p>
-          </div>
-
-          <div className="relative">
-            <Image
-              src="/mentorship/hero.jpg"
-              alt="A senior technology professional mentoring a junior colleague at a workstation"
-              width={1408}
-              height={768}
-              priority
-              sizes="(max-width: 1024px) 100vw, 540px"
-              className="border-mnt-line h-auto w-full rounded-2xl border object-cover shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* PERSPECTIVE */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-center">
-          <div>
-            <div className={eyebrow}>Perspective &amp; Purpose</div>
-            <h2 className={`${sectionH} mt-3`}>
-              Your Career Shouldn&apos;t Be Built Alone.
-            </h2>
-            <p className={`${lead} mt-4`}>
-              Technology moves quickly. Certifications matter. Technical skills
-              matter. But building a successful career also requires experience,
-              guidance, relationships and exposure to real-world opportunities.
-              The ETEN Mentorship Programme connects emerging technology
-              professionals with experienced practitioners who share their
-              knowledge and help the next generation of African technology
-              professionals grow. Whether you are beginning your career,
-              changing specialisations, pursuing certifications or preparing for
-              enterprise-level opportunities, the right mentor can help you move
-              forward with greater clarity.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3">
-            {PERSPECTIVE_FEATURES.map((f) => (
-              <div key={f.t} className={`${card} p-5`}>
-                <div className="text-body-lg text-mnt-ink font-bold">{f.t}</div>
-                <div className="text-body-md text-mnt-ink-muted mt-1">
-                  {f.d}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* GROWTH MODEL */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal">
-          <div className="mb-9 text-center">
-            <h2 className={sectionH}>
-              A Mentorship Programme Built Around Growth
-            </h2>
-            <p className={`${lead} mx-auto mt-3 max-w-[42rem]`}>
-              This is not simply about having someone to talk to. Our approach
-              moves professionals through a structured development journey.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {GROWTH_MODEL.map((s) => (
+                Learn From Experience. Build Your Capability.{" "}
+                <span className="text-brand-200">Shape Your Future.</span>
+              </h1>
+              <p
+                className="site-rise mt-6 max-w-xl text-lg leading-relaxed text-white/90 sm:text-xl"
+                style={rise(180)}
+              >
+                Connect with experienced technology professionals who can help
+                you develop the skills, confidence and practical experience
+                needed to thrive in Africa&apos;s evolving technology ecosystem.
+              </p>
               <div
-                key={s.n}
-                className={`${card} hover:border-mnt-brand/40 p-[22px] transition hover:-translate-y-1`}
+                className="site-rise mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
+                style={rise(270)}
               >
-                <div
-                  className={`font-display text-xl font-extrabold ${s.green ? "text-mnt-green" : "text-mnt-brand"}`}
+                <ButtonLink
+                  href="/mentorship/register?role=mentee"
+                  variant="light"
+                  arrow
                 >
-                  {s.n}
-                </div>
-                <h3 className="text-body-lg text-mnt-ink mt-3 font-bold">
+                  Become a Mentee
+                </ButtonLink>
+                <ButtonLink
+                  href="/mentorship/register?role=mentor"
+                  variant="outlineLight"
+                >
+                  Become a Mentor
+                </ButtonLink>
+              </div>
+              <p
+                className="site-rise text-brand-200 mt-8 text-xs font-semibold tracking-[0.18em] uppercase"
+                style={rise(360)}
+              >
+                Part of the Expervia Technology Experts Network (ETEN)
+              </p>
+            </div>
+
+            <div className="site-rise relative" style={rise(200)}>
+              <NetworkGraphic
+                idPrefix="mnt-hero-net"
+                className="absolute -top-16 -right-20 -z-10 hidden w-[480px] opacity-40 lg:block"
+              />
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/5 p-2 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.7)] backdrop-blur">
+                <Image
+                  src="/mentorship/hero.jpg"
+                  alt="A senior technology professional mentoring a junior colleague at a workstation"
+                  width={1408}
+                  height={768}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 560px"
+                  className="h-auto w-full rounded-[1.6rem] object-cover"
+                />
+              </div>
+              <div className="mnt-float absolute -bottom-6 left-4 hidden items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-[0_24px_40px_-20px_rgba(33,0,93,0.6)] sm:flex">
+                <IconBadge icon={Handshake} className="size-10 rounded-xl" />
+                <span>
+                  <span className="text-brand-950 block text-sm font-bold">
+                    Matched to your goal
+                  </span>
+                  <span className="text-ink/60 block text-xs">
+                    Not just assigned
+                  </span>
+                </span>
+              </div>
+              <div
+                className="mnt-float absolute -top-5 right-4 hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur sm:flex"
+                style={{ animationDelay: "1.5s" }}
+              >
+                <Compass aria-hidden className="text-brand-200 size-4" />8
+                specialist domains
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* DOMAINS MARQUEE */}
+        <section
+          aria-label="Mentorship domains"
+          className="border-brand-100 border-b bg-white py-8"
+        >
+          <div className="mnt-marquee overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_7%,#000_93%,transparent)]">
+            <ul className="mnt-marquee-track flex w-max gap-3">
+              {[...DOMAINS, ...DOMAINS].map((d, i) => (
+                <li
+                  key={i}
+                  aria-hidden={i >= DOMAINS.length}
+                  className="border-brand-100 bg-lavender text-brand-800 rounded-full border px-5 py-2.5 text-sm font-semibold whitespace-nowrap"
+                >
+                  {d}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* PERSPECTIVE */}
+        <Section labelledBy="mnt-perspective">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+            <Reveal variant="left">
+              <SectionIntro
+                id="mnt-perspective"
+                eyebrow="Perspective & purpose"
+                title={
+                  <>
+                    Your Career Shouldn&apos;t Be{" "}
+                    <span className="text-brand-600">Built Alone.</span>
+                  </>
+                }
+              />
+              <div className="text-ink/75 mt-6 space-y-4 text-lg leading-relaxed">
+                <p>
+                  Technology moves quickly. Certifications matter. Technical
+                  skills matter. But building a successful career also requires
+                  experience, guidance, relationships and exposure to real-world
+                  opportunities.
+                </p>
+                <p>
+                  The ETEN Mentorship Programme connects emerging technology
+                  professionals with experienced practitioners who share their
+                  knowledge. Whether you are beginning your career, changing
+                  specialisations, pursuing certifications or preparing for
+                  enterprise-level opportunities, the right mentor can help you
+                  move forward with greater clarity.
+                </p>
+              </div>
+            </Reveal>
+            <ul className="grid gap-4">
+              {PERSPECTIVE_FEATURES.map((f, i) => (
+                <Reveal
+                  as="li"
+                  key={f.t}
+                  variant="right"
+                  delay={i * 110}
+                  className={cn(cardClass, "flex items-start gap-5 p-6")}
+                >
+                  <IconBadge icon={f.icon} />
+                  <span>
+                    <span className="font-jakarta text-brand-950 block text-lg font-bold">
+                      {f.t}
+                    </span>
+                    <span className="text-ink/70 mt-1 block leading-relaxed">
+                      {f.d}
+                    </span>
+                  </span>
+                </Reveal>
+              ))}
+            </ul>
+          </div>
+        </Section>
+
+        {/* GROWTH MODEL */}
+        <Section tone="lavender" labelledBy="mnt-growth">
+          <Reveal>
+            <SectionIntro
+              id="mnt-growth"
+              center
+              eyebrow="Our approach"
+              title="A Mentorship Programme Built Around Growth"
+              intro="This is not simply about having someone to talk to. Our approach moves professionals through a structured development journey."
+            />
+          </Reveal>
+          <ol className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            {GROWTH_MODEL.map((s, i) => (
+              <Reveal
+                as="li"
+                key={s.t}
+                delay={i * 90}
+                className={cn(cardClass, "relative p-6")}
+              >
+                <span className="font-jakarta text-brand-200 absolute top-5 right-6 text-3xl font-extrabold">
+                  0{i + 1}
+                </span>
+                <IconBadge icon={s.icon} />
+                <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
                   {s.t}
                 </h3>
-                <p className="text-body-md text-mnt-ink-muted mt-2">{s.d}</p>
-              </div>
+                <p className="text-ink/70 mt-2 leading-relaxed">{s.d}</p>
+              </Reveal>
             ))}
-          </div>
-        </div>
-      </section>
+          </ol>
+        </Section>
 
-      {/* DOMAINS MARQUEE */}
-      <section className="pt-20">
-        <div className="mx-auto mb-6 flex max-w-[1140px] flex-wrap items-center justify-between gap-3 px-6">
-          <div className={eyebrow}>Specialist mentors across 8 domains</div>
-          <div className="text-mnt-faint text-body-md">
-            Matched to your goal, not just assigned
-          </div>
-        </div>
-        <div className="mnt-marquee overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_7%,#000_93%,transparent)]">
-          <div className="mnt-marquee-track flex w-max gap-3">
-            {[...DOMAINS, ...DOMAINS].map((d, i) => (
-              <span
-                key={i}
-                className="border-mnt-line bg-mnt-panel-2 text-mnt-ink-muted text-body-md rounded-full border px-[18px] py-[11px] whitespace-nowrap"
-              >
-                {d}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* SELECT YOUR TRAJECTORY */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal">
-          <div className="mb-9 text-center">
-            <h2 className={sectionH}>Select Your Trajectory</h2>
-            <p className={`${lead} mx-auto mt-3 max-w-[42rem]`}>
-              Whether sharpening personal technical precision or nurturing
-              emerging Pan-African engineers, ETEN provides the dedicated
-              framework.
-            </p>
-          </div>
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className={`${card} border-mnt-brand/28 p-[30px]`}>
-              <span className="text-mnt-brand bg-mnt-brand/12 text-label-sm rounded-full px-3 py-1.5 font-mono tracking-widest uppercase">
-                Become a Mentee
-              </span>
-              <h3 className="font-display text-mnt-ink mt-[18px] text-[22px] font-bold">
+        {/* SELECT YOUR TRAJECTORY */}
+        <Section labelledBy="mnt-trajectory">
+          <Reveal>
+            <SectionIntro
+              id="mnt-trajectory"
+              center
+              eyebrow="Choose your path"
+              title="Select Your Trajectory"
+              intro="Whether sharpening your own technical precision or nurturing emerging Pan-African engineers, ETEN provides the framework."
+            />
+          </Reveal>
+          <div className="mt-14 grid gap-6 lg:grid-cols-2">
+            <Reveal
+              variant="left"
+              className="from-brand-950 via-brand-900 to-brand-700 relative isolate flex flex-col overflow-hidden rounded-[2rem] bg-gradient-to-br p-8 text-white shadow-[0_40px_80px_-40px_rgba(33,0,93,0.9)] sm:p-10"
+            >
+              <NetworkGraphic
+                idPrefix="mnt-mentee-net"
+                className="absolute -right-24 -bottom-24 -z-10 w-[380px] opacity-25"
+              />
+              <p className="text-brand-200 text-xs font-bold tracking-[0.2em] uppercase">
+                Become a mentee
+              </p>
+              <h3 className="font-jakarta mt-4 text-2xl leading-tight font-extrabold sm:text-3xl">
                 Get Guidance. Build Capability. Accelerate Your Growth.
               </h3>
-              <p className="text-body-md text-mnt-ink-muted mt-2.5 mb-5">
-                The Mentee Programme is for technology professionals who want
-                structured guidance from experienced practitioners.
+              <p className="text-brand-100/85 mt-4 leading-relaxed">
+                For technology professionals who want structured guidance from
+                experienced practitioners.
               </p>
-              <BenefitList items={MENTEE_BENEFITS} />
-              <Link
+              <div className="mt-7 flex-1">
+                <BenefitList items={MENTEE_BENEFITS} dark />
+              </div>
+              <ButtonLink
                 href="/mentorship/register?role=mentee"
-                className="bg-mnt-brand text-mnt-on-brand text-body-md mt-6 inline-flex rounded-full px-[18px] py-3 font-bold transition hover:brightness-110"
+                variant="light"
+                arrow
+                className="mt-9 self-start"
               >
                 Apply as a Mentee
-              </Link>
-            </div>
+              </ButtonLink>
+            </Reveal>
 
-            <div className={`${card} p-[30px]`}>
-              <span className="text-mnt-green bg-mnt-green/12 text-label-sm rounded-full px-3 py-1.5 font-mono tracking-widest uppercase">
-                Become a Mentor
-              </span>
-              <h3 className="font-display text-mnt-ink mt-[18px] text-[22px] font-bold">
+            <Reveal
+              variant="right"
+              className="border-brand-100 flex flex-col rounded-[2rem] border bg-white p-8 shadow-[0_30px_60px_-40px_rgba(33,0,93,0.35)] sm:p-10"
+            >
+              <p className="text-brand-600 text-xs font-bold tracking-[0.2em] uppercase">
+                Become a mentor
+              </p>
+              <h3 className="font-jakarta text-brand-950 mt-4 text-2xl leading-tight font-extrabold sm:text-3xl">
                 Share Your Experience. Develop Talent. Strengthen the Ecosystem.
               </h3>
-              <p className="text-body-md text-mnt-ink-muted mt-2.5 mb-5">
+              <p className="text-ink/75 mt-4 leading-relaxed">
                 Great technology professionals do not just build systems, they
-                build people. The Mentor Programme helps experienced
-                professionals develop the next generation of talent across
+                build people. Help develop the next generation of talent across
                 Africa.
               </p>
-              <BenefitList items={MENTOR_BENEFITS} />
-              <Link
+              <div className="mt-7 flex-1">
+                <BenefitList items={MENTOR_BENEFITS} />
+              </div>
+              <ButtonLink
                 href="/mentorship/register?role=mentor"
-                className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand text-body-md mt-6 inline-flex rounded-full border px-[18px] py-3 font-bold transition"
+                variant="primary"
+                arrow
+                className="mt-9 self-start"
               >
                 Apply as a Mentor
-              </Link>
-            </div>
+              </ButtonLink>
+            </Reveal>
           </div>
-        </div>
-      </section>
+        </Section>
 
-      {/* SPECIALIZATIONS */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal">
-          <div className="mb-9 text-center">
-            <div className={eyebrow}>
-              Experienced Professionals. Practical Knowledge. Real Impact.
-            </div>
-            <h2 className={`${sectionH} mt-3`}>Who Can Become a Mentor?</h2>
-            <p className={`${lead} mx-auto mt-2 max-w-[44rem]`}>
-              We welcome experienced professionals across the technology
-              ecosystem, aligned with the specialisation areas of ETEN.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {SPECIALIZATIONS.map((s) => (
-              <div
+        {/* WHO CAN BECOME A MENTOR */}
+        <Section id="mentors" tone="lavender" labelledBy="mnt-mentors">
+          <Reveal>
+            <SectionIntro
+              id="mnt-mentors"
+              center
+              eyebrow="Experienced professionals. Practical knowledge. Real impact."
+              title="Who Can Become a Mentor?"
+              intro="We welcome experienced professionals across the technology ecosystem, aligned with the specialisation areas of ETEN."
+            />
+          </Reveal>
+          <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {SPECIALIZATIONS.map((s, i) => (
+              <Reveal
+                as="li"
                 key={s.t}
-                className={`${card} hover:border-mnt-brand/40 p-5 transition hover:-translate-y-1`}
+                variant="zoom"
+                delay={(i % 4) * 80}
+                className={cn(cardClass, "p-6")}
               >
-                <h3 className="text-body-lg text-mnt-ink font-bold">{s.t}</h3>
-                <p className="text-body-md text-mnt-faint mt-2">{s.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CANDIDATE MATRIX */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal text-center">
-          <div className={eyebrow}>For Professionals Ready to Grow</div>
-          <h2 className={`${sectionH} mt-3`}>Who Is The Programme For?</h2>
-          <div className="mt-6 flex flex-wrap justify-center gap-2.5">
-            {CANDIDATES.map((c) => (
-              <span
-                key={c}
-                className="border-mnt-line bg-mnt-panel-2 text-mnt-ink-muted text-body-md rounded-full border px-4 py-2"
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section id="how" className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal">
-          <div className="mb-9 text-center">
-            <div className={eyebrow}>
-              A Structured Journey From Connection to Capability
-            </div>
-            <h2 className={`${sectionH} mt-3`}>How It Works</h2>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {HOW_IT_WORKS.map((s) => (
-              <div key={s.n} className={`${card} p-[22px]`}>
-                <div className="font-display text-mnt-brand text-xl font-extrabold">
-                  {s.n}
-                </div>
-                <h3 className="text-body-lg text-mnt-ink mt-3 font-bold">
+                <IconBadge icon={s.icon} />
+                <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
                   {s.t}
                 </h3>
-                <p className="text-body-md text-mnt-ink-muted mt-2">{s.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* DIFFERENTIATORS */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal">
-          <div className="mb-9 text-center">
-            <div className={eyebrow}>Beyond Advice. Towards Capability.</div>
-            <h2 className={`${sectionH} mt-3`}>
-              What Makes ETEN Mentorship Different?
-            </h2>
-            <p className={`${lead} mx-auto mt-2 max-w-[44rem]`}>
-              Most mentorship programmes stop at conversations. The ETEN model
-              connects mentorship with practical capability development.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {DIFFERENTIATORS.map((f) => (
-              <div key={f.t} className={`${card} p-6`}>
-                <h3 className="text-body-lg text-mnt-ink font-bold">{f.t}</h3>
-                <p className="text-body-md text-mnt-ink-muted mt-2.5">{f.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* GROWTH JOURNEY */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px]">
-        <div className="mnt-reveal">
-          <div className="mb-9 text-center">
-            <div className={eyebrow}>From Learning to Opportunity</div>
-            <h2 className={`${sectionH} mt-3`}>The ETEN Growth Journey</h2>
-            <p className={`${lead} mx-auto mt-2 max-w-[44rem]`}>
-              Bridging the gap between professional certification, hands-on
-              capability, and commercial opportunity.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-stretch justify-center gap-3">
-            {JOURNEY.map((s, i) => (
-              <div key={s.t} className="flex items-center gap-3">
-                <div
-                  className={`${card} w-[150px] p-4 ${s.green ? "border-mnt-green/40" : ""}`}
-                >
-                  <div
-                    className={`font-display text-body-lg font-bold ${s.green ? "text-mnt-green" : "text-mnt-ink"}`}
-                  >
-                    {s.t}
-                  </div>
-                  <p className="text-mnt-faint text-label-sm mt-1 leading-snug normal-case">
-                    {s.d}
-                  </p>
-                </div>
-                {i < JOURNEY.length - 1 && (
-                  <span
-                    aria-hidden="true"
-                    className="text-mnt-faint hidden text-lg lg:inline"
-                  >
-                    →
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ENTERPRISE */}
-      <section
-        id="enterprise"
-        className="mx-auto max-w-[1140px] px-6 pt-[88px]"
-      >
-        <div className="border-mnt-line mnt-reveal grid gap-8 rounded-[20px] border p-8 [background:linear-gradient(120deg,rgba(167,140,250,0.10),rgba(52,211,153,0.06))] md:grid-cols-2 md:items-center md:p-10">
-          <div>
-            <div className={eyebrow}>Build Your Internal Capability</div>
-            <h2 className={`${sectionH} mt-3`}>
-              Want to Develop Your Technology Talent?
-            </h2>
-            <p className={`${lead} mt-3`}>
-              Organisations can engage with the ETEN Mentorship Programme to
-              support the development of their technology teams and emerging
-              leaders.
-            </p>
-            <Link
-              href={`${siteConfig.url}/contact`}
-              className="bg-mnt-brand text-mnt-on-brand text-body-md mt-6 inline-flex items-center gap-2 rounded-full px-[22px] py-3 font-bold transition hover:brightness-110"
-            >
-              Talk to Expervia
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </div>
-          <ul className="grid gap-2.5 sm:grid-cols-2">
-            {ENTERPRISE_SERVICES.map((s) => (
-              <li
-                key={s}
-                className="text-body-md text-mnt-ink-muted flex gap-2.5"
-              >
-                <Check
-                  className="text-mnt-green mt-0.5 size-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>{s}</span>
-              </li>
+                <p className="text-ink/70 mt-2 text-[0.95rem] leading-relaxed">
+                  {s.d}
+                </p>
+              </Reveal>
             ))}
           </ul>
-        </div>
-      </section>
+        </Section>
 
-      {/* CONTINENTAL FOOTPRINT */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px] text-center">
-        <div className="mnt-reveal">
-          <h2 className={sectionH}>Growing Africa&apos;s Technology Talent</h2>
-          <p className={`${lead} mx-auto mt-3 max-w-[46rem]`}>
-            We are building a network where experience is shared, capabilities
-            are developed and emerging professionals are prepared for the
-            opportunities shaping Africa&apos;s digital future.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2.5">
-            {FOOTPRINT_TOPICS.map((t) => (
-              <span
+        {/* WHO IS IT FOR */}
+        <Section labelledBy="mnt-for">
+          <Reveal>
+            <SectionIntro
+              id="mnt-for"
+              center
+              eyebrow="For professionals ready to grow"
+              title="Who Is the Programme For?"
+            />
+          </Reveal>
+          <ul className="mx-auto mt-10 flex max-w-4xl flex-wrap justify-center gap-3">
+            {CANDIDATES.map((c, i) => (
+              <Reveal
+                as="li"
+                key={c}
+                variant="zoom"
+                delay={i * 45}
+                className="border-brand-100 text-brand-900 hover:border-brand-300 hover:bg-lavender rounded-full border bg-white px-5 py-2.5 text-[0.95rem] font-medium shadow-[0_8px_20px_-16px_rgba(33,0,93,0.5)] transition-colors"
+              >
+                {c}
+              </Reveal>
+            ))}
+          </ul>
+        </Section>
+
+        {/* HOW IT WORKS */}
+        <Section id="how" tone="indigo" labelledBy="mnt-how">
+          <Reveal>
+            <SectionIntro
+              id="mnt-how"
+              center
+              dark
+              eyebrow="A structured journey from connection to capability"
+              title="How It Works"
+            />
+          </Reveal>
+          <ol className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {HOW_IT_WORKS.map((s, i) => (
+              <Reveal
+                as="li"
+                key={s.t}
+                delay={(i % 4) * 90}
+                className="group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/10"
+              >
+                <div className="flex items-center justify-between">
+                  <IconBadge icon={s.icon} dark />
+                  <span className="font-jakarta text-brand-300/70 text-sm font-bold tracking-[0.2em]">
+                    STEP {String(i + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <h3 className="font-jakarta mt-5 text-lg font-bold text-white">
+                  {s.t}
+                </h3>
+                <p className="text-brand-100/80 mt-2 leading-relaxed">{s.d}</p>
+              </Reveal>
+            ))}
+          </ol>
+        </Section>
+
+        {/* DIFFERENTIATORS */}
+        <Section labelledBy="mnt-diff">
+          <Reveal>
+            <SectionIntro
+              id="mnt-diff"
+              center
+              eyebrow="Beyond advice. Towards capability."
+              title={
+                <>
+                  What Makes ETEN Mentorship{" "}
+                  <span className="text-brand-600">Different?</span>
+                </>
+              }
+              intro="Most mentorship programmes stop at conversations. The ETEN model connects mentorship with practical capability development."
+            />
+          </Reveal>
+          <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {DIFFERENTIATORS.map((f, i) => (
+              <Reveal
+                as="li"
+                key={f.t}
+                delay={(i % 3) * 100}
+                className={cn(cardClass, "p-7")}
+              >
+                <IconBadge icon={f.icon} />
+                <h3 className="font-jakarta text-brand-950 mt-5 text-lg font-bold">
+                  {f.t}
+                </h3>
+                <p className="text-ink/70 mt-2 leading-relaxed">{f.d}</p>
+              </Reveal>
+            ))}
+          </ul>
+        </Section>
+
+        {/* GROWTH JOURNEY */}
+        <Section tone="lavender" labelledBy="mnt-journey">
+          <Reveal>
+            <SectionIntro
+              id="mnt-journey"
+              center
+              eyebrow="From learning to opportunity"
+              title="The ETEN Growth Journey"
+              intro="Bridging the gap between professional certification, hands-on capability and commercial opportunity."
+            />
+          </Reveal>
+          <ol className="relative mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-7 lg:gap-3">
+            <span
+              aria-hidden
+              className="from-brand-300 via-brand-400 to-brand-700 absolute top-7 right-[7%] left-[7%] hidden h-0.5 rounded-full bg-gradient-to-r lg:block"
+            />
+            {JOURNEY.map((s, i) => {
+              const last = i === JOURNEY.length - 1;
+              return (
+                <Reveal
+                  as="li"
+                  key={s.t}
+                  delay={i * 90}
+                  className="relative flex gap-4 lg:flex-col lg:items-center lg:text-center"
+                >
+                  <span
+                    className={cn(
+                      "font-jakarta relative z-10 inline-flex size-14 shrink-0 items-center justify-center rounded-full text-lg font-extrabold ring-8 ring-[#f3eeff]",
+                      last
+                        ? "bg-brand-700 text-white shadow-[0_10px_25px_-8px_rgba(100,38,220,0.8)]"
+                        : "text-brand-700 border-brand-200 border-2 bg-white",
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="lg:pt-5">
+                    <span
+                      className={cn(
+                        "font-jakarta block text-lg font-bold",
+                        last ? "text-brand-700" : "text-brand-950",
+                      )}
+                    >
+                      {s.t}
+                    </span>
+                    <span className="text-ink/70 mt-1 block text-sm leading-relaxed">
+                      {s.d}
+                    </span>
+                  </span>
+                </Reveal>
+              );
+            })}
+          </ol>
+        </Section>
+
+        {/* ENTERPRISE */}
+        <Section id="enterprise" labelledBy="mnt-enterprise">
+          <Reveal
+            variant="zoom"
+            className="border-brand-100 bg-lavender relative isolate grid gap-10 overflow-hidden rounded-[2rem] border p-8 sm:p-12 lg:grid-cols-2 lg:items-center"
+          >
+            <NetworkGraphic
+              idPrefix="mnt-ent-net"
+              className="absolute -top-24 -right-24 -z-10 w-[420px] opacity-15"
+            />
+            <div>
+              <SectionIntro
+                id="mnt-enterprise"
+                eyebrow="Build your internal capability"
+                title="Want to Develop Your Technology Talent?"
+                intro="Organisations can engage with the ETEN Mentorship Programme to support the development of their technology teams and emerging leaders."
+              />
+              <ButtonLink
+                href={`${siteConfig.url}/contact`}
+                variant="primary"
+                arrow
+                className="mt-8"
+              >
+                Talk to Expervia
+              </ButtonLink>
+            </div>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {ENTERPRISE_SERVICES.map((s, i) => (
+                <Reveal
+                  as="li"
+                  key={s}
+                  variant="right"
+                  delay={i * 60}
+                  className="border-brand-100 text-brand-950 flex items-center gap-3 rounded-2xl border bg-white px-4 py-3.5 text-[0.95rem] font-semibold"
+                >
+                  <span
+                    aria-hidden
+                    className="bg-brand-100 text-brand-700 inline-flex size-6 shrink-0 items-center justify-center rounded-full"
+                  >
+                    <Check className="size-3.5" strokeWidth={3} />
+                  </span>
+                  {s}
+                </Reveal>
+              ))}
+            </ul>
+          </Reveal>
+        </Section>
+
+        {/* GROWING AFRICA'S TALENT */}
+        <Section tone="indigo" labelledBy="mnt-africa" className="text-center">
+          <Reveal>
+            <SectionIntro
+              id="mnt-africa"
+              center
+              dark
+              eyebrow="Our ambition"
+              title="Growing Africa's Technology Talent"
+              intro="We are building a network where experience is shared, capabilities are developed and emerging professionals are prepared for the opportunities shaping Africa's digital future."
+            />
+          </Reveal>
+          <ul className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-3">
+            {FOOTPRINT_TOPICS.map((t, i) => (
+              <Reveal
+                as="li"
                 key={t}
-                className="border-mnt-line text-mnt-faint text-body-md rounded-full border px-4 py-2"
+                variant="zoom"
+                delay={i * 70}
+                className="text-brand-50 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium backdrop-blur"
               >
                 {t}
-              </span>
+              </Reveal>
             ))}
-          </div>
-        </div>
-      </section>
+          </ul>
+        </Section>
 
-      {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-[820px] px-6 pt-[88px]">
-        <div className="mnt-reveal">
-          <div className="mb-8 text-center">
-            <div className={eyebrow}>Frequently asked questions</div>
-            <h2 className={`${sectionH} mt-3`}>Everything you need to know</h2>
-          </div>
-          <div className="flex flex-col gap-3">
-            {FAQS.map((f, i) => (
-              <details
-                key={f.q}
-                open={i === 0}
-                className="mnt-faq bg-mnt-panel border-mnt-line open:border-mnt-brand/40 rounded-2xl border"
+        {/* FAQ */}
+        <Section id="faq" labelledBy="mnt-faq">
+          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+            <Reveal variant="left">
+              <SectionIntro
+                id="mnt-faq"
+                eyebrow="Frequently asked questions"
+                title="Everything You Need to Know"
+                intro="Still unsure where you fit? Reach out and our team will help you find the right track."
+              />
+              <ButtonLink
+                href={`${siteConfig.url}/contact`}
+                variant="outline"
+                className="mt-8"
               >
-                <summary className="flex items-center justify-between gap-4 px-[22px] py-5">
-                  <span className="font-display text-body-lg text-mnt-ink font-bold">
-                    {f.q}
-                  </span>
-                  <svg
-                    className="mnt-faq-plus text-mnt-brand shrink-0"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 18 18"
-                    fill="none"
-                    aria-hidden
-                  >
-                    <path
-                      d="M9 1v16M1 9h16"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </summary>
-                <div className="text-body-md text-mnt-ink-muted px-[22px] pb-5">
-                  {f.a}
-                </div>
-              </details>
-            ))}
+                Contact us
+              </ButtonLink>
+            </Reveal>
+            <Reveal variant="right" delay={100}>
+              <FaqList items={FAQS} />
+            </Reveal>
           </div>
-        </div>
-      </section>
+        </Section>
 
-      {/* FINAL CTA */}
-      <section className="mx-auto max-w-[1140px] px-6 pt-[88px] text-center">
-        <div className="mnt-reveal">
-          <div className={eyebrow}>
-            Your Next Level Starts With the Right Connection
-          </div>
-          <h2 className={`${sectionH} mt-3`}>Initiate Your Trajectory</h2>
-          <p className={`${lead} mx-auto mt-3 max-w-[42rem]`}>
-            Whether you are ready to share your experience or learn from someone
-            who has already walked the path, there is a place for you in the
-            ETEN Mentorship Programme.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
+        {/* FINAL CTA */}
+        <Reveal variant="zoom">
+          <CtaPanel
+            id="mnt-cta"
+            title="Your Next Level Starts With the Right Connection"
+            intro="Whether you are ready to share your experience or learn from someone who has already walked the path, there is a place for you in the ETEN Mentorship Programme."
+            footer={
+              <p className="text-brand-200 mt-8 text-xs font-semibold tracking-[0.18em] uppercase">
+                Join the Expervia Technology Experts Network (ETEN)
+              </p>
+            }
+          >
+            <ButtonLink
               href="/mentorship/register?role=mentee"
-              className="bg-mnt-brand text-mnt-on-brand text-body-md rounded-full px-[26px] py-[15px] font-bold transition hover:-translate-y-0.5 hover:brightness-110"
+              variant="light"
+              arrow
             >
               Become a Mentee
-            </Link>
-            <Link
+            </ButtonLink>
+            <ButtonLink
               href="/mentorship/register?role=mentor"
-              className="border-mnt-line-strong text-mnt-ink hover:border-mnt-brand text-body-md rounded-full border px-[26px] py-[15px] font-bold transition"
+              variant="outlineLight"
             >
               Become a Mentor
-            </Link>
-          </div>
-          <p className="text-mnt-faint text-label-sm mt-5 font-mono tracking-wide uppercase">
-            Join the Expervia Technology Experts Network (ETEN)
-          </p>
-        </div>
-      </section>
+            </ButtonLink>
+          </CtaPanel>
+        </Reveal>
+      </main>
 
-      {/* FOOTER */}
-      <footer className="border-mnt-line mt-[92px] border-t">
-        <div className="mx-auto max-w-[1140px] px-6 py-11">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <span className="from-mnt-brand to-mnt-brand-2 text-mnt-on-brand font-display grid size-8 place-items-center rounded-lg bg-gradient-to-br text-[15px] font-extrabold">
-                  E
-                </span>
-                <span className="font-display text-mnt-ink text-lg font-extrabold">
-                  ETEN Mentorship
-                </span>
-              </div>
-              <p className="text-mnt-faint text-body-md mt-4 max-w-[24rem]">
-                The Expervia Technology Experts Network (ETEN) Mentorship
-                Programme develops world-class engineers, architects and
-                technical leaders through structured curriculum and 1:1 veteran
-                guidance.
-              </p>
-              <div className="text-mnt-faint mt-4 font-mono text-[11px]">
-                mentorship.experviatechnologies.com
-              </div>
-            </div>
-            <FooterCol
-              head="Programme"
-              links={[
-                ["Mentorship Tracks", "/mentorship#how"],
-                ["Enterprise Programmes", "/mentorship#enterprise"],
-                ["Curriculum Directory", "/mentorship#how"],
-              ]}
-            />
-            <FooterCol
-              head="Network"
-              links={[
-                ["ETEN Community", siteConfig.url],
-                ["Events & Summits", `${siteConfig.url}/events`],
-                ["Mentor Application", "/mentorship/register?role=mentor"],
-              ]}
-            />
-            <FooterCol
-              head="Governance"
-              links={[
-                ["Privacy Policy", siteConfig.url],
-                ["Terms of Service", siteConfig.url],
-              ]}
-            />
-          </div>
-          <div className="border-mnt-line text-mnt-faint mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-5 text-[12px]">
-            <span>© 2026 Expervia Technologies. All rights reserved.</span>
-            <span className="flex gap-[18px]">
-              <Link
-                href={siteConfig.url}
-                className="text-mnt-faint hover:text-mnt-ink"
-              >
-                Privacy
-              </Link>
-              <Link
-                href={siteConfig.url}
-                className="text-mnt-faint hover:text-mnt-ink"
-              >
-                Terms
-              </Link>
-            </span>
-          </div>
-        </div>
-      </footer>
-    </>
-  );
-}
-
-function FooterCol({
-  head,
-  links,
-}: {
-  head: string;
-  links: [string, string][];
-}) {
-  return (
-    <div>
-      <div className="text-mnt-faint mb-3.5 font-mono text-[10.5px] tracking-[0.16em] uppercase">
-        {head}
-      </div>
-      <div className="text-body-md flex flex-col gap-2.5">
-        {links.map(([label, href]) => (
-          <Link
-            key={label}
-            href={href}
-            className="text-mnt-ink-muted hover:text-mnt-ink transition-colors"
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
+      <MntFooter />
     </div>
   );
 }
