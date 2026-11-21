@@ -3,12 +3,45 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CalendarCheck, Target, TrendingUp, Users } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { PasswordInput } from "@/components/shared/password-input";
 import { ResendConfirmation } from "@/components/shared/resend-confirmation";
+import {
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+  authLinkClass,
+  authPasswordToggleClass,
+  authSubmitClass,
+} from "@/components/site/auth-shell";
+import {
+  MntAuthPerks,
+  MntAuthShell,
+} from "@/components/mentorship/mnt-auth-shell";
 
-const inputClass =
-  "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand mt-1.5 w-full rounded-[10px] border px-3.5 py-3 text-[14px] outline-none transition-colors placeholder:text-[#586273]";
+const PERKS = [
+  {
+    icon: Users,
+    title: "Your Circles",
+    text: "Pick up with your mentor or mentees where you left off.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Sessions and bookings",
+    text: "See what's coming up and book your next session.",
+  },
+  {
+    icon: Target,
+    title: "Goals and evidence",
+    text: "Track your goal and the work that proves your progress.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Your growth",
+    text: "Watch your capability level move up over time.",
+  },
+];
 
 export default function MentorshipSignInPage() {
   const router = useRouter();
@@ -46,53 +79,50 @@ export default function MentorshipSignInPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-14">
-      <div className="w-full max-w-[400px]">
-        <Link href="/mentorship" className="flex items-center gap-2.5">
-          <span className="from-mnt-brand to-mnt-brand-2 text-mnt-on-brand font-display grid size-[30px] place-items-center rounded-[9px] bg-gradient-to-br font-extrabold">
-            E
-          </span>
-          <span className="font-display text-[15px] font-extrabold">
-            ETEN Mentorship
-          </span>
-        </Link>
+    <MntAuthShell
+      eyebrow="Mentorship sign in"
+      headline="Welcome back. Your growth journey continues here."
+      aside={<MntAuthPerks items={PERKS} label="In your mentorship account" />}
+    >
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="font-jakarta text-brand-950 text-3xl font-extrabold tracking-tight sm:text-[2.1rem]">
+            Sign in to ETEN Mentorship
+          </h1>
+          <p className="text-ink/65 mt-2">
+            Use the email and password you registered with.
+          </p>
+        </div>
 
-        <h1 className="font-display mt-8 text-2xl font-extrabold">
-          Welcome back
-        </h1>
-        <p className="text-mnt-ink-muted mt-2 text-[14px]">
-          Sign in to your mentorship account.
-        </p>
+        <form
+          className="flex flex-col gap-5"
+          onSubmit={handleSubmit}
+          noValidate
+        >
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email" className={authLabelClass}>
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={authInputClass}
+              placeholder="you@email.com"
+            />
+          </div>
 
-        <form className="mt-6" onSubmit={handleSubmit} noValidate>
-          <label
-            htmlFor="email"
-            className="text-mnt-ink-muted text-[12.5px] font-medium"
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-            placeholder="you@email.com"
-          />
-
-          <div className="mt-3.5">
+          <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label
-                htmlFor="password"
-                className="text-mnt-ink-muted text-[12.5px] font-medium"
-              >
+              <label htmlFor="password" className={authLabelClass}>
                 Password
               </label>
               <Link
                 href="/mentorship/forgot-password"
-                className="text-mnt-brand text-[12.5px]"
+                className={`${authLinkClass} text-sm`}
               >
                 Forgot password?
               </Link>
@@ -103,39 +133,37 @@ export default function MentorshipSignInPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={inputClass.replace("mt-1.5", "")}
-              wrapperClassName="mt-1.5"
+              className={`${authInputClass} pr-12`}
+              toggleClassName={authPasswordToggleClass}
               placeholder="Your password"
             />
           </div>
 
           {error && (
-            <p className="text-destructive mt-4 text-[13px]">{error}</p>
+            <p role="alert" className={authErrorClass}>
+              {error}
+            </p>
           )}
           {unconfirmed && (
             <ResendConfirmation
               email={unconfirmed}
-              className="text-mnt-ink-muted border-mnt-line mt-3 rounded-xl border p-4"
-              buttonClassName="text-mnt-brand font-semibold hover:underline disabled:opacity-60 disabled:no-underline"
+              className="border-brand-100 text-ink/75 bg-lavender rounded-xl border p-4 text-sm"
+              buttonClassName="text-brand-700 font-semibold hover:underline disabled:opacity-60 disabled:no-underline"
             />
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-mnt-brand text-mnt-on-brand mt-6 w-full rounded-[11px] py-3.5 text-[15px] font-bold transition hover:brightness-110 disabled:opacity-60"
-          >
+          <button type="submit" disabled={loading} className={authSubmitClass}>
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="text-mnt-faint mt-6 text-center text-[13px]">
+        <p className="border-brand-100 text-ink/70 border-t pt-6 text-[0.95rem]">
           New here?{" "}
-          <Link href="/mentorship/register" className="text-mnt-brand">
+          <Link href="/mentorship/register" className={authLinkClass}>
             Create an account
           </Link>
         </p>
       </div>
-    </main>
+    </MntAuthShell>
   );
 }

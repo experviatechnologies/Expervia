@@ -11,13 +11,28 @@ export function AuthShell({
   headline,
   aside,
   children,
+  brand = {
+    href: "/join-eten",
+    label: "Back to the ETEN page",
+    name: "Expervia Technologies",
+    tagline: "Expert Network · ETEN",
+  },
+  footnote = "An initiative of Expervia Technologies.",
+  asMain = false,
 }: {
   eyebrow: string;
   headline: string;
   /** Desktop-only extra content under the headline (steps, perks). */
   aside?: React.ReactNode;
   children: React.ReactNode;
+  /** The wordmark in the indigo panel and where it links (mentorship uses its own). */
+  brand?: { href: string; label: string; name: string; tagline: string };
+  /** Small print at the bottom of the indigo panel (desktop). */
+  footnote?: React.ReactNode;
+  /** Render the form column as <main>, for routes SiteChrome doesn't wrap. */
+  asMain?: boolean;
 }) {
+  const Column = asMain ? "main" : "div";
   return (
     <div className="min-h-dvh bg-white lg:grid lg:grid-cols-[minmax(380px,0.85fr)_1.15fr]">
       <aside className="bg-brand-950 relative isolate overflow-hidden text-white lg:sticky lg:top-0 lg:h-dvh">
@@ -31,16 +46,16 @@ export function AuthShell({
         />
         <div className="flex h-full flex-col px-5 py-6 sm:px-8 lg:px-12 lg:py-10">
           <Link
-            href="/join-eten"
-            aria-label="Back to the ETEN page"
+            href={brand.href}
+            aria-label={brand.label}
             className="focus-visible:ring-brand-300 self-start rounded-md focus-visible:ring-2 focus-visible:outline-none"
           >
             <span className="flex flex-col leading-none">
               <span className="text-[1.05rem] font-bold tracking-tight text-white">
-                Expervia Technologies
+                {brand.name}
               </span>
               <span className="text-brand-200 mt-1 text-[0.62rem] font-semibold tracking-[0.22em] uppercase">
-                Expert Network · ETEN
+                {brand.tagline}
               </span>
             </span>
           </Link>
@@ -53,15 +68,17 @@ export function AuthShell({
             </p>
             {aside && <div className="mt-10 hidden lg:block">{aside}</div>}
           </div>
-          <p className="text-brand-200/70 mt-6 hidden text-sm lg:block">
-            An initiative of Expervia Technologies.
-          </p>
+          {footnote && (
+            <div className="text-brand-200/70 mt-6 hidden text-sm lg:block">
+              {footnote}
+            </div>
+          )}
         </div>
       </aside>
-      {/* Not <main>: SiteChrome already wraps bare routes in one. */}
-      <div className="flex justify-center px-5 py-10 sm:px-8 sm:py-14 lg:items-center lg:px-12">
+      {/* Not <main> by default: SiteChrome already wraps bare routes in one. */}
+      <Column className="flex justify-center px-5 py-10 sm:px-8 sm:py-14 lg:items-center lg:px-12">
         <div className="w-full max-w-[600px]">{children}</div>
-      </div>
+      </Column>
     </div>
   );
 }

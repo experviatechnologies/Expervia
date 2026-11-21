@@ -4,9 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { PasswordInput } from "@/components/shared/password-input";
-
-const inputClass =
-  "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand mt-1.5 w-full rounded-[10px] border px-3.5 py-3 text-[14px] outline-none transition-colors placeholder:text-[#586273]";
+import {
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+  authPasswordToggleClass,
+  authSubmitClass,
+} from "@/components/site/auth-shell";
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -60,11 +64,8 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form className="mt-6" onSubmit={handleSubmit} noValidate>
-      <label
-        htmlFor="password"
-        className="text-mnt-ink-muted text-[12.5px] font-medium"
-      >
+    <form className="mt-7" onSubmit={handleSubmit} noValidate>
+      <label htmlFor="password" className={authLabelClass}>
         New password
       </label>
       <PasswordInput
@@ -74,16 +75,14 @@ export function ResetPasswordForm() {
         minLength={8}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className={inputClass.replace("mt-1.5", "")}
-        wrapperClassName="mt-1.5"
+        className={`${authInputClass} pr-12`}
+        wrapperClassName="mt-2"
+        toggleClassName={authPasswordToggleClass}
         placeholder="At least 8 characters"
       />
 
-      <div className="mt-3.5">
-        <label
-          htmlFor="confirm"
-          className="text-mnt-ink-muted text-[12.5px] font-medium"
-        >
+      <div className="mt-5">
+        <label htmlFor="confirm" className={authLabelClass}>
           Confirm new password
         </label>
         <PasswordInput
@@ -93,18 +92,23 @@ export function ResetPasswordForm() {
           minLength={8}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          className={inputClass.replace("mt-1.5", "")}
-          wrapperClassName="mt-1.5"
+          className={`${authInputClass} pr-12`}
+          wrapperClassName="mt-2"
+          toggleClassName={authPasswordToggleClass}
           placeholder="Re-enter your new password"
         />
       </div>
 
-      {error && <p className="text-destructive mt-4 text-[13px]">{error}</p>}
+      {error && (
+        <p role="alert" className={`${authErrorClass} mt-5`}>
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"
         disabled={loading}
-        className="bg-mnt-brand text-mnt-on-brand mt-6 w-full rounded-[11px] py-3.5 text-[15px] font-bold transition hover:brightness-110 disabled:opacity-60"
+        className={`${authSubmitClass} mt-6`}
       >
         {loading ? "Updating…" : "Set new password"}
       </button>

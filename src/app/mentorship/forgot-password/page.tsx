@@ -4,9 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
-
-const inputClass =
-  "border-mnt-line bg-mnt-panel-2 text-mnt-ink focus:border-mnt-brand mt-1.5 w-full rounded-[10px] border px-3.5 py-3 text-[14px] outline-none transition-colors placeholder:text-[#586273]";
+import {
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+  authLinkClass,
+  authSubmitClass,
+} from "@/components/site/auth-shell";
+import { MntAuthShell } from "@/components/mentorship/mnt-auth-shell";
 
 export default function MentorshipForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -44,52 +49,40 @@ export default function MentorshipForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-14">
-      <div className="w-full max-w-[400px]">
-        <Link href="/mentorship" className="flex items-center gap-2.5">
-          <span className="from-mnt-brand to-mnt-brand-2 text-mnt-on-brand font-display grid size-[30px] place-items-center rounded-[9px] bg-gradient-to-br font-extrabold">
-            E
-          </span>
-          <span className="font-display text-[15px] font-extrabold">
-            ETEN Mentorship
-          </span>
-        </Link>
-
+    <MntAuthShell
+      eyebrow="Account help"
+      headline="Locked out? We'll get you back to your mentorship in minutes."
+    >
+      <div>
         {sentTo ? (
-          <div className="mt-10 flex flex-col items-center gap-4 text-center">
-            <span className="bg-mnt-brand/12 text-mnt-brand flex size-14 items-center justify-center rounded-full">
-              <MailCheck className="size-7" />
+          <div className="flex flex-col items-center gap-4 py-6 text-center">
+            <span className="bg-brand-100 text-brand-700 flex size-16 items-center justify-center rounded-full">
+              <MailCheck aria-hidden className="size-8" />
             </span>
-            <h1 className="font-display text-xl font-extrabold">
+            <h1 className="font-jakarta text-brand-950 text-3xl font-extrabold tracking-tight">
               Check your inbox
             </h1>
-            <p className="text-mnt-ink-muted text-[14px]">
+            <p className="text-ink/70 leading-relaxed">
               If an account exists for{" "}
-              <span className="text-mnt-ink font-medium">{sentTo}</span>,
+              <span className="text-brand-950 font-semibold">{sentTo}</span>,
               we&apos;ve sent a link to set a new password. It expires soon, so
               use it while it&apos;s fresh.
             </p>
-            <Link
-              href="/mentorship/signin"
-              className="text-mnt-brand mt-2 text-[13px]"
-            >
+            <Link href="/mentorship/signin" className={`${authLinkClass} mt-2`}>
               Back to sign in
             </Link>
           </div>
         ) : (
           <>
-            <h1 className="font-display mt-8 text-2xl font-extrabold">
+            <h1 className="font-jakarta text-brand-950 text-3xl font-extrabold tracking-tight sm:text-[2.1rem]">
               Forgot your password?
             </h1>
-            <p className="text-mnt-ink-muted mt-2 text-[14px]">
+            <p className="text-ink/65 mt-2">
               Enter your email and we&apos;ll send you a link to set a new one.
             </p>
 
-            <form className="mt-6" onSubmit={handleSubmit} noValidate>
-              <label
-                htmlFor="email"
-                className="text-mnt-ink-muted text-[12.5px] font-medium"
-              >
+            <form className="mt-7" onSubmit={handleSubmit} noValidate>
+              <label htmlFor="email" className={authLabelClass}>
                 Email
               </label>
               <input
@@ -99,7 +92,7 @@ export default function MentorshipForgotPasswordPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
+                className={`${authInputClass} mt-2`}
                 placeholder="you@email.com"
               />
 
@@ -118,27 +111,29 @@ export default function MentorshipForgotPasswordPage() {
               </div>
 
               {error && (
-                <p className="text-destructive mt-4 text-[13px]">{error}</p>
+                <p role="alert" className={`${authErrorClass} mt-5`}>
+                  {error}
+                </p>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-mnt-brand text-mnt-on-brand mt-6 w-full rounded-[11px] py-3.5 text-[15px] font-bold transition hover:brightness-110 disabled:opacity-60"
+                className={`${authSubmitClass} mt-6`}
               >
                 {loading ? "Sending link…" : "Send reset link"}
               </button>
             </form>
 
-            <p className="text-mnt-faint mt-6 text-center text-[13px]">
+            <p className="border-brand-100 text-ink/70 mt-6 border-t pt-6 text-[0.95rem]">
               Remembered it?{" "}
-              <Link href="/mentorship/signin" className="text-mnt-brand">
+              <Link href="/mentorship/signin" className={authLinkClass}>
                 Back to sign in
               </Link>
             </p>
           </>
         )}
       </div>
-    </main>
+    </MntAuthShell>
   );
 }
