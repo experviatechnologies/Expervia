@@ -87,7 +87,7 @@ export function CreateCircleForm({
         </label>
         {mentors.length === 0 ? (
           <p className="text-eten-faint text-sm">
-            This pod has no Verified Mentors yet — nominate one first.
+            This pod has no Verified Mentors yet. Nominate one first.
           </p>
         ) : (
           <select

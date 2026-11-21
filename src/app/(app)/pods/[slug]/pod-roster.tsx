@@ -18,7 +18,11 @@ export type RosterItem = {
   canNominate: boolean;
 };
 
-const ROLE_LABEL = { lead: "Lead", co_lead: "Co-lead", member: "" } as const;
+const ROLE_LABEL = {
+  lead: "Pod Leader",
+  co_lead: "Backup leader",
+  member: "",
+} as const;
 
 type Filter = "all" | "leads" | "members";
 
@@ -203,6 +207,7 @@ export function PodRoster({
                     ) : null}
                     {isOps && (
                       <PodRoleControl
+                        key={r.role}
                         podId={podId}
                         memberId={r.memberId}
                         role={r.role}

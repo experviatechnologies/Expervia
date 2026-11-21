@@ -24,7 +24,7 @@ const SLOT: Record<Slot, { title: string; help: string; icon: typeof Crown }> =
 
 /**
  * Ops control for a pod's Lead and backup leader (co_lead). Pick from the
- * pod's active roster, give a reason, save. The previous holder of the slot
+ * pod's active roster, optionally give a reason, save. The previous holder of the slot
  * goes back to member.
  */
 export function PodLeadershipControl({
@@ -96,12 +96,7 @@ function SlotEditor({
     : matches.length === 1
       ? matches[0].id
       : "";
-  const reasonOk = reason.trim().length >= 3;
-  const missing = !picked
-    ? "Choose a member from the list."
-    : !reasonOk
-      ? "Add a reason of at least 3 characters."
-      : null;
+  const missing = picked ? null : "Choose a member from the list.";
 
   function save(memberId: string | null) {
     setError(null);
@@ -155,7 +150,7 @@ function SlotEditor({
           className="mt-3 flex flex-col gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (picked && reasonOk) save(picked);
+            if (picked) save(picked);
           }}
         >
           <label className="sr-only" htmlFor={`${slot}-search`}>
@@ -218,14 +213,14 @@ function SlotEditor({
             id={`${slot}-reason`}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason (recorded in the audit log)"
+            placeholder="Reason (optional, recorded in the audit log)"
             className={inputClass}
           />
           <div className="flex flex-wrap items-center justify-end gap-2">
             {holder && (
               <button
                 type="button"
-                disabled={busy || !reasonOk}
+                disabled={busy}
                 onClick={() => save(null)}
                 className="text-destructive mr-auto text-sm font-semibold disabled:opacity-50"
               >

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { setPodRole } from "../actions";
 
@@ -16,6 +17,7 @@ export function PodRoleControl({
   memberId: string;
   role: PodRole;
 }) {
+  const router = useRouter();
   const [value, setValue] = useState<PodRole>(role);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -29,6 +31,9 @@ export function PodRoleControl({
       if ("error" in res) {
         setError(res.error);
         setValue(prev);
+      } else {
+        // Another member may have been moved out of the slot; reload the roster.
+        router.refresh();
       }
     });
   }
@@ -44,8 +49,8 @@ export function PodRoleControl({
         className="border-eten-line bg-eten-panel-hi text-eten-ink focus:border-eten-accent rounded-lg border px-2 py-1 text-xs outline-none disabled:opacity-60"
       >
         <option value="member">Member</option>
-        <option value="lead">Lead</option>
-        <option value="co_lead">Co-lead</option>
+        <option value="lead">Pod Leader</option>
+        <option value="co_lead">Backup leader</option>
       </select>
       {error && <span className="text-destructive text-xs">{error}</span>}
     </span>

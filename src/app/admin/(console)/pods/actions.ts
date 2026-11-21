@@ -11,18 +11,18 @@ type Slot = "lead" | "co_lead";
 /**
  * Set (or clear) a pod's Lead or backup leader (co_lead). Pod Leaders receive
  * presales nomination requests for their pod (PRD section 5), so every pod
- * needs one. Ops-only, re-verified here; a written reason is required and the
- * change is audit-logged.
+ * needs one. Ops-only, re-verified here; the change is audit-logged, with
+ * the reason when one is given.
  *
  * One person per slot: the previous holder of the slot goes back to member.
- * If the chosen person currently holds the other slot, they move across and
- * that slot becomes empty.
+ * The holder of the other slot can't be chosen (clear that slot first), so a
+ * pod is never left without its Lead by accident.
  */
 export async function setPodLeader(input: {
   podId: string;
   slot: Slot;
   memberId: string | null;
-  reason: string;
+  reason?: string;
 }): Promise<ActionResult> {
   if (!(await isOperations())) {
     return { error: "You don't have permission to manage pods." };
@@ -30,9 +30,8 @@ export async function setPodLeader(input: {
   if (input.slot !== "lead" && input.slot !== "co_lead") {
     return { error: "Invalid leadership slot." };
   }
-  const reason = input.reason?.trim() ?? "";
-  if (reason.length < 3)
-    return { error: "Please give a reason for this change." };
+  // A reason is optional; when given it is kept in the audit log.
+  const reason = input.reason?.trim() || null;
 
   const me = await getCurrentMember();
   const admin = getSupabaseAdmin();

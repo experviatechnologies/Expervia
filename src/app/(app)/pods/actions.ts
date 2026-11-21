@@ -28,7 +28,32 @@ export async function setPodRole(input: {
   }
 
   const me = await getCurrentMember();
-  const { error } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+
+  if (input.role !== "member") {
+    const { data: pod } = await admin
+      .from("pods")
+      .select("is_main")
+      .eq("id", input.podId)
+      .maybeSingle();
+    if (!pod) return { error: "Pod not found." };
+    if (pod.is_main) {
+      return { error: "The Main Community has no pod leadership." };
+    }
+    // One Pod Leader and one backup per pod: the slot's current holder goes
+    // back to member, matching the admin console's leadership control.
+    const { error: clearError } = await admin
+      .from("pod_memberships")
+      .update({ role_in_pod: "member" })
+      .eq("pod_id", input.podId)
+      .eq("role_in_pod", input.role)
+      .neq("member_id", input.memberId);
+    if (clearError) {
+      return { error: "Couldn't update the role. Please try again." };
+    }
+  }
+
+  const { error } = await admin
     .from("pod_memberships")
     .update({ role_in_pod: input.role })
     .eq("pod_id", input.podId)
@@ -45,6 +70,8 @@ export async function setPodRole(input: {
   });
 
   revalidatePath("/pods/[slug]", "page");
+  revalidatePath("/admin/pods/[slug]", "page");
+  revalidatePath("/admin/pods");
   return { ok: true };
 }
 
@@ -195,6 +222,21 @@ export async function leavePod(input: {
     return {
       error:
         "This is your primary specialization pod. Change it from your profile first.",
+    };
+  }
+
+  // A Pod Leader or backup leaving would leave the pod without its leadership
+  // (and nomination requests with nobody to answer them).
+  const { data: mine } = await supabase
+    .from("pod_memberships")
+    .select("role_in_pod")
+    .eq("pod_id", input.podId)
+    .eq("member_id", member.id)
+    .maybeSingle();
+  if (mine && mine.role_in_pod !== "member") {
+    return {
+      error:
+        "You lead this pod. Ask ETEN operations to hand over your role before you leave.",
     };
   }
 

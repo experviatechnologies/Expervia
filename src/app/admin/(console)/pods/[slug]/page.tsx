@@ -13,7 +13,11 @@ export const metadata: Metadata = {
 };
 
 const ROLE_RANK = { lead: 0, co_lead: 1, member: 2 } as const;
-const ROLE_LABEL = { lead: "Lead", co_lead: "Co-lead", member: "" } as const;
+const ROLE_LABEL = {
+  lead: "Pod Leader",
+  co_lead: "Backup leader",
+  member: "",
+} as const;
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -130,7 +134,11 @@ export default async function AdminPodDetailPage({
             </b>{" "}
             member{roster.length === 1 ? "" : "s"}
           </span>
-          {leadCount > 0 && <span>{leadCount} lead/co-lead</span>}
+          {leadCount > 0 && (
+            <span>
+              {leadCount} leader{leadCount === 1 ? "" : "s"}
+            </span>
+          )}
           <span className="text-eten-accent inline-flex items-center gap-1">
             <Star className="size-3.5" />
             {primaryCount} primary
@@ -151,8 +159,8 @@ export default async function AdminPodDetailPage({
           <h2 className="text-eten-ink text-sm font-bold">Pod leadership</h2>
           <p className="text-eten-ink-muted mt-1 mb-4 text-xs">
             The Pod Leader receives presales nomination requests for this pod in
-            the ETEN Availability Tracker. Every change needs a reason and is
-            recorded in the audit log.
+            the ETEN Availability Tracker. The backup leader can nominate when
+            they are away. Every change is recorded in the audit log.
           </p>
           <PodLeadershipControl
             podId={pod.id}

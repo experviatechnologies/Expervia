@@ -30,7 +30,11 @@ type RosterMember = {
 };
 
 const ROLE_RANK = { lead: 0, co_lead: 1, member: 2 } as const;
-const ROLE_LABEL = { lead: "Lead", co_lead: "Co-lead", member: "" } as const;
+const ROLE_LABEL = {
+  lead: "Pod Leader",
+  co_lead: "Backup leader",
+  member: "",
+} as const;
 
 export default async function PodDetailPage({
   params,
@@ -351,10 +355,13 @@ export default async function PodDetailPage({
                     Primary pod
                   </span>
                 ) : isMember ? (
-                  <span className="bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold">
-                    <Check className="size-3.5" strokeWidth={2.8} />
-                    Joined
-                  </span>
+                  <>
+                    <span className="bg-eten-verified-soft text-eten-verified inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold">
+                      <Check className="size-3.5" strokeWidth={2.8} />
+                      Joined
+                    </span>
+                    <PodMembershipButton podId={pod.id} isMember />
+                  </>
                 ) : (
                   <PodMembershipButton podId={pod.id} isMember={isMember} />
                 )}
@@ -492,7 +499,7 @@ export default async function PodDetailPage({
           {/* Roster */}
           {roster.length === 0 ? (
             <div className="bg-eten-panel border-eten-line text-eten-ink-muted rounded-[18px] border p-8 text-center text-sm">
-              No members yet — be the first to join.
+              No members yet. Be the first to join.
             </div>
           ) : (
             <PodRoster
