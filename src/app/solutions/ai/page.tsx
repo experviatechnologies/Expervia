@@ -6,6 +6,7 @@ import { ResponsibleAi } from "@/components/sections/solutions/ai/responsible-ai
 import { AiAssessments } from "@/components/sections/solutions/ai/ai-assessments";
 import { AiCta } from "@/components/sections/solutions/ai/ai-cta";
 import { pageMeta } from "@/lib/seo";
+import { RelatedSolutions } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/solutions/ai");
 
@@ -18,6 +19,7 @@ export default function AiSolutionsPage() {
       <AiUseCases />
       <ResponsibleAi />
       <AiAssessments />
+      <RelatedSolutions current="ai" />
       <AiCta />
     </>
   );

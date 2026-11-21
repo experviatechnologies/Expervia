@@ -6,6 +6,7 @@ import { DataInsight } from "@/components/sections/solutions/data/data-insight";
 import { DataAssessments } from "@/components/sections/solutions/data/data-assessments";
 import { DataCta } from "@/components/sections/solutions/data/data-cta";
 import { pageMeta } from "@/lib/seo";
+import { RelatedSolutions } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/solutions/data");
 
@@ -18,6 +19,7 @@ export default function DataSolutionsPage() {
       <DataStack />
       <DataInsight />
       <DataAssessments />
+      <RelatedSolutions current="data" />
       <DataCta />
     </>
   );

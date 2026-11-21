@@ -4,6 +4,7 @@ import { TransformationPriorities } from "@/components/sections/industries/trans
 import { WhyChoose } from "@/components/sections/industries/why-choose";
 import { IndustriesCta } from "@/components/sections/industries/industries-cta";
 import { pageMeta } from "@/lib/seo";
+import { ServingAfrica } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/industries");
 
@@ -14,6 +15,7 @@ export default function IndustriesPage() {
       <IndustryGrid />
       <TransformationPriorities />
       <WhyChoose />
+      <ServingAfrica tone="lavender" />
       <IndustriesCta />
     </>
   );

@@ -8,6 +8,7 @@ import { WhyExpervia } from "@/components/sections/why-expervia";
 import { Community } from "@/components/sections/community";
 import { FinalCta } from "@/components/sections/final-cta";
 import { VideoPanel, CMO_VIDEOS } from "@/components/site/video-panel";
+import { ServingAfrica } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/");
 
@@ -35,6 +36,7 @@ export default function HomePage() {
       <Industries />
       <WhyExpervia />
       <Community />
+      <ServingAfrica tone="lavender" />
       <FinalCta />
     </>
   );

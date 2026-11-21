@@ -6,6 +6,7 @@ import { CyberSoc } from "@/components/sections/solutions/cybersecurity/cyber-so
 import { CyberAssessments } from "@/components/sections/solutions/cybersecurity/cyber-assessments";
 import { CyberCta } from "@/components/sections/solutions/cybersecurity/cyber-cta";
 import { pageMeta } from "@/lib/seo";
+import { RelatedSolutions } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/solutions/cybersecurity");
 
@@ -18,6 +19,7 @@ export default function CybersecuritySolutionsPage() {
       <CyberStack />
       <CyberSoc />
       <CyberAssessments />
+      <RelatedSolutions current="cybersecurity" />
       <CyberCta />
     </>
   );

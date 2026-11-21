@@ -6,6 +6,7 @@ import { CspServices } from "@/components/sections/solutions/microsoft/csp-servi
 import { MicrosoftAssessments } from "@/components/sections/solutions/microsoft/microsoft-assessments";
 import { MicrosoftCta } from "@/components/sections/solutions/microsoft/microsoft-cta";
 import { pageMeta } from "@/lib/seo";
+import { RelatedSolutions } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/solutions/microsoft");
 
@@ -18,6 +19,7 @@ export default function MicrosoftSolutionsPage() {
       <Capabilities />
       <CspServices />
       <MicrosoftAssessments />
+      <RelatedSolutions current="microsoft" />
       <MicrosoftCta />
     </>
   );

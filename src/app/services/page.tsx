@@ -5,6 +5,7 @@ import { ServicesPartners } from "@/components/sections/services/services-partne
 import { ServicesIndustries } from "@/components/sections/services/services-industries";
 import { ServicesCta } from "@/components/sections/services/services-cta";
 import { pageMeta } from "@/lib/seo";
+import { ServingAfrica } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/services");
 
@@ -16,6 +17,7 @@ export default function ServicesPage() {
       <ServicesPortfolio />
       <ServicesPartners />
       <ServicesIndustries />
+      <ServingAfrica tone="lavender" />
       <ServicesCta />
     </>
   );

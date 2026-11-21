@@ -6,6 +6,7 @@ import { CloudResilience } from "@/components/sections/solutions/cloud/cloud-res
 import { CloudAssessments } from "@/components/sections/solutions/cloud/cloud-assessments";
 import { CloudCta } from "@/components/sections/solutions/cloud/cloud-cta";
 import { pageMeta } from "@/lib/seo";
+import { RelatedSolutions } from "@/components/site/internal-links";
 
 export const metadata = pageMeta("/solutions/cloud");
 
@@ -18,6 +19,7 @@ export default function CloudSolutionsPage() {
       <CloudPlatforms />
       <CloudResilience />
       <CloudAssessments />
+      <RelatedSolutions current="cloud" />
       <CloudCta />
     </>
   );
