@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { PAGE_SEO } from "@/config/seo";
 import { POD_LANDING_SLUGS } from "@/lib/eten/pod-landings";
-import { COUNTRIES } from "@/config/countries";
+import { COUNTRIES, countryLanguages } from "@/config/countries";
+import { FR_PAGES } from "@/config/countries-fr";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -39,6 +40,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: path === "/events" ? "weekly" : "monthly",
     priority: PRIORITY[path] ?? (path.startsWith("/africa/") ? 0.8 : 0.7),
   }));
+
+  // French pages (+ hreflang alternates on both language versions).
+  const langs = (slug: string) =>
+    Object.fromEntries(
+      Object.entries(countryLanguages(slug) ?? {})
+        .filter(([k]) => k !== "x-default")
+        .map(([k, v]) => [k, absoluteUrl(v)]),
+    );
+  for (const e of entries) {
+    const m = e.url.match(/\/africa\/([^/]+)$/);
+    if (m) e.alternates = { languages: langs(m[1]) };
+  }
+  entries.push({
+    url: absoluteUrl("/fr/afrique"),
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.7,
+    alternates: {
+      languages: { fr: absoluteUrl("/fr/afrique"), en: absoluteUrl("/africa") },
+    },
+  });
+  for (const p of FR_PAGES) {
+    entries.push({
+      url: absoluteUrl(`/fr/afrique/${p.c.slug}`),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+      alternates: { languages: langs(p.enSlug) },
+    });
+  }
 
   // Public mentor booking pages (verified mentors with a short handle).
   try {

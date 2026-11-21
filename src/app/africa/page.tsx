@@ -15,7 +15,17 @@ import { siteConfig } from "@/config/site";
 import { absoluteUrl, pageMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
-export const metadata = pageMeta("/africa");
+export const metadata = {
+  ...pageMeta("/africa"),
+  alternates: {
+    ...pageMeta("/africa").alternates,
+    languages: {
+      en: absoluteUrl("/africa"),
+      fr: absoluteUrl("/fr/afrique"),
+      "x-default": absoluteUrl("/africa"),
+    },
+  },
+};
 
 const REGIONS: Country["region"][] = [
   "West Africa",
@@ -59,6 +69,14 @@ export default function AfricaPage() {
             </ButtonLink>
             <ButtonLink href="/contact" variant="outlineLight">
               Talk to Our Team
+            </ButtonLink>
+            <ButtonLink
+              href="/fr/afrique"
+              variant="outlineLight"
+              hrefLang="fr"
+              lang="fr"
+            >
+              Afrique francophone (FR)
             </ButtonLink>
           </>
         }

@@ -12,7 +12,7 @@
 
 /** Flip to true in SEO step 3, once the /fr/afrique pages exist: turns on
  * hreflang alternates and the "Lire en français" links. */
-export const FRENCH_PAGES_LIVE = false;
+export const FRENCH_PAGES_LIVE = true;
 
 export type SolutionKey =
   | "ai"
@@ -1020,4 +1020,17 @@ export const COUNTRIES: Country[] = [
 
 export function getCountry(slug: string): Country | undefined {
   return COUNTRIES.find((c) => c.slug === slug);
+}
+
+/** hreflang map shared by the English and French versions of a country. */
+export function countryLanguages(slug: string) {
+  const c = getCountry(slug);
+  if (!c) return undefined;
+  return {
+    [`en-${c.iso}`]: `/africa/${c.slug}`,
+    ...(FRENCH_PAGES_LIVE && c.frSlug
+      ? { [`fr-${c.iso}`]: `/fr/afrique/${c.frSlug}` }
+      : {}),
+    "x-default": `/africa/${c.slug}`,
+  };
 }
