@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle2, Loader2, UploadCloud } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { Section, SectionIntro } from "@/components/site/ui";
 
 const solutionAreas = [
   "Azure Infrastructure",
@@ -16,14 +15,14 @@ const solutionAreas = [
 
 const availabilityOptions = ["0-10 hrs", "10-20 hrs", "20-40 hrs", "Full-time"];
 
-const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4MB — see note in Huawei's application-form.tsx
+const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4MB; see note in Huawei's application-form.tsx
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
 const fieldClasses =
-  "w-full rounded-lg border border-outline-variant bg-surface p-4 text-on-surface outline-none transition-all focus:border-brand";
+  "w-full rounded-xl border border-brand-100 bg-white px-4 py-3 text-ink placeholder:text-ink/40 shadow-[0_1px_2px_rgba(33,0,93,0.04)] outline-none transition hover:border-brand-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
 
 export function ApplicationForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -93,236 +92,239 @@ export function ApplicationForm() {
   }
 
   return (
-    <section id="apply" className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-12 text-center">
-            <SectionLabel className="mb-4">Application</SectionLabel>
-            <h2 className="font-display text-on-surface text-headline-lg font-bold">
-              Apply Now
-            </h2>
-          </div>
+    <Section id="apply" labelledBy="apply-heading" tone="lavender">
+      <div className="mx-auto max-w-3xl">
+        <SectionIntro
+          id="apply-heading"
+          eyebrow="Application"
+          title="Apply Now"
+          center
+        />
 
-          <div className="bg-surface-container-high rounded-2xl p-8 shadow-xl md:p-12">
-            {submitted ? (
-              <div
-                role="status"
-                className="flex flex-col items-center gap-4 py-16 text-center"
-              >
-                <CheckCircle2 className="text-primary size-14" />
-                <h3 className="font-display text-on-surface text-headline-md font-semibold">
-                  Thank you — your application has been received.
-                </h3>
-                <p className="text-on-surface-variant max-w-md">
-                  Our team will review your profile and reach out about next
-                  steps.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-10">
-                {/* Personal Information */}
-                <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <legend className="text-label-sm text-primary col-span-full mb-2 font-mono tracking-widest uppercase">
-                    Personal Information
-                  </legend>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="fullName"
-                      className="text-label-sm text-on-surface-variant font-mono uppercase"
-                    >
-                      Full Name
-                    </label>
-                    <input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      required
-                      placeholder="John Doe"
-                      className={fieldClasses}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="email"
-                      className="text-label-sm text-on-surface-variant font-mono uppercase"
-                    >
-                      Email Address
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      placeholder="you@email.com"
-                      className={fieldClasses}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="phone"
-                      className="text-label-sm text-on-surface-variant font-mono uppercase"
-                    >
-                      Phone Number
-                    </label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      required
-                      placeholder="+234 800 000 0000"
-                      className={fieldClasses}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="linkedin"
-                      className="text-label-sm text-on-surface-variant font-mono uppercase"
-                    >
-                      LinkedIn Profile
-                    </label>
-                    <input
-                      id="linkedin"
-                      name="linkedin"
-                      type="url"
-                      placeholder="linkedin.com/in/johndoe"
-                      className={fieldClasses}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="location"
-                      className="text-label-sm text-on-surface-variant font-mono uppercase"
-                    >
-                      Location (City, Country)
-                    </label>
-                    <input
-                      id="location"
-                      name="location"
-                      type="text"
-                      placeholder="Lagos, Nigeria"
-                      className={fieldClasses}
-                    />
-                  </div>
-                </fieldset>
-
-                {/* Professional Profile */}
-                <fieldset className="space-y-6">
-                  <legend className="text-label-sm text-primary mb-2 font-mono tracking-widest uppercase">
-                    Professional Profile
-                  </legend>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="solutionArea"
-                      className="text-label-sm text-on-surface-variant font-mono uppercase"
-                    >
-                      Primary Solution Area
-                    </label>
-                    <select
-                      id="solutionArea"
-                      name="solutionArea"
-                      required
-                      defaultValue=""
-                      className={fieldClasses}
-                    >
-                      <option value="" disabled>
-                        Select…
-                      </option>
-                      {solutionAreas.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="certifications"
-                      className="text-label-sm text-on-surface-variant font-mono uppercase"
-                    >
-                      Microsoft Certifications
-                    </label>
-                    <input
-                      id="certifications"
-                      name="certifications"
-                      type="text"
-                      placeholder="AZ-104, AZ-305, MS-900…"
-                      className={fieldClasses}
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <span className="text-label-sm text-on-surface-variant block font-mono uppercase">
-                      Weekly Availability for Projects
-                    </span>
-                    <div className="flex flex-wrap gap-4">
-                      {availabilityOptions.map((option) => (
-                        <label
-                          key={option}
-                          className="border-outline-variant has-checked:border-brand has-checked:bg-brand/10 flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors"
-                        >
-                          <input
-                            type="radio"
-                            name="availability"
-                            value={option}
-                            required
-                            className="accent-brand"
-                          />
-                          {option}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </fieldset>
-
-                {/* Documents */}
-                <fieldset className="space-y-2">
-                  <legend className="text-label-sm text-primary mb-2 font-mono tracking-widest uppercase">
-                    Documents
-                  </legend>
+        <div className="border-brand-100 mt-12 rounded-[2rem] border bg-white p-6 shadow-[0_24px_50px_-34px_rgba(33,0,93,0.45)] sm:p-8 md:p-12">
+          {submitted ? (
+            <div
+              role="status"
+              className="flex flex-col items-center gap-4 py-16 text-center"
+            >
+              <CheckCircle2 aria-hidden className="text-brand-600 size-14" />
+              <h3 className="font-jakarta text-brand-950 text-2xl font-bold">
+                Thank you. Your application has been received.
+              </h3>
+              <p className="text-ink/75 max-w-md">
+                Our team will review your profile and reach out about next
+                steps.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-10">
+              {/* Personal Information */}
+              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <legend className="text-brand-600 col-span-full mb-1 text-xs font-bold tracking-[0.2em] uppercase">
+                  Personal Information
+                </legend>
+                <div className="space-y-2">
                   <label
-                    htmlFor="resume"
-                    className="border-outline-variant hover:border-brand flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center transition-colors"
+                    htmlFor="fullName"
+                    className="text-brand-950 block text-sm font-semibold"
                   >
-                    <UploadCloud className="text-primary size-8" />
-                    <span className="text-on-surface text-sm font-medium">
-                      {fileName ?? "Upload your Resume/CV or Portfolio"}
-                    </span>
-                    <span className="text-on-surface-variant text-xs">
-                      PDF or DOCX. Max size 4MB.
-                    </span>
-                    <input
-                      id="resume"
-                      name="resume"
-                      type="file"
-                      required
-                      accept=".pdf,.docx"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
+                    Full Name
                   </label>
-                </fieldset>
-
-                <div className="pt-2">
-                  {error && (
-                    <p role="alert" className="text-destructive mb-4 text-sm">
-                      {error}
-                    </p>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="bg-brand text-brand-foreground primary-glow flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {submitting && <Loader2 className="size-4 animate-spin" />}
-                    {submitting ? "Submitting…" : "Submit Application"}
-                  </button>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    required
+                    placeholder="John Doe"
+                    className={fieldClasses}
+                  />
                 </div>
-              </form>
-            )}
-          </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="email"
+                    className="text-brand-950 block text-sm font-semibold"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="you@email.com"
+                    className={fieldClasses}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="phone"
+                    className="text-brand-950 block text-sm font-semibold"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    placeholder="+234 800 000 0000"
+                    className={fieldClasses}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="linkedin"
+                    className="text-brand-950 block text-sm font-semibold"
+                  >
+                    LinkedIn Profile
+                  </label>
+                  <input
+                    id="linkedin"
+                    name="linkedin"
+                    type="url"
+                    placeholder="linkedin.com/in/johndoe"
+                    className={fieldClasses}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="location"
+                    className="text-brand-950 block text-sm font-semibold"
+                  >
+                    Location (City, Country)
+                  </label>
+                  <input
+                    id="location"
+                    name="location"
+                    type="text"
+                    placeholder="Lagos, Nigeria"
+                    className={fieldClasses}
+                  />
+                </div>
+              </fieldset>
+
+              {/* Professional Profile */}
+              <fieldset className="space-y-6">
+                <legend className="text-brand-600 mb-2 text-xs font-bold tracking-[0.2em] uppercase">
+                  Professional Profile
+                </legend>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="solutionArea"
+                    className="text-brand-950 block text-sm font-semibold"
+                  >
+                    Primary Solution Area
+                  </label>
+                  <select
+                    id="solutionArea"
+                    name="solutionArea"
+                    required
+                    defaultValue=""
+                    className={fieldClasses}
+                  >
+                    <option value="" disabled>
+                      Select…
+                    </option>
+                    {solutionAreas.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="certifications"
+                    className="text-brand-950 block text-sm font-semibold"
+                  >
+                    Microsoft Certifications
+                  </label>
+                  <input
+                    id="certifications"
+                    name="certifications"
+                    type="text"
+                    placeholder="AZ-104, AZ-305, MS-900…"
+                    className={fieldClasses}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <span className="text-brand-950 block text-sm font-semibold">
+                    Weekly Availability for Projects
+                  </span>
+                  <div className="flex flex-wrap gap-4">
+                    {availabilityOptions.map((option) => (
+                      <label
+                        key={option}
+                        className="border-brand-100 text-ink/80 has-checked:border-brand-600 has-checked:bg-brand-50 has-checked:text-brand-900 has-focus-visible:ring-brand-200 flex cursor-pointer items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors has-focus-visible:ring-4"
+                      >
+                        <input
+                          type="radio"
+                          name="availability"
+                          value={option}
+                          required
+                          className="accent-brand-700"
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </fieldset>
+
+              {/* Documents */}
+              <fieldset className="space-y-2">
+                <legend className="text-brand-600 mb-2 text-xs font-bold tracking-[0.2em] uppercase">
+                  Documents
+                </legend>
+                <label
+                  htmlFor="resume"
+                  className="border-brand-200 hover:border-brand-500 focus-within:border-brand-500 focus-within:ring-brand-500/15 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed bg-white p-8 text-center transition focus-within:ring-4"
+                >
+                  <UploadCloud aria-hidden className="text-brand-600 size-8" />
+                  <span className="text-brand-950 text-sm font-semibold">
+                    {fileName ?? "Upload your Resume/CV or Portfolio"}
+                  </span>
+                  <span className="text-ink/60 text-xs">
+                    PDF or DOCX. Max size 4MB.
+                  </span>
+                  <input
+                    id="resume"
+                    name="resume"
+                    type="file"
+                    required
+                    accept=".pdf,.docx"
+                    onChange={handleFileChange}
+                    className="sr-only"
+                  />
+                </label>
+              </fieldset>
+
+              <div className="pt-2">
+                {error && (
+                  <p
+                    role="alert"
+                    className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                  >
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="bg-brand-700 hover:bg-brand-600 focus-visible:outline-brand-500 flex min-h-13 w-full items-center justify-center gap-2 rounded-full py-3.5 font-semibold text-white shadow-[0_12px_30px_-12px_rgba(100,38,220,0.8)] transition focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {submitting && (
+                    <Loader2 aria-hidden className="size-4 animate-spin" />
+                  )}
+                  {submitting ? "Submitting…" : "Submit Application"}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
-      </Container>
-    </section>
+      </div>
+    </Section>
   );
 }

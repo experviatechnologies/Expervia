@@ -8,8 +8,7 @@ import {
   UserCheck,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const areas: { icon: LucideIcon; title: string }[] = [
   { icon: Cloud, title: "Cloud Infrastructure" },
@@ -23,27 +22,26 @@ const areas: { icon: LucideIcon; title: string }[] = [
 
 export function WhoShouldJoin() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">Who Should Join?</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Seven Specialization Areas
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {areas.map(({ icon: Icon, title }) => (
-            <div
-              key={title}
-              className="border-outline-variant/20 hover:border-primary/50 bg-surface-container-low flex items-center gap-4 rounded-xl border p-6 transition-colors"
-            >
-              <Icon className="text-primary size-6 shrink-0" />
-              <span className="font-bold">{title}</span>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="who-should-join" labelledBy="empc-who-heading" tone="lavender">
+      <SectionIntro
+        id="empc-who-heading"
+        eyebrow="Who Should Join?"
+        title="Seven Specialization Areas"
+        center
+      />
+      <ul className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {areas.map(({ icon, title }) => (
+          <li
+            key={title}
+            className="border-brand-100 hover:border-brand-300 flex items-center gap-4 rounded-2xl border bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_36px_-24px_rgba(33,0,93,0.35)]"
+          >
+            <IconBadge icon={icon} className="size-11" />
+            <span className="font-jakarta text-brand-950 font-bold">
+              {title}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

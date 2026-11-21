@@ -5,8 +5,7 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const principles: { icon: LucideIcon; title: string }[] = [
   { icon: Award, title: "Professionalism" },
@@ -17,29 +16,26 @@ const principles: { icon: LucideIcon; title: string }[] = [
 
 export function CommunityPrinciples() {
   return (
-    <section className="bg-surface py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">Community Principles</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            What We Stand For
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-2 lg:grid-cols-4">
-          {principles.map(({ icon: Icon, title }) => (
-            <div
-              key={title}
-              className="border-outline-variant/20 flex flex-col items-center gap-3 rounded-xl border p-8 text-center"
-            >
-              <Icon className="text-primary size-8" />
-              <span className="font-display text-on-surface font-semibold">
-                {title}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="principles" labelledBy="principles-heading" tone="lavender">
+      <SectionIntro
+        id="principles-heading"
+        eyebrow="Community Principles"
+        title="What We Stand For"
+        center
+      />
+      <ul className="mt-14 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {principles.map(({ icon, title }) => (
+          <li
+            key={title}
+            className="border-brand-100 flex flex-col items-center gap-4 rounded-3xl border bg-white p-7 text-center"
+          >
+            <IconBadge icon={icon} />
+            <span className="font-jakarta text-brand-950 text-lg font-bold">
+              {title}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

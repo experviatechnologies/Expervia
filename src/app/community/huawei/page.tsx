@@ -5,8 +5,7 @@ import { ProfessionalAdvantage } from "@/components/sections/community/huawei/pr
 import { WhoShouldJoin } from "@/components/sections/community/huawei/who-should-join";
 import { SpecializationTracks } from "@/components/sections/community/huawei/specialization-tracks";
 import { ApplicationForm } from "@/components/sections/community/huawei/application-form";
-import { CMO_VIDEOS } from "@/components/shared/video-feature";
-import { VideoPanel } from "@/components/site/video-panel";
+import { VideoPanel, CMO_VIDEOS } from "@/components/site/video-panel";
 
 export const metadata: Metadata = {
   title: "Huawei Professionals Community",

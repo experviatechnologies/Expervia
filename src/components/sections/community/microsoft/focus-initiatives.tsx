@@ -1,6 +1,5 @@
 import { Bot, ShieldCheck, type LucideIcon } from "lucide-react";
-import { Container } from "@/components/shared/container";
-import { SectionLabel } from "@/components/shared/section-label";
+import { IconBadge, Section, SectionIntro } from "@/components/site/ui";
 
 const initiatives: { icon: LucideIcon; title: string; body: string }[] = [
   {
@@ -17,32 +16,30 @@ const initiatives: { icon: LucideIcon; title: string; body: string }[] = [
 
 export function FocusInitiatives() {
   return (
-    <section className="bg-surface-container-low py-section">
-      <Container>
-        <div className="mb-16 text-center">
-          <SectionLabel className="mb-4">Focus Initiatives</SectionLabel>
-          <h2 className="font-display text-on-surface text-headline-lg font-bold">
-            Where We&apos;re Driving Impact
-          </h2>
-        </div>
-
-        <div className="gap-gutter grid grid-cols-1 lg:grid-cols-2">
-          {initiatives.map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="glass-card hover:border-primary/50 space-y-4 rounded-2xl p-10 transition-all"
-            >
-              <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-lg">
-                <Icon className="size-6" />
-              </div>
-              <h3 className="font-display text-on-surface text-headline-md font-semibold">
-                {title}
-              </h3>
-              <p className="text-on-surface-variant">{body}</p>
-            </div>
-          ))}
-        </div>
-      </Container>
-    </section>
+    <Section id="initiatives" labelledBy="initiatives-heading" tone="indigo">
+      <SectionIntro
+        id="initiatives-heading"
+        eyebrow="Focus Initiatives"
+        title="Where We're Driving Impact"
+        center
+        dark
+      />
+      <ul className="mt-14 grid gap-5 lg:grid-cols-2">
+        {initiatives.map(({ icon, title, body }) => (
+          <li
+            key={title}
+            className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 backdrop-blur transition duration-300 hover:border-white/25 hover:bg-white/[0.08] md:p-10"
+          >
+            <IconBadge icon={icon} dark />
+            <h3 className="font-jakarta mt-5 text-2xl font-bold text-white">
+              {title}
+            </h3>
+            <p className="text-brand-100/80 mt-2.5 text-lg leading-relaxed">
+              {body}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }

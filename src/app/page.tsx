@@ -6,8 +6,7 @@ import { Industries } from "@/components/sections/industries";
 import { WhyExpervia } from "@/components/sections/why-expervia";
 import { Community } from "@/components/sections/community";
 import { FinalCta } from "@/components/sections/final-cta";
-import { VideoPanel } from "@/components/site/video-panel";
-import { CMO_VIDEOS } from "@/components/shared/video-feature";
+import { VideoPanel, CMO_VIDEOS } from "@/components/site/video-panel";
 
 export default function HomePage() {
   return (

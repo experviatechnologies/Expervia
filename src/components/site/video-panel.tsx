@@ -54,3 +54,15 @@ export function VideoPanel({
     </Section>
   );
 }
+
+/** Public Supabase Storage URLs + poster paths for the CMO videos. */
+export const CMO_VIDEOS = {
+  joinNetwork: {
+    src: "https://jidirlttkoxjwtfmmfuu.supabase.co/storage/v1/object/public/videos/cmo-join-the-network.mp4",
+    poster: "/images/cmo-join-the-network-poster.jpg",
+  },
+  businessSolutions: {
+    src: "https://jidirlttkoxjwtfmmfuu.supabase.co/storage/v1/object/public/videos/cmo-business-solutions.mp4",
+    poster: "/images/cmo-business-solutions-poster.jpg",
+  },
+} as const;
