@@ -36,6 +36,7 @@ const BARE_PREFIXES = [
   "/reset-password",
   "/suspended",
   "/tracker",
+  "/crm",
 ];
 
 export function SiteChrome({

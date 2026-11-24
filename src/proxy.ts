@@ -157,6 +157,9 @@ export async function proxy(request: NextRequest) {
     !path.startsWith("/tracker/demo") &&
     path !== "/tracker/login";
 
+  // The CRM: staff only (roles are checked by its layout and every page).
+  const isCrmArea = path === "/crm" || path.startsWith("/crm/");
+
   const redirectTo = (pathname: string) => {
     const url = request.nextUrl.clone();
     url.pathname = pathname;
@@ -210,6 +213,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // --- /crm — signed-in only; the staff role is checked by the CRM itself ----
+  if (isCrmArea && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/signin";
+    url.search = `?next=${encodeURIComponent(rawPath + request.nextUrl.search)}`;
+    return NextResponse.redirect(url);
+  }
+
   // --- /dashboard — any signed-in member -------------------------------------
   if (isMemberArea && !user) {
     return redirectTo("/signin");
@@ -253,6 +264,8 @@ export const config = {
     "/mfa",
     "/tracker",
     "/tracker/:path((?!demo|login).*)",
+    "/crm",
+    "/crm/:path*",
     // The tracker's own address serves these at the root (Phase 9). On any
     // other host the proxy returns at once for them.
     "/",
