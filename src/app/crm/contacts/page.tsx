@@ -10,7 +10,6 @@ import {
   contactViewCounts,
   listContacts,
   parseContactFilters,
-  type AccountStatus,
   type ContactFilters as Filters,
   type ContactRow,
 } from "@/lib/crm/contacts";
@@ -24,6 +23,13 @@ import {
   shortDate,
 } from "@/lib/crm/labels";
 import { ExportCsvButton } from "@/components/shared/export-csv-button";
+import {
+  ACCOUNT_CHIP,
+  AUDIENCE_CHIP,
+  COMMUNITY_CHIP,
+  REVIEW_CHIP,
+  Chip,
+} from "@/components/crm/ui";
 import { ContactFilters } from "./contact-filters";
 import { exportContactsCsv } from "./actions";
 
@@ -49,43 +55,6 @@ function hrefWith(f: Filters, changes: Record<string, string | null>) {
   return qs ? `/crm/contacts?${qs}` : "/crm/contacts";
 }
 
-const ACCOUNT_CHIP: Record<
-  AccountStatus,
-  { label: string; className: string }
-> = {
-  active: {
-    label: "Active",
-    className: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
-  },
-  pending: {
-    label: "Not activated",
-    className: "bg-amber-50 text-amber-800 ring-amber-600/20",
-  },
-  none: {
-    label: "No account",
-    className: "bg-slate-100 text-slate-600 ring-slate-500/15",
-  },
-};
-
-function Chip({
-  className,
-  children,
-}: {
-  className: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-inset",
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
 function ContactCells({ c }: { c: ContactRow }) {
   const name = fullName(c.firstName, c.lastName);
   const account = ACCOUNT_CHIP[c.account];
@@ -100,7 +69,12 @@ function ContactCells({ c }: { c: ContactRow }) {
             {initialsOf(c.firstName, c.lastName)}
           </span>
           <div className="min-w-0">
-            <p className="text-ink truncate font-semibold">{name}</p>
+            <Link
+              href={`/crm/contacts/${c.id}`}
+              className="text-ink hover:text-brand-700 block truncate font-semibold hover:underline focus-visible:underline"
+            >
+              {name}
+            </Link>
             <p className="truncate text-xs text-slate-500">
               {c.email ?? "No email"}
             </p>
@@ -111,13 +85,7 @@ function ContactCells({ c }: { c: ContactRow }) {
         {c.phone ?? <span className="text-slate-400">None</span>}
       </td>
       <td className="px-4 py-3">
-        <Chip
-          className={
-            c.audience === "eten"
-              ? "bg-brand-50 text-brand-700 ring-brand-600/15"
-              : "bg-sky-50 text-sky-700 ring-sky-600/15"
-          }
-        >
+        <Chip className={AUDIENCE_CHIP[c.audience]}>
           {AUDIENCE_LABEL[c.audience]}
         </Chip>
       </td>
@@ -135,15 +103,12 @@ function ContactCells({ c }: { c: ContactRow }) {
       <td className="hidden px-4 py-3 lg:table-cell">
         <div className="flex flex-wrap gap-1">
           {c.communities.map((k) => (
-            <Chip
-              key={k}
-              className="bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-600/15"
-            >
+            <Chip key={k} className={COMMUNITY_CHIP}>
               {COMMUNITY_LABEL[k] ?? k}
             </Chip>
           ))}
           {c.reviewReason && (
-            <Chip className="bg-rose-50 text-rose-700 ring-rose-600/15">
+            <Chip className={REVIEW_CHIP}>
               <AlertTriangle aria-hidden className="size-3" />
               {REVIEW_LABEL[c.reviewReason] ?? "Needs review"}
             </Chip>
