@@ -42,6 +42,10 @@ export type Dashboard = {
   customer: number;
   active: number;
   pending: number;
+  /** Platform accounts, counted like the admin overview's Total members
+   *  (staff logins left out), so the two numbers can be compared. */
+  accounts: number;
+  staffAccounts: number;
   noAccount: number;
   womenInTech: number;
   review: number;
@@ -62,8 +66,8 @@ type Row = {
   owner_id: string | null;
   member_id: string | null;
   account:
-    | { claimed_at: string | null }
-    | { claimed_at: string | null }[]
+    | { claimed_at: string | null; role: string }
+    | { claimed_at: string | null; role: string }[]
     | null;
 };
 
@@ -91,7 +95,7 @@ async function loadRows(): Promise<Row[]> {
     const { data, error } = await admin
       .from("crm_contacts")
       .select(
-        "audience, source, first_seen_at, communities, review_reason, owner_id, member_id, account:members!crm_contacts_member_id_fkey(claimed_at)",
+        "audience, source, first_seen_at, communities, review_reason, owner_id, member_id, account:members!crm_contacts_member_id_fkey(claimed_at, role)",
       )
       .order("id")
       .range(from, from + 999);
@@ -169,6 +173,8 @@ export async function loadDashboard(viewerId: string): Promise<Dashboard> {
     customer: 0,
     active: 0,
     pending: 0,
+    accounts: 0,
+    staffAccounts: 0,
     noAccount: 0,
     womenInTech: 0,
     review: 0,
@@ -185,6 +191,7 @@ export async function loadDashboard(viewerId: string): Promise<Dashboard> {
     d[r.audience] += 1;
     const account = Array.isArray(r.account) ? r.account[0] : r.account;
     if (!r.member_id || !account) d.noAccount += 1;
+    else if (account.role === "operations") d.staffAccounts += 1;
     else if (account.claimed_at) d.active += 1;
     else d.pending += 1;
     if (r.communities?.includes("women-in-tech")) d.womenInTech += 1;
@@ -203,6 +210,7 @@ export async function loadDashboard(viewerId: string): Promise<Dashboard> {
     if (w !== undefined) weeks[w][r.audience] += 1;
   }
 
+  d.accounts = d.active + d.pending;
   const sorted = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]);
   d.sources = sorted
     .slice(0, TOP_SOURCES)

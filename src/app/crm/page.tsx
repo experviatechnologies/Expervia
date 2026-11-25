@@ -194,10 +194,10 @@ export default async function CrmDashboard() {
           detail={<Delta now={d.new30} before={d.newPrev30} />}
         />
         <StatTile
-          label="Active platform accounts"
-          value={d.active}
+          label="Platform accounts"
+          value={d.accounts}
           href="/crm/contacts?account=active"
-          detail={`${fmt(d.pending)} created and waiting to be activated · ${fmt(d.noAccount)} with no account`}
+          detail={`${fmt(d.active)} active · ${fmt(d.pending)} waiting to activate · ${fmt(d.noAccount)} contacts with no account. Matches Total members in the admin overview (staff logins left out).`}
         />
         <StatTile
           label="Women in Tech"
