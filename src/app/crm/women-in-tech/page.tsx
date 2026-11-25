@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Info } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { getCrmSession } from "@/lib/crm/session";
 import { loadWomenInTech, type WitMember } from "@/lib/crm/women-in-tech";
 import { shortDate } from "@/lib/crm/labels";
@@ -182,18 +182,48 @@ export default async function WomenInTechPage() {
         />
       </div>
 
-      <div
-        role="note"
-        className="mt-4 flex gap-3 rounded-xl border border-[#ece9f5] bg-white p-4 text-sm text-slate-600"
+      <Card
+        title={`Contributor enquiries (${w.enquiriesTotal})`}
+        className="mt-6"
       >
-        <Info aria-hidden className="text-brand-600 mt-0.5 size-4 shrink-0" />
-        <p>
-          Contributor enquiries (mentors, speakers and leaders) from the Women
-          in Tech page are only emailed to the team today, so they are not
-          counted here yet. Page visits and conversion rate come from website
-          analytics.
+        <p className="-mt-2 mb-3 text-sm text-slate-600">
+          People who offered to mentor, speak, lead or help through the Women in
+          Tech page. Each one gets a follow-up task. Page visits and conversion
+          rate come from website analytics.
         </p>
-      </div>
+        {w.enquiries.length === 0 ? (
+          <p className="text-sm text-slate-600">No enquiries yet.</p>
+        ) : (
+          <ul className="divide-y divide-[#f1eef8]">
+            {w.enquiries.map((e) => (
+              <li
+                key={e.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-2.5"
+              >
+                <div className="min-w-0">
+                  {e.contactId ? (
+                    <Link
+                      href={`/crm/contacts/${e.contactId}`}
+                      className="text-ink hover:text-brand-700 font-semibold hover:underline"
+                    >
+                      {e.name}
+                    </Link>
+                  ) : (
+                    <span className="text-ink font-semibold">{e.name}</span>
+                  )}
+                  <p className="text-xs text-slate-500">
+                    {e.offer || "Contributor"}
+                    {e.email ? ` · ${e.email}` : ""}
+                  </p>
+                </div>
+                <span className="text-xs text-slate-500">
+                  {shortDate(e.at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <Card title="New members per week">

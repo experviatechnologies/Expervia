@@ -3,6 +3,7 @@ import { HONEYPOT_FIELD } from "@/lib/eten/honeypot";
 import { checkRateLimit, clientIp } from "@/lib/eten/spam-guard";
 import { verifyTurnstile } from "@/lib/eten/turnstile";
 import { witContributionInterests } from "@/config/women-in-tech";
+import { recordWitContributor } from "@/lib/crm/capture";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LIMITS = {
@@ -17,8 +18,10 @@ const LIMITS = {
  * ETEN Women in Tech contributor enquiry (PRD 10.2 / FR-05, FR-06, FR-15).
  *
  * An expression of interest only: it is emailed to the ETEN team inbox
- * (CONTACT_TO_EMAIL), the same approved route the contact form uses. Nothing
- * is stored in a new database, per the PRD's "no parallel member database".
+ * (CONTACT_TO_EMAIL), the same approved route the contact form uses, and
+ * recorded in the CRM (the PRD's open "mailbox, CRM or endpoint" question,
+ * answered 25 Nov 2026) with a follow-up task. The CRM step is best effort
+ * and never fails the form.
  * Same bot defences as /api/contact: honeypot + minimum fill time (silent
  * fake success), per-IP rate limit, and Turnstile once keys are configured.
  */
@@ -167,6 +170,16 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  // After the email has gone: a CRM problem must never fail the form.
+  await recordWitContributor({
+    fullName,
+    email,
+    role,
+    profile,
+    message,
+    interests,
+  });
 
   return Response.json({ success: true });
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 /**
  * The Women in Tech segment: contacts whose communities include
@@ -39,6 +40,16 @@ export type WitOverview = {
     source: string | null;
   }[];
   outreachTotal: number;
+  /** Contributor enquiries from the Women in Tech page (newest 20). */
+  enquiries: {
+    id: string;
+    contactId: string | null;
+    name: string;
+    email: string | null;
+    offer: string;
+    at: string;
+  }[];
+  enquiriesTotal: number;
 };
 
 type Raw = {
@@ -95,15 +106,18 @@ function tally(values: string[], top = 6) {
 
 export async function loadWomenInTech(): Promise<WitOverview> {
   const admin = getSupabaseAdmin();
-  const [{ data, error }, outreach] = await Promise.all([
-    admin
-      .from("crm_contacts")
-      .select(
-        "id, member_id, first_name, last_name, email, city, country, first_seen_at, account:members!crm_contacts_member_id_fkey(claimed_at)",
-      )
-      .contains("communities", [COMMUNITY])
-      .order("first_seen_at", { ascending: false })
-      .limit(2000),
+  const [{ data, error }, outreach, enquiries] = await Promise.all([
+    fetchAllRows<Raw>((a, b) =>
+      admin
+        .from("crm_contacts")
+        .select(
+          "id, member_id, first_name, last_name, email, city, country, first_seen_at, account:members!crm_contacts_member_id_fkey(claimed_at)",
+        )
+        .contains("communities", [COMMUNITY])
+        .order("first_seen_at", { ascending: false })
+        .order("id")
+        .range(a, b),
+    ),
     admin
       .from("crm_contacts")
       .select("id, first_name, last_name, email, source", { count: "exact" })
@@ -111,9 +125,18 @@ export async function loadWomenInTech(): Promise<WitOverview> {
       .not("communities", "cs", `{${COMMUNITY}}`)
       .order("first_seen_at", { ascending: false })
       .limit(10),
+    admin
+      .from("crm_activities")
+      .select(
+        "id, subject, occurred_at, contact_id, crm_contacts(first_name, last_name, email)",
+        { count: "exact" },
+      )
+      .eq("event", "wit_contributor_enquiry")
+      .order("occurred_at", { ascending: false })
+      .limit(20),
   ]);
   if (error) throw new Error(`Could not load Women in Tech: ${error.message}`);
-  const rows = (data ?? []) as Raw[];
+  const rows = data ?? [];
 
   const memberIds = rows.map((r) => r.member_id).filter(Boolean) as string[];
   const [profiles, pods, members, mentors] = memberIds.length
@@ -222,5 +245,27 @@ export async function loadWomenInTech(): Promise<WitOverview> {
       source: c.source,
     })),
     outreachTotal: outreach.count ?? 0,
+    enquiries: (enquiries.data ?? []).map((e) => {
+      const c = one(
+        e.crm_contacts as unknown as
+          | { first_name: string; last_name: string; email: string | null }
+          | { first_name: string; last_name: string; email: string | null }[]
+          | null,
+      );
+      return {
+        id: e.id as string,
+        contactId: e.contact_id as string | null,
+        name: c
+          ? `${c.first_name} ${c.last_name}`.trim() || "No name"
+          : "Unknown",
+        email: c?.email ?? null,
+        offer: ((e.subject as string) ?? "").replace(
+          /^Offered to contribute to Women in Tech:\s*/,
+          "",
+        ),
+        at: e.occurred_at as string,
+      };
+    }),
+    enquiriesTotal: enquiries.count ?? 0,
   };
 }
