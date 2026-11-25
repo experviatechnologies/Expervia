@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
-import { Contact2, LogOut, Menu, X } from "lucide-react";
+import { Contact2, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -22,13 +22,17 @@ type NavGroup = { heading?: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
   {
+    items: [{ href: "/crm", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
     heading: "CRM",
     items: [{ href: "/crm/contacts", label: "Contacts", icon: Contact2 }],
   },
 ];
 
+// "/crm" (the dashboard) is active only on itself, not on every CRM page.
 const isActive = (pathname: string, href: string) =>
-  pathname === href || pathname.startsWith(`${href}/`);
+  pathname === href || (href !== "/crm" && pathname.startsWith(`${href}/`));
 
 function Brand() {
   return (
