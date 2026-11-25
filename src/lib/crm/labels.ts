@@ -141,3 +141,25 @@ export const COMPANY_SORT_LABEL = {
   contacts: "Most contacts",
   newest: "Newest first",
 } as const;
+
+export const TASK_TYPE_LABEL = {
+  todo: "To-do",
+  call: "Call",
+  email: "Email",
+  meeting: "Meeting",
+  follow_up: "Follow-up",
+} as const;
+
+export const TASK_PRIORITY_LABEL = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+} as const;
+
+export const TASK_VIEW_LABEL = {
+  mine: "My tasks",
+  due: "Overdue and due today",
+  upcoming: "Upcoming",
+  open: "All open",
+  done: "Done",
+} as const;

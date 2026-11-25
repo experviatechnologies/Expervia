@@ -13,6 +13,9 @@ import {
 import { COMPANY_TYPE_CHIP, Card, Chip } from "@/components/crm/ui";
 import { LogActivity } from "@/components/crm/log-activity";
 import { Timeline } from "@/components/crm/timeline";
+import { tasksFor } from "@/lib/crm/tasks";
+import { TaskForm } from "@/components/crm/task-form";
+import { TaskList } from "@/components/crm/task-list";
 import { CompanyForm } from "../company-form";
 
 export const metadata: Metadata = { title: "Company" };
@@ -26,9 +29,10 @@ export default async function CompanyRecordPage({
   if (!session) redirect("/signin?next=/crm/companies");
 
   const { id } = await params;
-  const [company, owners] = await Promise.all([
+  const [company, owners, tasks] = await Promise.all([
     getCompanyRecord(id),
     listOwners(),
+    tasksFor({ kind: "company", id }),
   ]);
   if (!company) notFound();
 
@@ -152,6 +156,32 @@ export default async function CompanyRecordPage({
               </ul>
             )}
           </Card>
+          {tasks && (
+            <Card title="Tasks">
+              <TaskList
+                tasks={tasks}
+                showRelated={false}
+                showAssignee
+                empty="No tasks for this company yet."
+              />
+              <details className="mt-4 border-t border-[#f1eef8] pt-4">
+                <summary className="text-brand-700 cursor-pointer text-sm font-semibold hover:underline">
+                  Add a task
+                </summary>
+                <div className="mt-3">
+                  <TaskForm
+                    owners={owners}
+                    meId={session.member.id}
+                    fixed={{
+                      kind: "company",
+                      id: company.id,
+                      label: company.name,
+                    }}
+                  />
+                </div>
+              </details>
+            </Card>
+          )}
           <Card title="Log activity">
             <LogActivity target={{ kind: "company", id: company.id }} />
           </Card>

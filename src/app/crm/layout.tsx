@@ -5,6 +5,7 @@ import { ShieldAlert } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { CRM_ROLE_LABEL, getCrmSession } from "@/lib/crm/session";
 import { reviewCount } from "@/lib/crm/review";
+import { myDueCount } from "@/lib/crm/tasks";
 import { CrmShell } from "@/components/crm/shell";
 
 export const metadata: Metadata = {
@@ -50,7 +51,10 @@ export default async function CrmLayout({
     );
   }
 
-  const waiting = await reviewCount();
+  const [waiting, due] = await Promise.all([
+    reviewCount(),
+    myDueCount(member.id),
+  ]);
 
   return (
     <CrmShell
@@ -59,6 +63,7 @@ export default async function CrmLayout({
       roleLabel={session.roles.map((r) => CRM_ROLE_LABEL[r]).join(" · ")}
       showAdminLink={session.roles.includes("operations")}
       reviewCount={waiting ?? 0}
+      tasksDue={due ?? 0}
     >
       {children}
     </CrmShell>

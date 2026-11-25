@@ -41,6 +41,9 @@ import { PropertiesForm } from "./properties-form";
 import { LogActivity } from "@/components/crm/log-activity";
 import { Timeline } from "@/components/crm/timeline";
 import { fixedListsFor } from "@/lib/crm/lists";
+import { tasksFor } from "@/lib/crm/tasks";
+import { TaskForm } from "@/components/crm/task-form";
+import { TaskList } from "@/components/crm/task-list";
 import { ContactLists } from "./contact-lists";
 
 type Params = Promise<{ id: string }>;
@@ -70,10 +73,11 @@ export default async function ContactRecordPage({
   if (!session) redirect("/crm");
 
   const { id } = await params;
-  const [contact, owners, lists] = await Promise.all([
+  const [contact, owners, lists, tasks] = await Promise.all([
     getContactRecord(id),
     listOwners(),
     fixedListsFor(id),
+    tasksFor({ kind: "contact", id }),
   ]);
   if (!contact) notFound();
 
@@ -190,6 +194,32 @@ export default async function ContactRecordPage({
         {/* Right column: account, logging and timeline */}
         <div className="space-y-6">
           <AccountCard account={contact.account} isOps={isOps} />
+          {tasks && (
+            <Card title="Tasks">
+              <TaskList
+                tasks={tasks}
+                showRelated={false}
+                showAssignee
+                empty="No tasks for this person yet."
+              />
+              <details className="mt-4 border-t border-[#f1eef8] pt-4">
+                <summary className="text-brand-700 cursor-pointer text-sm font-semibold hover:underline">
+                  Add a task
+                </summary>
+                <div className="mt-3">
+                  <TaskForm
+                    owners={owners}
+                    meId={session.member.id}
+                    fixed={{
+                      kind: "contact",
+                      id: contact.id,
+                      label: name,
+                    }}
+                  />
+                </div>
+              </details>
+            </Card>
+          )}
           <Card title="Log activity">
             <LogActivity target={{ kind: "contact", id: contact.id }} />
           </Card>

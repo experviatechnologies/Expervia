@@ -14,6 +14,7 @@ import {
   Contact2,
   LayoutDashboard,
   ListChecks,
+  ListTodo,
   ListFilter,
   Sparkles,
   LogOut,
@@ -27,7 +28,7 @@ type NavItem = {
   href: string;
   label: string;
   /** Shows a count next to the label (e.g. people waiting for review). */
-  badge?: "review";
+  badge?: "review" | "tasks";
   icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 };
 type NavGroup = { heading?: string; items: NavItem[] };
@@ -37,18 +38,29 @@ const NAV: NavGroup[] = [
     items: [{ href: "/crm", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
-    heading: "CRM",
+    heading: "People",
     items: [
       { href: "/crm/contacts", label: "Contacts", icon: Contact2 },
       { href: "/crm/companies", label: "Companies", icon: Building2 },
-      { href: "/crm/women-in-tech", label: "Women in Tech", icon: Sparkles },
       { href: "/crm/lists", label: "Lists", icon: ListFilter },
+    ],
+  },
+  {
+    heading: "Work",
+    items: [
+      { href: "/crm/tasks", label: "Tasks", icon: ListTodo, badge: "tasks" },
       {
         href: "/crm/review",
         label: "Review queue",
         icon: ListChecks,
         badge: "review",
       },
+    ],
+  },
+  {
+    heading: "Communities",
+    items: [
+      { href: "/crm/women-in-tech", label: "Women in Tech", icon: Sparkles },
     ],
   },
 ];
@@ -83,11 +95,13 @@ function Sidebar({
   pathname,
   showAdminLink,
   reviewCount,
+  tasksDue,
   onNavigate,
 }: {
   pathname: string;
   showAdminLink: boolean;
   reviewCount: number;
+  tasksDue: number;
   onNavigate?: () => void;
 }) {
   return (
@@ -103,7 +117,12 @@ function Sidebar({
             )}
             <ul className="space-y-0.5">
               {group.items.map(({ href, label, icon: Icon, badge }) => {
-                const count = badge === "review" ? reviewCount : 0;
+                const count =
+                  badge === "review"
+                    ? reviewCount
+                    : badge === "tasks"
+                      ? tasksDue
+                      : 0;
                 const active = isActive(pathname, href);
                 return (
                   <li key={href}>
@@ -152,6 +171,7 @@ export function CrmShell({
   roleLabel,
   showAdminLink,
   reviewCount,
+  tasksDue,
   children,
 }: {
   name: string;
@@ -159,6 +179,7 @@ export function CrmShell({
   roleLabel: string;
   showAdminLink: boolean;
   reviewCount: number;
+  tasksDue: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -195,6 +216,7 @@ export function CrmShell({
       pathname={pathname}
       showAdminLink={showAdminLink}
       reviewCount={reviewCount}
+      tasksDue={tasksDue}
       onNavigate={onNavigate}
     />
   );
