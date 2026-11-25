@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import {
+  Building2,
   Contact2,
   LayoutDashboard,
   ListChecks,
@@ -37,6 +38,7 @@ const NAV: NavGroup[] = [
     heading: "CRM",
     items: [
       { href: "/crm/contacts", label: "Contacts", icon: Contact2 },
+      { href: "/crm/companies", label: "Companies", icon: Building2 },
       {
         href: "/crm/review",
         label: "Review queue",

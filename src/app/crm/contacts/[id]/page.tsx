@@ -4,16 +4,10 @@ import { notFound, redirect } from "next/navigation";
 import {
   AlertTriangle,
   ArrowLeft,
-  CalendarClock,
-  ClipboardList,
   ExternalLink,
-  FileText,
   Mail,
   MessageCircle,
-  Pencil,
   Phone,
-  Settings2,
-  Users,
 } from "lucide-react";
 import { getCrmSession } from "@/lib/crm/session";
 import {
@@ -21,14 +15,11 @@ import {
   listOwners,
   type AccountSummary,
   type ContactRecord,
-  type TimelineEntry,
 } from "@/lib/crm/record";
 import {
-  ACTIVITY_LABEL,
   AUDIENCE_LABEL,
   COMMUNITY_LABEL,
   POD_ROLE_LABEL,
-  PRODUCT_LABEL,
   REVIEW_LABEL,
   dateTime,
   fullName,
@@ -46,9 +37,9 @@ import {
   Field,
   type AccountStatus,
 } from "@/components/crm/ui";
-import { cn } from "@/lib/utils";
 import { PropertiesForm } from "./properties-form";
-import { LogActivity } from "./log-activity";
+import { LogActivity } from "@/components/crm/log-activity";
+import { Timeline } from "@/components/crm/timeline";
 
 type Params = Promise<{ id: string }>;
 
@@ -188,7 +179,7 @@ export default async function ContactRecordPage({
         <div className="space-y-6">
           <AccountCard account={contact.account} isOps={isOps} />
           <Card title="Log activity">
-            <LogActivity contactId={contact.id} />
+            <LogActivity target={{ kind: "contact", id: contact.id }} />
           </Card>
           <Timeline entries={contact.timeline} />
         </div>
@@ -272,7 +263,19 @@ function Details({ contact }: { contact: ContactRecord }) {
               : null}
         </Field>
         <Field label="Source">{contact.source}</Field>
-        <Field label="Company">{contact.company}</Field>
+        <Field label="Company">
+          {contact.company &&
+            (contact.companyId ? (
+              <Link
+                href={`/crm/companies/${contact.companyId}`}
+                className="text-brand-700 font-semibold hover:underline"
+              >
+                {contact.company}
+              </Link>
+            ) : (
+              contact.company
+            ))}
+        </Field>
         <Field label="First seen">{shortDate(contact.firstSeenAt)}</Field>
         <Field label="Last activity">{dateTime(contact.lastActivityAt)}</Field>
       </dl>
@@ -399,93 +402,6 @@ function AccountCard({
           </Field>
         </dl>
       </div>
-    </Card>
-  );
-}
-
-const TYPE_ICON: Record<string, typeof FileText> = {
-  note: FileText,
-  call: Phone,
-  meeting: Users,
-  email: Mail,
-  form: ClipboardList,
-  stage: Pencil,
-  task: CalendarClock,
-};
-
-const TYPE_TINT: Record<string, string> = {
-  note: "bg-amber-50 text-amber-700",
-  call: "bg-emerald-50 text-emerald-700",
-  meeting: "bg-sky-50 text-sky-700",
-  email: "bg-brand-50 text-brand-700",
-  form: "bg-fuchsia-50 text-fuchsia-700",
-  stage: "bg-slate-100 text-slate-600",
-};
-
-function Timeline({ entries }: { entries: TimelineEntry[] }) {
-  return (
-    <Card title="Timeline">
-      {entries.length === 0 ? (
-        <p className="text-sm text-slate-600">Nothing has been logged yet.</p>
-      ) : (
-        <ol className="relative space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[17px] before:w-px before:bg-[#ece9f5]">
-          {entries.map((a) => {
-            const Icon = TYPE_ICON[a.type] ?? Settings2;
-            return (
-              <li key={a.id} className="relative flex gap-4">
-                <span
-                  aria-hidden
-                  className={cn(
-                    "relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full ring-4 ring-white",
-                    TYPE_TINT[a.type] ?? "bg-slate-100 text-slate-600",
-                  )}
-                >
-                  <Icon className="size-4" />
-                </span>
-                <div className="min-w-0 flex-1 pt-1">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <p className="text-sm">
-                      <span className="text-ink font-semibold">
-                        {ACTIVITY_LABEL[a.type] ?? a.type}
-                      </span>
-                      {a.product !== "crm" && (
-                        <span className="text-slate-500">
-                          {" "}
-                          · {PRODUCT_LABEL[a.product] ?? a.product}
-                        </span>
-                      )}
-                      {a.outcome && (
-                        <span className="text-slate-500"> · {a.outcome}</span>
-                      )}
-                    </p>
-                    <time
-                      dateTime={a.occurredAt}
-                      className="text-xs whitespace-nowrap text-slate-500"
-                    >
-                      {dateTime(a.occurredAt)}
-                    </time>
-                  </div>
-                  {a.subject && (
-                    <p className="text-ink mt-0.5 text-sm font-medium">
-                      {a.subject}
-                    </p>
-                  )}
-                  {a.body && (
-                    <p className="mt-1 text-sm break-words whitespace-pre-line text-slate-700">
-                      {a.body}
-                    </p>
-                  )}
-                  <p className="mt-1 text-xs text-slate-500">
-                    {a.actorName
-                      ? `By ${a.actorName}`
-                      : "Recorded automatically"}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      )}
     </Card>
   );
 }

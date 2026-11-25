@@ -28,6 +28,13 @@ export const AUDIENCE_CHIP = {
 
 export const COMMUNITY_CHIP =
   "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-600/15";
+export const COMPANY_TYPE_CHIP = {
+  customer: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
+  prospect: "bg-sky-50 text-sky-700 ring-sky-600/15",
+  partner: "bg-brand-50 text-brand-700 ring-brand-600/15",
+  member_employer: "bg-slate-100 text-slate-600 ring-slate-500/15",
+} as const;
+
 export const REVIEW_CHIP = "bg-rose-50 text-rose-700 ring-rose-600/15";
 
 export function Chip({

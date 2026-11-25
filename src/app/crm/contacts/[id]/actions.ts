@@ -6,86 +6,20 @@ import { getCrmSession } from "@/lib/crm/session";
 import {
   LEAD_STATUSES,
   LIFECYCLES,
-  LOGGABLE_TYPES,
   isUuid,
   listOwners,
   type LeadStatus,
   type Lifecycle,
-  type LoggableType,
 } from "@/lib/crm/record";
 import { LEAD_STATUS_LABEL, LIFECYCLE_LABEL } from "@/lib/crm/labels";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-const MAX_BODY = 5000;
-const MAX_SUBJECT = 200;
 const MAX_TAGS = 20;
 const MAX_TAG = 40;
 
 const includes = <T extends string>(list: readonly T[], v: unknown): v is T =>
   typeof v === "string" && (list as readonly string[]).includes(v);
-
-/** Log a note, call, meeting or email on a contact's timeline. */
-export async function logActivity(input: {
-  contactId: string;
-  type: LoggableType;
-  subject?: string;
-  body: string;
-  outcome?: string;
-  occurredAt?: string;
-}): Promise<ActionResult> {
-  const session = await getCrmSession();
-  if (!session)
-    return { ok: false, error: "You don't have access to the CRM." };
-
-  if (!isUuid(input.contactId)) return { ok: false, error: "Unknown contact." };
-  if (!includes(LOGGABLE_TYPES, input.type)) {
-    return { ok: false, error: "Choose what you are logging." };
-  }
-  const body = (input.body ?? "").trim();
-  const subject = (input.subject ?? "").trim();
-  const outcome = (input.outcome ?? "").trim();
-  if (!body)
-    return { ok: false, error: "Add a few words about what happened." };
-  if (body.length > MAX_BODY) {
-    return { ok: false, error: `Keep it under ${MAX_BODY} characters.` };
-  }
-  if (subject.length > MAX_SUBJECT) {
-    return { ok: false, error: "The title is too long." };
-  }
-
-  let occurredAt = new Date();
-  if (input.occurredAt) {
-    const d = new Date(input.occurredAt);
-    // Allow back-dating (logging yesterday's call) but not the future.
-    if (Number.isNaN(d.getTime()) || d.getTime() > Date.now() + 5 * 60_000) {
-      return {
-        ok: false,
-        error: "Pick a date and time that isn't in the future.",
-      };
-    }
-    occurredAt = d;
-  }
-
-  const { error } = await getSupabaseAdmin()
-    .from("crm_activities")
-    .insert({
-      contact_id: input.contactId,
-      type: input.type,
-      product: "crm",
-      event: `${input.type}_logged`,
-      subject: subject || null,
-      body,
-      payload: outcome ? { outcome: outcome.slice(0, 100) } : {},
-      actor_id: session.member.id,
-      occurred_at: occurredAt.toISOString(),
-    });
-  if (error) {
-    return { ok: false, error: "Couldn't save it. Please try again." };
-  }
-  revalidatePath(`/crm/contacts/${input.contactId}`);
-  return { ok: true };
-}
 
 /** Change lead status, lifecycle stage, owner or tags. */
 export async function updateContact(input: {

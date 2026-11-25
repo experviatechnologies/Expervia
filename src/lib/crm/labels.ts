@@ -123,3 +123,21 @@ export function money(minor: number, currency: string): string {
     return `${currency} ${(minor / 100).toFixed(0)}`;
   }
 }
+
+export const COMPANY_TYPE_LABEL = {
+  customer: "Customer",
+  prospect: "Prospect",
+  partner: "Partner",
+  member_employer: "Member employer",
+} as const;
+
+export const COMPANY_VIEW_LABEL = {
+  all: "All companies",
+  ...COMPANY_TYPE_LABEL,
+} as const;
+
+export const COMPANY_SORT_LABEL = {
+  name: "Name A to Z",
+  contacts: "Most contacts",
+  newest: "Newest first",
+} as const;

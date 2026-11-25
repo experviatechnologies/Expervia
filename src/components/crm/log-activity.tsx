@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Log a note, call, meeting or email on the contact's timeline. Calls and
+ * Log a note, call, meeting or email on a contact's or company's timeline. Calls and
  * meetings have an outcome. "When" defaults to now and can be set earlier,
  * for something that happened before it was written down.
  */
@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ACTIVITY_LABEL } from "@/lib/crm/labels";
 import type { LoggableType } from "@/lib/crm/record";
-import { logActivity } from "./actions";
+import { logActivity, type ActivityTarget } from "@/app/crm/activity-actions";
 
 const TYPES: LoggableType[] = ["note", "call", "meeting", "email"];
 
@@ -29,7 +29,7 @@ const PLACEHOLDER: Record<LoggableType, string> = {
 const fieldClass =
   "w-full rounded-lg border border-[#e4e0f0] bg-white px-3 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-3 focus:ring-brand-100";
 
-export function LogActivity({ contactId }: { contactId: string }) {
+export function LogActivity({ target }: { target: ActivityTarget }) {
   const [type, setType] = useState<LoggableType>("note");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -44,7 +44,7 @@ export function LogActivity({ contactId }: { contactId: string }) {
     setError(null);
     start(async () => {
       const res = await logActivity({
-        contactId,
+        target,
         type,
         subject,
         body,

@@ -75,6 +75,7 @@ export type ContactRecord = {
   phone: string | null;
   jobTitle: string | null;
   company: string | null;
+  companyId: string | null;
   audience: "eten" | "customer";
   lifecycle: Lifecycle;
   leadStatus: LeadStatus;
@@ -277,7 +278,7 @@ export async function getContactRecord(
   const { data: c, error } = await admin
     .from("crm_contacts")
     .select(
-      "id, member_id, first_name, last_name, email, phone, job_title, audience, lifecycle, lead_status, owner_id, city, state, country, gender, source, tags, communities, eten, email_opt_in, review_reason, first_seen_at, last_activity_at, crm_companies(name)",
+      "id, member_id, first_name, last_name, email, phone, job_title, audience, lifecycle, lead_status, owner_id, city, state, country, gender, source, tags, communities, eten, email_opt_in, review_reason, first_seen_at, last_activity_at, crm_companies(id, name)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -297,8 +298,19 @@ export async function getContactRecord(
     phone: c.phone,
     jobTitle: c.job_title,
     company:
-      one(c.crm_companies as { name: string } | { name: string }[] | null)
-        ?.name ?? null,
+      one(
+        c.crm_companies as
+          | { id: string; name: string }
+          | { id: string; name: string }[]
+          | null,
+      )?.name ?? null,
+    companyId:
+      one(
+        c.crm_companies as
+          | { id: string; name: string }
+          | { id: string; name: string }[]
+          | null,
+      )?.id ?? null,
     audience: c.audience,
     lifecycle: c.lifecycle,
     leadStatus: c.lead_status,
