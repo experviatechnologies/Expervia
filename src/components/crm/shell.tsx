@@ -14,6 +14,7 @@ import {
   Building2,
   Contact2,
   Handshake,
+  MailCheck,
   LayoutDashboard,
   ListChecks,
   ListTodo,
@@ -52,6 +53,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/crm/deals", label: "Deals", icon: Handshake },
       { href: "/crm/tasks", label: "Tasks", icon: ListTodo, badge: "tasks" },
+      { href: "/crm/activation", label: "Activation emails", icon: MailCheck },
       {
         href: "/crm/review",
         label: "Review queue",

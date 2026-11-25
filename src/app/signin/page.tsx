@@ -40,9 +40,9 @@ const perks = [
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; next?: string; notice?: string }>;
 }) {
-  const { error, next } = await searchParams;
+  const { error, next, notice } = await searchParams;
   // Only same-site paths (e.g. /tracker); anything else falls back.
   const safeNext = toSafeNext(next);
 
@@ -79,6 +79,27 @@ export default async function SignInPage({
         {error === "link_invalid" && (
           <p role="alert" className={authErrorClass}>
             That sign-in link was invalid or has expired. Please try again.
+          </p>
+        )}
+
+        {notice === "already_active" && (
+          <p
+            role="status"
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          >
+            Your account is already active. Sign in with your email and
+            password, or choose &ldquo;Forgot password&rdquo; if you need a new
+            one.
+          </p>
+        )}
+        {(notice === "activation_expired" ||
+          notice === "activation_failed") && (
+          <p role="alert" className={authErrorClass}>
+            {notice === "activation_expired"
+              ? "That activation link has expired or isn't valid."
+              : "We couldn't open that activation link just now."}{" "}
+            Choose &ldquo;Forgot password&rdquo; below with your email address
+            and we&apos;ll send you a new link.
           </p>
         )}
 
