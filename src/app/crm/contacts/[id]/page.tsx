@@ -40,6 +40,8 @@ import {
 import { PropertiesForm } from "./properties-form";
 import { LogActivity } from "@/components/crm/log-activity";
 import { Timeline } from "@/components/crm/timeline";
+import { fixedListsFor } from "@/lib/crm/lists";
+import { ContactLists } from "./contact-lists";
 
 type Params = Promise<{ id: string }>;
 
@@ -68,9 +70,10 @@ export default async function ContactRecordPage({
   if (!session) redirect("/crm");
 
   const { id } = await params;
-  const [contact, owners] = await Promise.all([
+  const [contact, owners, lists] = await Promise.all([
     getContactRecord(id),
     listOwners(),
+    fixedListsFor(id),
   ]);
   if (!contact) notFound();
 
@@ -173,6 +176,15 @@ export default async function ContactRecordPage({
             />
           </Card>
           <Details contact={contact} />
+          {lists && (
+            <Card title="Lists">
+              <ContactLists
+                contactId={contact.id}
+                lists={lists.all}
+                memberOf={lists.memberOf}
+              />
+            </Card>
+          )}
         </div>
 
         {/* Right column: account, logging and timeline */}

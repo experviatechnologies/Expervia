@@ -2,35 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCrmSession } from "@/lib/crm/session";
 import {
   CONTACT_VIEWS,
+  SAVED_FILTER_KEYS,
   contactViewCounts,
+  filtersToParams,
   listContacts,
   parseContactFilters,
   type ContactFilters as Filters,
-  type ContactRow,
 } from "@/lib/crm/contacts";
-import {
-  AUDIENCE_LABEL,
-  COMMUNITY_LABEL,
-  REVIEW_LABEL,
-  VIEW_LABEL,
-  fullName,
-  initialsOf,
-  shortDate,
-} from "@/lib/crm/labels";
+import { describeFilters } from "@/lib/crm/lists";
+import { listOwners } from "@/lib/crm/record";
+import { LEAD_STATUS_LABEL, VIEW_LABEL } from "@/lib/crm/labels";
 import { ExportCsvButton } from "@/components/shared/export-csv-button";
-import {
-  ACCOUNT_CHIP,
-  AUDIENCE_CHIP,
-  COMMUNITY_CHIP,
-  REVIEW_CHIP,
-  Chip,
-} from "@/components/crm/ui";
+import { ContactsTable } from "@/components/crm/contacts-table";
 import { ContactFilters } from "./contact-filters";
+import { SaveAsList } from "./save-as-list";
 import { exportContactsCsv } from "./actions";
 
 export const metadata: Metadata = { title: "Contacts" };
@@ -42,85 +32,11 @@ type SearchParams = Record<string, string | string[] | undefined>;
 /** URL for this list with some params changed (null removes one). */
 function hrefWith(f: Filters, changes: Record<string, string | null>) {
   const p = new URLSearchParams();
-  const base: Record<string, string> = {
-    view: f.view === "all" ? "" : f.view,
-    account: f.account === "any" ? "" : f.account,
-    sort: f.sort === "newest" ? "" : f.sort,
-    q: f.q,
-    gender: f.gender === "any" ? "" : f.gender,
-  };
-  for (const [k, v] of Object.entries({ ...base, ...changes })) {
+  for (const [k, v] of Object.entries({ ...filtersToParams(f), ...changes })) {
     if (v) p.set(k, v);
   }
   const qs = p.toString();
   return qs ? `/crm/contacts?${qs}` : "/crm/contacts";
-}
-
-function ContactCells({ c }: { c: ContactRow }) {
-  const name = fullName(c.firstName, c.lastName);
-  const account = ACCOUNT_CHIP[c.account];
-  return (
-    <>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span
-            aria-hidden
-            className="bg-brand-50 text-brand-700 flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-          >
-            {initialsOf(c.firstName, c.lastName)}
-          </span>
-          <div className="min-w-0">
-            <Link
-              href={`/crm/contacts/${c.id}`}
-              className="text-ink hover:text-brand-700 block truncate font-semibold hover:underline focus-visible:underline"
-            >
-              {name}
-            </Link>
-            <p className="truncate text-xs text-slate-500">
-              {c.email ?? "No email"}
-            </p>
-          </div>
-        </div>
-      </td>
-      <td className="hidden px-4 py-3 text-sm whitespace-nowrap text-slate-600 md:table-cell">
-        {c.phone ?? <span className="text-slate-400">None</span>}
-      </td>
-      <td className="px-4 py-3">
-        <Chip className={AUDIENCE_CHIP[c.audience]}>
-          {AUDIENCE_LABEL[c.audience]}
-        </Chip>
-      </td>
-      <td className="px-4 py-3">
-        <Chip className={account.className}>{account.label}</Chip>
-      </td>
-      <td className="hidden px-4 py-3 text-sm whitespace-nowrap text-slate-600 lg:table-cell">
-        {c.source ?? ""}
-        {c.company && (
-          <p className="max-w-[14rem] truncate text-xs text-slate-500">
-            {c.company}
-          </p>
-        )}
-      </td>
-      <td className="hidden px-4 py-3 lg:table-cell">
-        <div className="flex flex-wrap gap-1">
-          {c.communities.map((k) => (
-            <Chip key={k} className={COMMUNITY_CHIP}>
-              {COMMUNITY_LABEL[k] ?? k}
-            </Chip>
-          ))}
-          {c.reviewReason && (
-            <Chip className={REVIEW_CHIP}>
-              <AlertTriangle aria-hidden className="size-3" />
-              {REVIEW_LABEL[c.reviewReason] ?? "Needs review"}
-            </Chip>
-          )}
-        </div>
-      </td>
-      <td className="hidden px-4 py-3 text-sm whitespace-nowrap text-slate-600 xl:table-cell">
-        {shortDate(c.firstSeenAt)}
-      </td>
-    </>
-  );
 }
 
 export default async function ContactsPage({
@@ -137,9 +53,10 @@ export default async function ContactsPage({
   const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
   const requested = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
 
-  const [counts, first] = await Promise.all([
+  const [counts, first, owners] = await Promise.all([
     contactViewCounts(),
     listContacts(filters, requested, PAGE_SIZE),
+    listOwners(),
   ]);
   const lastPage = Math.max(1, Math.ceil(first.total / PAGE_SIZE));
   // A page number past the end (e.g. after narrowing a search) shows the last.
@@ -147,21 +64,33 @@ export default async function ContactsPage({
   const { rows, total } =
     page === requested ? first : await listContacts(filters, page, PAGE_SIZE);
 
-  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const to = Math.min(page * PAGE_SIZE, total);
-  const exportArgs = Object.fromEntries(
-    Object.entries({
-      view: filters.view,
-      account: filters.account,
-      sort: filters.sort,
-      q: filters.q,
-      gender: filters.gender === "any" ? "" : filters.gender,
-    }).filter(([, v]) => v),
-  );
+  const saved = filtersToParams(filters, SAVED_FILTER_KEYS);
+  const ownerName = (id: string) =>
+    id === "none"
+      ? "No owner"
+      : (owners.find((o) => o.id === id)?.name ?? "Former staff member");
+
+  // Filters set from links (not the bar above the table) show as chips.
+  const chips: { label: string; clear: string }[] = [
+    filters.gender !== "any" && {
+      label: filters.gender === "female" ? "Women" : "Men",
+      clear: "gender",
+    },
+    filters.leadStatus !== "any" && {
+      label: `Lead status: ${LEAD_STATUS_LABEL[filters.leadStatus]}`,
+      clear: "leadStatus",
+    },
+    filters.source && { label: `Source: ${filters.source}`, clear: "source" },
+    filters.tag && { label: `Tag: ${filters.tag}`, clear: "tag" },
+    filters.owner && {
+      label: `Owner: ${ownerName(filters.owner)}`,
+      clear: "owner",
+    },
+  ].filter(Boolean) as { label: string; clear: string }[];
 
   return (
     <div className="mx-auto max-w-7xl">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div>
           <h1 className="text-ink text-2xl font-bold tracking-tight sm:text-3xl">
             Contacts
@@ -171,12 +100,18 @@ export default async function ContactsPage({
             without a platform account.
           </p>
         </div>
-        <ExportCsvButton
-          action={exportContactsCsv}
-          args={exportArgs}
-          filename={`crm-contacts-${filters.view}.csv`}
-          className="text-ink hover:border-brand-300 hover:bg-brand-50 inline-flex h-10 items-center gap-2 self-start rounded-lg border border-[#e4e0f0] bg-white px-3.5 text-sm font-semibold transition-colors disabled:opacity-50 sm:self-auto"
-        />
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <ExportCsvButton
+            action={exportContactsCsv}
+            args={filtersToParams(filters)}
+            filename={`crm-contacts-${filters.view}.csv`}
+            className="text-ink hover:border-brand-300 hover:bg-brand-50 inline-flex h-10 items-center gap-2 rounded-lg border border-[#e4e0f0] bg-white px-3.5 text-sm font-semibold transition-colors disabled:opacity-50"
+          />
+          <SaveAsList
+            filters={saved}
+            summary={describeFilters(filters, owners).join(" · ")}
+          />
+        </div>
       </div>
 
       <nav
@@ -189,7 +124,10 @@ export default async function ContactsPage({
             return (
               <li key={v}>
                 <Link
-                  href={hrefWith(filters, { view: v === "all" ? null : v })}
+                  href={hrefWith(filters, {
+                    view: v === "all" ? null : v,
+                    page: null,
+                  })}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "-mb-px flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors",
@@ -222,150 +160,56 @@ export default async function ContactsPage({
         </Suspense>
       </div>
 
-      {filters.gender !== "any" && (
-        <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          Showing {filters.gender === "female" ? "women" : "men"} only
-          <Link
-            href={hrefWith(filters, { gender: null })}
-            className="text-brand-700 font-semibold hover:underline"
-          >
-            Show everyone
-          </Link>
-        </p>
-      )}
-
-      <section
-        aria-label="Contacts list"
-        className="mt-5 overflow-hidden rounded-2xl border border-[#ece9f5] bg-white shadow-[0_1px_2px_rgba(23,19,35,0.04)]"
-      >
-        {rows.length === 0 ? (
-          <div className="flex flex-col items-center px-6 py-16 text-center">
-            <span className="bg-brand-50 text-brand-700 flex size-12 items-center justify-center rounded-full">
-              <Users aria-hidden className="size-6" />
-            </span>
-            <h2 className="text-ink mt-4 font-semibold">No contacts found</h2>
-            <p className="mt-1 max-w-sm text-sm text-slate-600">
-              Nothing matches these filters. Try a different search or view.
-            </p>
+      {chips.length > 0 && (
+        <ul
+          aria-label="Other filters"
+          className="mt-3 flex flex-wrap items-center gap-2 text-sm"
+        >
+          {chips.map((c) => (
+            <li key={c.clear}>
+              <Link
+                href={hrefWith(filters, { [c.clear]: null, page: null })}
+                className="bg-brand-50 text-brand-800 hover:bg-brand-100 inline-flex items-center gap-1 rounded-full py-1 pr-2 pl-3 font-semibold"
+                aria-label={`Remove filter ${c.label}`}
+              >
+                {c.label}
+                <X aria-hidden className="size-3.5" />
+              </Link>
+            </li>
+          ))}
+          <li>
             <Link
               href="/crm/contacts"
-              className="text-brand-700 mt-4 text-sm font-semibold hover:underline"
+              className="hover:text-brand-700 font-semibold text-slate-600 hover:underline"
             >
               Clear all filters
             </Link>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <caption className="sr-only">
-                {VIEW_LABEL[filters.view]}, {from} to {to} of {total}
-              </caption>
-              <thead className="border-b border-[#ece9f5] bg-[#fbfaff] text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                <tr>
-                  <th scope="col" className="px-4 py-2.5">
-                    Contact
-                  </th>
-                  <th scope="col" className="hidden px-4 py-2.5 md:table-cell">
-                    Phone
-                  </th>
-                  <th scope="col" className="px-4 py-2.5">
-                    Audience
-                  </th>
-                  <th scope="col" className="px-4 py-2.5">
-                    Account
-                  </th>
-                  <th scope="col" className="hidden px-4 py-2.5 lg:table-cell">
-                    Source
-                  </th>
-                  <th scope="col" className="hidden px-4 py-2.5 lg:table-cell">
-                    Communities and flags
-                  </th>
-                  <th scope="col" className="hidden px-4 py-2.5 xl:table-cell">
-                    First seen
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f1eef8]">
-                {rows.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="transition-colors hover:bg-[#fbfaff]"
-                  >
-                    <ContactCells c={c} />
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {total > 0 && (
-          <div className="flex flex-col gap-3 border-t border-[#ece9f5] px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              Showing <span className="text-ink font-semibold">{from}</span> to{" "}
-              <span className="text-ink font-semibold">{to}</span> of{" "}
-              <span className="text-ink font-semibold">
-                {total.toLocaleString("en-GB")}
-              </span>
-            </p>
-            <nav aria-label="Pages" className="flex items-center gap-2">
-              <PageLink
-                href={hrefWith(filters, { page: String(page - 1) })}
-                disabled={page <= 1}
-                label="Previous page"
-              >
-                <ChevronLeft aria-hidden className="size-4" />
-                Previous
-              </PageLink>
-              <span className="tabular-nums">
-                Page {page} of {lastPage}
-              </span>
-              <PageLink
-                href={hrefWith(filters, { page: String(page + 1) })}
-                disabled={page >= lastPage}
-                label="Next page"
-              >
-                Next
-                <ChevronRight aria-hidden className="size-4" />
-              </PageLink>
-            </nav>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function PageLink({
-  href,
-  disabled,
-  label,
-  children,
-}: {
-  href: string;
-  disabled: boolean;
-  label: string;
-  children: React.ReactNode;
-}) {
-  const className =
-    "inline-flex h-9 items-center gap-1 rounded-lg border border-[#e4e0f0] bg-white px-3 font-semibold";
-  if (disabled) {
-    return (
-      <span aria-disabled className={cn(className, "text-slate-300")}>
-        {children}
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className={cn(
-        className,
-        "text-ink hover:border-brand-300 hover:bg-brand-50 transition-colors",
+          </li>
+        </ul>
       )}
-    >
-      {children}
-    </Link>
+
+      <div className="mt-5">
+        <ContactsTable
+          rows={rows}
+          total={total}
+          page={page}
+          pageSize={PAGE_SIZE}
+          caption={VIEW_LABEL[filters.view]}
+          pageHref={(p) => hrefWith(filters, { page: String(p) })}
+          empty={{
+            title: "No contacts found",
+            text: "Nothing matches these filters. Try a different search or view.",
+            action: (
+              <Link
+                href="/crm/contacts"
+                className="text-brand-700 text-sm font-semibold hover:underline"
+              >
+                Clear all filters
+              </Link>
+            ),
+          }}
+        />
+      </div>
+    </div>
   );
 }

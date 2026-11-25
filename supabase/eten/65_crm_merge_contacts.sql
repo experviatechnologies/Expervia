@@ -1,12 +1,14 @@
 -- ============================================================================
 -- ETEN - 65 - CRM: merge two contact records into one (25 Nov 2026)
 -- ----------------------------------------------------------------------------
--- Run AFTER 64. Safe to re-run.
+-- Run AFTER 64. Safe to re-run. Re-run it after 66 as well (lists), so a
+-- merge also carries list memberships across.
 --
 -- Used by the CRM review queue. When staff confirm that a lead (e.g. from a
 -- Facebook lead ad) is the same person as an existing member, the lead is
 -- merged INTO the member's contact, in one transaction:
---   * the lead's timeline entries move to the member's contact
+--   * the lead's timeline entries and list memberships move to the
+--     member's contact
 --   * tags and communities are combined
 --   * the lead's email and phone are kept as alternates if they differ
 --     (phones compared on their last 10 digits)
@@ -72,6 +74,17 @@ begin
   -- Move the timeline first (the source row is deleted below).
   update public.crm_activities set contact_id = p_target
     where contact_id = p_source;
+
+  -- Keep their fixed-list memberships (SQL 66). Checked at run time so this
+  -- function also works before lists exist.
+  if to_regclass('public.crm_list_members') is not null then
+    execute
+      'insert into public.crm_list_members (list_id, contact_id, added_by, added_at)
+         select list_id, $1, added_by, added_at
+           from public.crm_list_members where contact_id = $2
+       on conflict (list_id, contact_id) do nothing'
+      using p_target, p_source;
+  end if;
 
   -- Free the lead's unique keys before the target takes anything over.
   delete from public.crm_contacts where id = p_source;

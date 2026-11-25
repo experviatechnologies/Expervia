@@ -14,6 +14,7 @@ import {
   Contact2,
   LayoutDashboard,
   ListChecks,
+  ListFilter,
   Sparkles,
   LogOut,
   Menu,
@@ -41,6 +42,7 @@ const NAV: NavGroup[] = [
       { href: "/crm/contacts", label: "Contacts", icon: Contact2 },
       { href: "/crm/companies", label: "Companies", icon: Building2 },
       { href: "/crm/women-in-tech", label: "Women in Tech", icon: Sparkles },
+      { href: "/crm/lists", label: "Lists", icon: ListFilter },
       {
         href: "/crm/review",
         label: "Review queue",

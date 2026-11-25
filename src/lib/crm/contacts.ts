@@ -26,13 +26,67 @@ export type ContactSort = (typeof CONTACT_SORTS)[number];
 export const GENDER_FILTERS = ["any", "female", "male"] as const;
 export type GenderFilter = (typeof GENDER_FILTERS)[number];
 
+export const LEAD_STATUS_FILTERS = [
+  "any",
+  "new",
+  "open",
+  "in_progress",
+  "connected",
+  "unqualified",
+] as const;
+export type LeadStatusFilter = (typeof LEAD_STATUS_FILTERS)[number];
+
 export type ContactFilters = {
   view: ContactView;
   account: AccountFilter;
   sort: ContactSort;
   q: string;
   gender: GenderFilter;
+  leadStatus: LeadStatusFilter;
+  /** Exact source, e.g. "Facebook lead ad". Empty = any. */
+  source: string;
+  /** Exact tag. Empty = any. */
+  tag: string;
+  /** Owner member id, "none" for unowned, empty = any. */
+  owner: string;
+  /** Members of one fixed list (set by the list page, never from the URL). */
+  listId?: string;
 };
+
+/** The filters that can be saved as a smart list (no sort, no list). */
+export const SAVED_FILTER_KEYS = [
+  "view",
+  "account",
+  "q",
+  "gender",
+  "leadStatus",
+  "source",
+  "tag",
+  "owner",
+] as const;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Filters as URL params, leaving out anything at its default. */
+export function filtersToParams(
+  f: ContactFilters,
+  keys: readonly (keyof ContactFilters)[] = [...SAVED_FILTER_KEYS, "sort"],
+): Record<string, string> {
+  const defaults: Partial<Record<keyof ContactFilters, string>> = {
+    view: "all",
+    account: "any",
+    sort: "newest",
+    gender: "any",
+    leadStatus: "any",
+  };
+  const out: Record<string, string> = {};
+  for (const k of keys) {
+    const v = f[k];
+    if (typeof v === "string" && v && v !== defaults[k]) out[k] = v;
+  }
+  return out;
+}
 
 /** Account status, from the linked members row. */
 export type AccountStatus = "active" | "pending" | "none";
@@ -67,6 +121,19 @@ const pick = <T extends string>(
     ? (value as T)
     : fallback;
 
+/** Everything, with no filter applied. */
+export const NO_FILTERS: ContactFilters = {
+  view: "all",
+  account: "any",
+  sort: "newest",
+  q: "",
+  gender: "any",
+  leadStatus: "any",
+  source: "",
+  tag: "",
+  owner: "",
+};
+
 /** Parse untrusted search params into safe filters. */
 export function parseContactFilters(
   params: Record<string, string | string[] | undefined>,
@@ -81,6 +148,13 @@ export function parseContactFilters(
     sort: pick(CONTACT_SORTS, one("sort"), "newest"),
     q: (one("q") ?? "").trim().slice(0, 100),
     gender: pick(GENDER_FILTERS, one("gender"), "any"),
+    leadStatus: pick(LEAD_STATUS_FILTERS, one("leadStatus"), "any"),
+    source: (one("source") ?? "").trim().slice(0, 100),
+    tag: (one("tag") ?? "").trim().slice(0, 40),
+    owner: (() => {
+      const o = (one("owner") ?? "").trim();
+      return o === "none" || UUID_RE.test(o) ? o : "";
+    })(),
   };
 }
 
@@ -158,7 +232,7 @@ type Query = any;
 function buildQuery(
   admin: SupabaseClient,
   f: ContactFilters,
-  options: { count?: boolean } = {},
+  options: { count?: boolean; head?: boolean } = {},
 ): Query {
   // The person's own account (not owner_id, which also points at members).
   // An account filter needs an inner join so it can filter on it.
@@ -166,9 +240,15 @@ function buildQuery(
     f.account === "active" || f.account === "pending"
       ? "account:members!crm_contacts_member_id_fkey!inner(claimed_at)"
       : "account:members!crm_contacts_member_id_fkey(claimed_at)";
-  let q: Query = admin.from("crm_contacts").select(`${BASE_COLUMNS}, ${join}`, {
-    count: options.count ? "exact" : undefined,
-  });
+  // Members of a fixed list: inner join so only that list's people come back.
+  const listJoin = f.listId ? ", crm_list_members!inner(list_id)" : "";
+  let q: Query = admin
+    .from("crm_contacts")
+    .select(`${BASE_COLUMNS}, ${join}${listJoin}`, {
+      count: options.count || options.head ? "exact" : undefined,
+      head: options.head,
+    });
+  if (f.listId) q = q.eq("crm_list_members.list_id", f.listId);
 
   if (f.view === "eten" || f.view === "customer") q = q.eq("audience", f.view);
   if (f.view === "women-in-tech")
@@ -179,6 +259,11 @@ function buildQuery(
   if (f.account === "pending") q = q.is("account.claimed_at", null);
   if (f.account === "none") q = q.is("member_id", null);
   if (f.gender !== "any") q = q.eq("gender", f.gender);
+  if (f.leadStatus !== "any") q = q.eq("lead_status", f.leadStatus);
+  if (f.source) q = q.eq("source", f.source);
+  if (f.tag) q = q.contains("tags", [f.tag]);
+  if (f.owner === "none") q = q.is("owner_id", null);
+  else if (f.owner) q = q.eq("owner_id", f.owner);
 
   for (const t of searchTerms(f.q)) {
     const like = `%${t}%`;
@@ -216,6 +301,14 @@ export async function listContacts(
   }).range(from, from + pageSize - 1);
   if (error) throw new Error(`Could not load contacts: ${error.message}`);
   return { rows: ((data ?? []) as RawRow[]).map(toRow), total: count ?? 0 };
+}
+
+/** How many contacts match the filters (null if the count failed). */
+export async function countContacts(f: ContactFilters): Promise<number | null> {
+  const { count, error } = await buildQuery(getSupabaseAdmin(), f, {
+    head: true,
+  });
+  return error ? null : (count ?? 0);
 }
 
 /** Every contact matching the filters (for CSV export), read in pages. */

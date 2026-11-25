@@ -35,6 +35,11 @@ export const COMPANY_TYPE_CHIP = {
   member_employer: "bg-slate-100 text-slate-600 ring-slate-500/15",
 } as const;
 
+export const LIST_KIND_CHIP = {
+  smart: "bg-brand-50 text-brand-700 ring-brand-600/15",
+  fixed: "bg-slate-100 text-slate-600 ring-slate-500/15",
+} as const;
+
 export const REVIEW_CHIP = "bg-rose-50 text-rose-700 ring-rose-600/15";
 
 export function Chip({
