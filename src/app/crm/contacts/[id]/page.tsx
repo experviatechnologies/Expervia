@@ -154,7 +154,14 @@ export default async function ContactRecordPage({
               {REVIEW_LABEL[contact.reviewReason] ?? "Needs review"}.
             </span>{" "}
             This person may already have a platform account under a different
-            email address. Check before creating a new account for them.
+            email address.{" "}
+            <Link
+              href="/crm/review"
+              className="font-semibold underline hover:no-underline"
+            >
+              Check them in the review queue
+            </Link>
+            .
           </p>
         </div>
       )}

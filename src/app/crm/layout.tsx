@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentMember } from "@/lib/auth";
 import { CRM_ROLE_LABEL, getCrmSession } from "@/lib/crm/session";
+import { reviewCount } from "@/lib/crm/review";
 import { CrmShell } from "@/components/crm/shell";
 
 export const metadata: Metadata = {
@@ -49,12 +50,15 @@ export default async function CrmLayout({
     );
   }
 
+  const waiting = await reviewCount();
+
   return (
     <CrmShell
       name={member.fullName ?? ""}
       email={member.email ?? ""}
       roleLabel={session.roles.map((r) => CRM_ROLE_LABEL[r]).join(" · ")}
       showAdminLink={session.roles.includes("operations")}
+      reviewCount={waiting ?? 0}
     >
       {children}
     </CrmShell>

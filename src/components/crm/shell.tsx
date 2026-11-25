@@ -9,13 +9,22 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
-import { Contact2, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import {
+  Contact2,
+  LayoutDashboard,
+  ListChecks,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type NavItem = {
   href: string;
   label: string;
+  /** Shows a count next to the label (e.g. people waiting for review). */
+  badge?: "review";
   icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 };
 type NavGroup = { heading?: string; items: NavItem[] };
@@ -26,7 +35,15 @@ const NAV: NavGroup[] = [
   },
   {
     heading: "CRM",
-    items: [{ href: "/crm/contacts", label: "Contacts", icon: Contact2 }],
+    items: [
+      { href: "/crm/contacts", label: "Contacts", icon: Contact2 },
+      {
+        href: "/crm/review",
+        label: "Review queue",
+        icon: ListChecks,
+        badge: "review",
+      },
+    ],
   },
 ];
 
@@ -59,10 +76,12 @@ function Brand() {
 function Sidebar({
   pathname,
   showAdminLink,
+  reviewCount,
   onNavigate,
 }: {
   pathname: string;
   showAdminLink: boolean;
+  reviewCount: number;
   onNavigate?: () => void;
 }) {
   return (
@@ -77,7 +96,8 @@ function Sidebar({
               </p>
             )}
             <ul className="space-y-0.5">
-              {group.items.map(({ href, label, icon: Icon }) => {
+              {group.items.map(({ href, label, icon: Icon, badge }) => {
+                const count = badge === "review" ? reviewCount : 0;
                 const active = isActive(pathname, href);
                 return (
                   <li key={href}>
@@ -93,7 +113,13 @@ function Sidebar({
                       )}
                     >
                       <Icon aria-hidden className="size-[18px]" />
-                      {label}
+                      <span className="flex-1">{label}</span>
+                      {count > 0 && (
+                        <span className="bg-brand-500 rounded-full px-2 py-0.5 text-xs text-white tabular-nums">
+                          {count}
+                          <span className="sr-only"> waiting</span>
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -119,12 +145,14 @@ export function CrmShell({
   email,
   roleLabel,
   showAdminLink,
+  reviewCount,
   children,
 }: {
   name: string;
   email: string;
   roleLabel: string;
   showAdminLink: boolean;
+  reviewCount: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -160,6 +188,7 @@ export function CrmShell({
     <Sidebar
       pathname={pathname}
       showAdminLink={showAdminLink}
+      reviewCount={reviewCount}
       onNavigate={onNavigate}
     />
   );

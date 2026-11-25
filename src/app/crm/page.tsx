@@ -246,7 +246,7 @@ export default async function CrmDashboard() {
         <StatTile
           label="Needs review"
           value={d.review}
-          href="/crm/contacts?view=review"
+          href="/crm/review"
           detail={
             d.review > 0 ? (
               <span className="inline-flex items-center gap-1 text-rose-700">
