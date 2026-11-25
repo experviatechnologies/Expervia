@@ -7,6 +7,7 @@ import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { RegisterMentorControl } from "./register-mentor-control";
 import { PilotPods, type PilotPod } from "./pilot-pods";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const metadata: Metadata = {
   title: "Mentorship pilot",
@@ -50,10 +51,30 @@ export default async function MentorshipPilotPage() {
       .select("id, name, slug, is_main")
       .eq("is_main", false)
       .order("name"),
-    admin.from("pod_memberships").select("member_id, pod_id, role_in_pod"),
-    admin.from("profiles").select("member_id, full_name"),
-    admin.from("mentor_profiles").select("member_id"),
-    admin.from("members").select("id, status"),
+    fetchAllRows((a, b) =>
+      admin
+        .from("pod_memberships")
+        .select("member_id, pod_id, role_in_pod")
+        .order("id")
+        .range(a, b),
+    ),
+    fetchAllRows((a, b) =>
+      admin
+        .from("profiles")
+        .select("member_id, full_name")
+        .order("member_id")
+        .range(a, b),
+    ),
+    fetchAllRows((a, b) =>
+      admin
+        .from("mentor_profiles")
+        .select("member_id")
+        .order("member_id")
+        .range(a, b),
+    ),
+    fetchAllRows((a, b) =>
+      admin.from("members").select("id, status").order("id").range(a, b),
+    ),
     admin
       .from("capability_areas")
       .select("id, slug, label")

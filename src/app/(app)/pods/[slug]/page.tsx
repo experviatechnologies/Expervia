@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { PodMembershipButton } from "./pod-membership-button";
 import { PodRoster, type RosterItem } from "./pod-roster";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const metadata: Metadata = {
   title: "Pod",
@@ -77,7 +78,13 @@ export default async function PodDetailPage({
       .select("id, slug, name, is_main")
       .eq("is_main", false)
       .order("name"),
-    supabase.from("pod_memberships").select("pod_id, member_id"),
+    fetchAllRows((a, b) =>
+      supabase
+        .from("pod_memberships")
+        .select("pod_id, member_id")
+        .order("id")
+        .range(a, b),
+    ),
   ]);
 
   // Pod picker: all specialist pods with their counts + whether the viewer is in.

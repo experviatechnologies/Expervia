@@ -5,6 +5,7 @@ import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { CertificationsReview, type CertRow } from "./certifications-review";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const metadata: Metadata = {
   title: "Certifications",
@@ -40,13 +41,23 @@ export default async function AdminCertificationsPage() {
   // session client (see actions.ts) so the verification trigger permits them.
   const [{ data: certRows }, { data: profileRows }, emails] = await Promise.all(
     [
-      admin
-        .from("certifications")
-        .select(
-          "id, member_id, name, issuer, credential_id, date_obtained, expiry_date, verification_status, certificate_path, created_at",
-        )
-        .order("created_at", { ascending: false }),
-      admin.from("profiles").select("member_id, full_name"),
+      fetchAllRows((a, b) =>
+        admin
+          .from("certifications")
+          .select(
+            "id, member_id, name, issuer, credential_id, date_obtained, expiry_date, verification_status, certificate_path, created_at",
+          )
+          .order("created_at", { ascending: false })
+          .order("id")
+          .range(a, b),
+      ),
+      fetchAllRows((a, b) =>
+        admin
+          .from("profiles")
+          .select("member_id, full_name")
+          .order("member_id")
+          .range(a, b),
+      ),
       loadEmails(admin),
     ],
   );

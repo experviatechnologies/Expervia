@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 /**
  * Overview analytics data layer (Phase 2, step 2.1). One call fetches every
@@ -116,9 +117,13 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
   ] = await Promise.all([
     // Pull members once and derive every member figure client-side so the
     // operations/staff accounts can be excluded consistently everywhere.
-    admin
-      .from("members")
-      .select("id, role, status, origin, claimed_at, created_at"),
+    fetchAllRows((a, b) =>
+      admin
+        .from("members")
+        .select("id, role, status, origin, claimed_at, created_at")
+        .order("id")
+        .range(a, b),
+    ),
     admin.from("posts").select("*", head).eq("is_removed", false),
     admin.from("comments").select("*", head).eq("is_removed", false),
     admin.from("certifications").select("*", head),
@@ -150,7 +155,13 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
       .select("*", head)
       .eq("status", "unverified"),
     admin.from("pods").select("id, name, is_main").order("name"),
-    admin.from("pod_memberships").select("pod_id, member_id"),
+    fetchAllRows((a, b) =>
+      admin
+        .from("pod_memberships")
+        .select("pod_id, member_id")
+        .order("id")
+        .range(a, b),
+    ),
     admin
       .from("audit_log")
       .select("id, action, target_type, created_at, actor_id")

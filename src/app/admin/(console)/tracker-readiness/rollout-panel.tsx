@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { RolloutControl } from "./rollout-control";
 
 /** Loads the rollout switch and specialist pods for RolloutControl. */
@@ -11,7 +12,13 @@ export async function RolloutPanel() {
       .eq("id", true)
       .maybeSingle(),
     admin.from("pods").select("id, name").eq("is_main", false).order("name"),
-    admin.from("presales_profiles").select("member_id"),
+    fetchAllRows((a, b) =>
+      admin
+        .from("presales_profiles")
+        .select("member_id")
+        .order("member_id")
+        .range(a, b),
+    ),
   ]);
   if (settings.error) {
     return (

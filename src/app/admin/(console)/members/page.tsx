@@ -6,6 +6,7 @@ import { getCurrentManager } from "@/lib/supabase-server";
 import { getCurrentMember, isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { MembersManager, type MemberRow } from "./members-manager";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const metadata: Metadata = {
   title: "Members",
@@ -44,13 +45,29 @@ export default async function MembersPage() {
     { data: membershipRows },
     emails,
   ] = await Promise.all([
-    admin
-      .from("members")
-      .select("id, status, role, origin, claimed_at, created_at, v_level")
-      .order("created_at", { ascending: false }),
-    admin.from("profiles").select("member_id, full_name"),
+    fetchAllRows((a, b) =>
+      admin
+        .from("members")
+        .select("id, status, role, origin, claimed_at, created_at, v_level")
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(a, b),
+    ),
+    fetchAllRows((a, b) =>
+      admin
+        .from("profiles")
+        .select("member_id, full_name")
+        .order("member_id")
+        .range(a, b),
+    ),
     admin.from("pods").select("id, name, is_main"),
-    admin.from("pod_memberships").select("member_id, pod_id"),
+    fetchAllRows((a, b) =>
+      admin
+        .from("pod_memberships")
+        .select("member_id, pod_id")
+        .order("id")
+        .range(a, b),
+    ),
     loadEmails(admin),
   ]);
 

@@ -6,6 +6,7 @@ import { getCurrentManager } from "@/lib/supabase-server";
 import { isOperations } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { SendReminderControl } from "./send-reminder-control";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const metadata: Metadata = {
   title: "Document gaps",
@@ -51,17 +52,34 @@ export default async function MemberGapsPage() {
     { data: reminderRows },
     emails,
   ] = await Promise.all([
-    admin
-      .from("members")
-      .select("id, membership_id, created_at")
-      .eq("status", "active")
-      .order("created_at", { ascending: true }),
-    admin.from("profiles").select("member_id, full_name"),
-    admin
-      .from("member_verifications")
-      .select("member_id, kind")
-      .eq("status", "verified"),
-    admin.from("certifications").select("member_id"),
+    fetchAllRows((a, b) =>
+      admin
+        .from("members")
+        .select("id, membership_id, created_at")
+        .eq("status", "active")
+        .order("created_at", { ascending: true })
+        .order("id")
+        .range(a, b),
+    ),
+    fetchAllRows((a, b) =>
+      admin
+        .from("profiles")
+        .select("member_id, full_name")
+        .order("member_id")
+        .range(a, b),
+    ),
+    fetchAllRows((a, b) =>
+      admin
+        .from("member_verifications")
+        .select("member_id, kind")
+        .eq("status", "verified")
+        .order("member_id")
+        .order("kind")
+        .range(a, b),
+    ),
+    fetchAllRows((a, b) =>
+      admin.from("certifications").select("member_id").order("id").range(a, b),
+    ),
     admin
       .from("member_document_reminders")
       .select("member_id, sent_at")

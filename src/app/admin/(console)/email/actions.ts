@@ -12,6 +12,7 @@ import {
   unsubscribeOneClickUrl,
 } from "@/lib/email-unsubscribe";
 import { writeAudit } from "@/lib/eten/audit";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 
@@ -80,54 +81,101 @@ async function resolveRecipients(
   if (audience.startsWith("pod:")) {
     const podId = audience.slice(4);
     const [{ data: rows }, { data: pod }] = await Promise.all([
-      admin.from("pod_memberships").select("member_id").eq("pod_id", podId),
+      fetchAllRows((a, b) =>
+        admin
+          .from("pod_memberships")
+          .select("member_id")
+          .eq("pod_id", podId)
+          .order("id")
+          .range(a, b),
+      ),
       admin.from("pods").select("name").eq("id", podId).maybeSingle(),
     ]);
     memberIds = (rows ?? []).map((r) => r.member_id);
     label = `Pod: ${pod?.name ?? "Unknown"}`;
   } else if (audience === "all") {
-    const { data } = await admin
-      .from("members")
-      .select("id")
-      .eq("status", "active");
+    const { data } = await fetchAllRows((a, b) =>
+      admin
+        .from("members")
+        .select("id")
+        .eq("status", "active")
+        .order("id")
+        .range(a, b),
+    );
     memberIds = (data ?? []).map((m) => m.id);
     label = "All members";
   } else if (audience === "prospects") {
-    const { data } = await admin
-      .from("members")
-      .select("id")
-      .eq("status", "active")
-      .is("validated_at", null);
+    const { data } = await fetchAllRows((a, b) =>
+      admin
+        .from("members")
+        .select("id")
+        .eq("status", "active")
+        .is("validated_at", null)
+        .order("id")
+        .range(a, b),
+    );
     memberIds = (data ?? []).map((m) => m.id);
     label = "Prospects";
   } else if (audience === "validated") {
-    const { data } = await admin
-      .from("members")
-      .select("id")
-      .eq("status", "active")
-      .not("validated_at", "is", null);
+    const { data } = await fetchAllRows((a, b) =>
+      admin
+        .from("members")
+        .select("id")
+        .eq("status", "active")
+        .not("validated_at", "is", null)
+        .order("id")
+        .range(a, b),
+    );
     memberIds = (data ?? []).map((m) => m.id);
     label = "Validated members";
   } else if (audience === "mentors") {
-    const { data } = await admin.from("mentor_profiles").select("member_id");
+    const { data } = await fetchAllRows((a, b) =>
+      admin
+        .from("mentor_profiles")
+        .select("member_id")
+        .order("member_id")
+        .range(a, b),
+    );
     memberIds = (data ?? []).map((m) => m.member_id);
     label = "Verified mentors";
   } else if (audience === "mentorship_signups") {
-    const { data } = await admin
-      .from("members")
-      .select("id")
-      .eq("signup_source", "mentorship");
+    const { data } = await fetchAllRows((a, b) =>
+      admin
+        .from("members")
+        .select("id")
+        .eq("signup_source", "mentorship")
+        .order("id")
+        .range(a, b),
+    );
     memberIds = (data ?? []).map((m) => m.id);
     label = "Mentorship signups";
   } else if (audience === "missing_docs") {
     const [{ data: activeM }, { data: verifs }, { data: certs }] =
       await Promise.all([
-        admin.from("members").select("id").eq("status", "active"),
-        admin
-          .from("member_verifications")
-          .select("member_id, kind")
-          .eq("status", "verified"),
-        admin.from("certifications").select("member_id"),
+        fetchAllRows((a, b) =>
+          admin
+            .from("members")
+            .select("id")
+            .eq("status", "active")
+            .order("id")
+            .range(a, b),
+        ),
+        fetchAllRows((a, b) =>
+          admin
+            .from("member_verifications")
+            .select("member_id, kind")
+            .eq("status", "verified")
+            .order("member_id")
+            .order("kind")
+            .range(a, b),
+        ),
+        fetchAllRows((a, b) =>
+          admin
+            .from("certifications")
+            .select("member_id")
+            .order("id")
+            .range(a, b),
+        ),
       ]);
     const idV = new Set<string>();
     const addrV = new Set<string>();
