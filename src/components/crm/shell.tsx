@@ -14,6 +14,7 @@ import {
   Building2,
   Contact2,
   Handshake,
+  LifeBuoy,
   MailCheck,
   LayoutDashboard,
   ListChecks,
@@ -21,6 +22,7 @@ import {
   Mail,
   ListFilter,
   Sparkles,
+  UsersRound,
   LogOut,
   Menu,
   X,
@@ -67,7 +69,11 @@ const NAV: NavGroup[] = [
   },
   {
     heading: "Insights",
-    items: [{ href: "/crm/reports", label: "Reports", icon: BarChart3 }],
+    items: [
+      { href: "/crm/reports", label: "Reports", icon: BarChart3 },
+      { href: "/crm/team", label: "Team & access", icon: UsersRound },
+      { href: "/crm/help", label: "How to use the CRM", icon: LifeBuoy },
+    ],
   },
   {
     heading: "Communities",
