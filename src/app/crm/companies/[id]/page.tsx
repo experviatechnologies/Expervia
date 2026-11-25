@@ -14,6 +14,8 @@ import { COMPANY_TYPE_CHIP, Card, Chip } from "@/components/crm/ui";
 import { LogActivity } from "@/components/crm/log-activity";
 import { Timeline } from "@/components/crm/timeline";
 import { tasksFor } from "@/lib/crm/tasks";
+import { dealsFor } from "@/lib/crm/deals";
+import { DealsCard } from "@/components/crm/deals-card";
 import { TaskForm } from "@/components/crm/task-form";
 import { TaskList } from "@/components/crm/task-list";
 import { CompanyForm } from "../company-form";
@@ -29,10 +31,11 @@ export default async function CompanyRecordPage({
   if (!session) redirect("/signin?next=/crm/companies");
 
   const { id } = await params;
-  const [company, owners, tasks] = await Promise.all([
+  const [company, owners, tasks, deals] = await Promise.all([
     getCompanyRecord(id),
     listOwners(),
     tasksFor({ kind: "company", id }),
+    dealsFor({ kind: "company", id }),
   ]);
   if (!company) notFound();
 
@@ -156,6 +159,9 @@ export default async function CompanyRecordPage({
               </ul>
             )}
           </Card>
+          {deals && (
+            <DealsCard deals={deals} empty="No deals with this company yet." />
+          )}
           {tasks && (
             <Card title="Tasks">
               <TaskList

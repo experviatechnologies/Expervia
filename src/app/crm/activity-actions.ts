@@ -5,7 +5,10 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { getCrmSession } from "@/lib/crm/session";
 import { LOGGABLE_TYPES, isUuid, type LoggableType } from "@/lib/crm/record";
 
-export type ActivityTarget = { kind: "contact" | "company"; id: string };
+export type ActivityTarget = {
+  kind: "contact" | "company" | "deal";
+  id: string;
+};
 export type LogResult = { ok: true } | { ok: false; error: string };
 
 const MAX_BODY = 5000;
@@ -30,7 +33,7 @@ export async function logActivity(input: {
   const { target } = input;
   if (
     !target ||
-    (target.kind !== "contact" && target.kind !== "company") ||
+    !["contact", "company", "deal"].includes(target.kind) ||
     !isUuid(target.id)
   ) {
     return { ok: false, error: "Unknown record." };
@@ -68,6 +71,7 @@ export async function logActivity(input: {
     .insert({
       contact_id: target.kind === "contact" ? target.id : null,
       company_id: target.kind === "company" ? target.id : null,
+      deal_id: target.kind === "deal" ? target.id : null,
       type: input.type,
       product: "crm",
       event: `${input.type}_logged`,
@@ -83,7 +87,9 @@ export async function logActivity(input: {
   revalidatePath(
     target.kind === "contact"
       ? `/crm/contacts/${target.id}`
-      : `/crm/companies/${target.id}`,
+      : target.kind === "company"
+        ? `/crm/companies/${target.id}`
+        : `/crm/deals/${target.id}`,
   );
   revalidatePath("/crm");
   return { ok: true };

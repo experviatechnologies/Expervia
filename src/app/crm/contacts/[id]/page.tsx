@@ -42,6 +42,8 @@ import { LogActivity } from "@/components/crm/log-activity";
 import { Timeline } from "@/components/crm/timeline";
 import { fixedListsFor } from "@/lib/crm/lists";
 import { tasksFor } from "@/lib/crm/tasks";
+import { dealsFor } from "@/lib/crm/deals";
+import { DealsCard } from "@/components/crm/deals-card";
 import { TaskForm } from "@/components/crm/task-form";
 import { TaskList } from "@/components/crm/task-list";
 import { ContactLists } from "./contact-lists";
@@ -73,11 +75,12 @@ export default async function ContactRecordPage({
   if (!session) redirect("/crm");
 
   const { id } = await params;
-  const [contact, owners, lists, tasks] = await Promise.all([
+  const [contact, owners, lists, tasks, deals] = await Promise.all([
     getContactRecord(id),
     listOwners(),
     fixedListsFor(id),
     tasksFor({ kind: "contact", id }),
+    dealsFor({ kind: "contact", id }),
   ]);
   if (!contact) notFound();
 
@@ -194,6 +197,9 @@ export default async function ContactRecordPage({
         {/* Right column: account, logging and timeline */}
         <div className="space-y-6">
           <AccountCard account={contact.account} isOps={isOps} />
+          {deals && (
+            <DealsCard deals={deals} empty="No deals with this person yet." />
+          )}
           {tasks && (
             <Card title="Tasks">
               <TaskList

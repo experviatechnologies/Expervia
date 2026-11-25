@@ -12,6 +12,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import {
   Building2,
   Contact2,
+  Handshake,
   LayoutDashboard,
   ListChecks,
   ListTodo,
@@ -48,6 +49,7 @@ const NAV: NavGroup[] = [
   {
     heading: "Work",
     items: [
+      { href: "/crm/deals", label: "Deals", icon: Handshake },
       { href: "/crm/tasks", label: "Tasks", icon: ListTodo, badge: "tasks" },
       {
         href: "/crm/review",
