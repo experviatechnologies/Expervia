@@ -110,6 +110,8 @@ export type ContactRow = {
   account: AccountStatus;
   firstSeenAt: string;
   lastActivityAt: string | null;
+  /** May receive marketing email (campaigns). */
+  emailOptIn: boolean;
 };
 
 const pick = <T extends string>(
@@ -159,7 +161,7 @@ export function parseContactFilters(
 }
 
 const BASE_COLUMNS =
-  "id, first_name, last_name, email, phone, audience, lifecycle, lead_status, source, tags, communities, review_reason, city, country, first_seen_at, last_activity_at, crm_companies(name)";
+  "id, first_name, last_name, email, phone, audience, lifecycle, lead_status, source, tags, communities, review_reason, city, country, first_seen_at, last_activity_at, email_opt_in, crm_companies(name)";
 
 type RawRow = {
   id: string;
@@ -178,6 +180,7 @@ type RawRow = {
   country: string | null;
   first_seen_at: string;
   last_activity_at: string | null;
+  email_opt_in: boolean;
   crm_companies: { name: string } | { name: string }[] | null;
   account:
     | { claimed_at: string | null }
@@ -209,6 +212,7 @@ function toRow(r: RawRow): ContactRow {
     account: !member ? "none" : member.claimed_at ? "active" : "pending",
     firstSeenAt: r.first_seen_at,
     lastActivityAt: r.last_activity_at,
+    emailOptIn: r.email_opt_in !== false,
   };
 }
 

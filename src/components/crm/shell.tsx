@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   ListChecks,
   ListTodo,
+  Mail,
   ListFilter,
   Sparkles,
   LogOut,
@@ -46,6 +47,7 @@ const NAV: NavGroup[] = [
       { href: "/crm/contacts", label: "Contacts", icon: Contact2 },
       { href: "/crm/companies", label: "Companies", icon: Building2 },
       { href: "/crm/lists", label: "Lists", icon: ListFilter },
+      { href: "/crm/campaigns", label: "Email campaigns", icon: Mail },
     ],
   },
   {
