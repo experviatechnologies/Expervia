@@ -23,11 +23,15 @@ export type AccountFilter = (typeof ACCOUNT_FILTERS)[number];
 export const CONTACT_SORTS = ["newest", "oldest", "name", "activity"] as const;
 export type ContactSort = (typeof CONTACT_SORTS)[number];
 
+export const GENDER_FILTERS = ["any", "female", "male"] as const;
+export type GenderFilter = (typeof GENDER_FILTERS)[number];
+
 export type ContactFilters = {
   view: ContactView;
   account: AccountFilter;
   sort: ContactSort;
   q: string;
+  gender: GenderFilter;
 };
 
 /** Account status, from the linked members row. */
@@ -76,6 +80,7 @@ export function parseContactFilters(
     account: pick(ACCOUNT_FILTERS, one("account"), "any"),
     sort: pick(CONTACT_SORTS, one("sort"), "newest"),
     q: (one("q") ?? "").trim().slice(0, 100),
+    gender: pick(GENDER_FILTERS, one("gender"), "any"),
   };
 }
 
@@ -173,6 +178,7 @@ function buildQuery(
   if (f.account === "active") q = q.not("account.claimed_at", "is", null);
   if (f.account === "pending") q = q.is("account.claimed_at", null);
   if (f.account === "none") q = q.is("member_id", null);
+  if (f.gender !== "any") q = q.eq("gender", f.gender);
 
   for (const t of searchTerms(f.q)) {
     const like = `%${t}%`;

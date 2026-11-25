@@ -1,21 +1,16 @@
 "use client";
 
 /**
- * New contacts per week, stacked ETEN + Customers. Columns are focusable so
- * the tooltip works with a keyboard as well as a pointer; the same numbers are
- * always available in the table under the chart.
- *
- * Colours validated with the dataviz palette checker on white: ETEN #6426dc,
- * Customers #e0861a (CVD ΔE 37). The orange is under 3:1 on white, so the
- * legend and table view are required, not optional.
+ * Weekly column chart, stacked when there is more than one series. Columns
+ * are focusable so the tooltip works with a keyboard as well as a pointer;
+ * the same numbers are always in the table under the chart. One series gets
+ * no legend box (the card title names it).
+ * Colours come from @/lib/crm/chart-colors.
  */
 import { useState } from "react";
-import type { WeekBucket } from "@/lib/crm/dashboard";
 
-const SERIES = [
-  { key: "eten", label: "ETEN", color: "#6426dc" },
-  { key: "customer", label: "Customers", color: "#e0861a" },
-] as const;
+export type ChartSeries = { key: string; label: string; color: string };
+export type ChartWeek = { start: string } & Record<string, number | string>;
 
 const PLOT_HEIGHT = 200;
 
@@ -48,9 +43,21 @@ const weekLabel = (start: string) => {
   return `${d} ${MONTHS[m - 1]}`;
 };
 
-export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
+export function WeeklyChart({
+  weeks,
+  series,
+  noun,
+}: {
+  weeks: ChartWeek[];
+  series: ChartSeries[];
+  /** What is being counted, for screen readers, e.g. "new members". */
+  noun: string;
+}) {
   const [active, setActive] = useState<number | null>(null);
-  const totals = weeks.map((w) => w.eten + w.customer);
+  const val = (w: ChartWeek, key: string) => Number(w[key] ?? 0);
+  const totals = weeks.map((w) =>
+    series.reduce((n, s) => n + val(w, s.key), 0),
+  );
   const peak = Math.max(...totals, 0);
   const step = niceStep(peak);
   const top = Math.max(step * Math.ceil(peak / step), step);
@@ -60,23 +67,25 @@ export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
 
   return (
     <div>
-      <ul
-        className="mb-4 flex flex-wrap gap-4 text-xs text-slate-600"
-        aria-label="Legend"
-      >
-        {SERIES.map((s) => (
-          <li key={s.key} className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="size-2.5 rounded-[2px]"
-              style={{ background: s.color }}
-            />
-            {s.label}
-          </li>
-        ))}
-      </ul>
+      {series.length > 1 && (
+        <ul
+          className="mb-4 flex flex-wrap gap-4 text-xs text-slate-600"
+          aria-label="Legend"
+        >
+          {series.map((s) => (
+            <li key={s.key} className="inline-flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="size-2.5 rounded-[2px]"
+                style={{ background: s.color }}
+              />
+              {s.label}
+            </li>
+          ))}
+        </ul>
+      )}
 
-      <div className="flex gap-2">
+      <div className={series.length > 1 ? "flex gap-2" : "mt-6 flex gap-2"}>
         {/* Y axis */}
         <div
           aria-hidden
@@ -124,7 +133,13 @@ export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
                   key={w.start}
                   tabIndex={0}
                   role="img"
-                  aria-label={`Week of ${weekLabel(w.start)}: ${w.eten} ETEN, ${w.customer} customers`}
+                  aria-label={`Week of ${weekLabel(w.start)}: ${
+                    series.length > 1
+                      ? series
+                          .map((s) => `${val(w, s.key)} ${s.label}`)
+                          .join(", ")
+                      : `${totals[i]} ${noun}`
+                  }`}
                   onPointerEnter={() => setActive(i)}
                   onFocus={() => setActive(i)}
                   onBlur={() => setActive(null)}
@@ -134,10 +149,13 @@ export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
                     className="flex w-full max-w-6 flex-col-reverse gap-[2px] transition-opacity"
                     style={{ opacity: active === null || isActive ? 1 : 0.55 }}
                   >
-                    {SERIES.map((s) => {
-                      const v = w[s.key];
+                    {series.map((s, si) => {
+                      const v = val(w, s.key);
                       if (v === 0) return null;
-                      const isTop = s.key === "customer" || w.customer === 0;
+                      // The last non-zero series is on top: round its end.
+                      const isTop = series
+                        .slice(si + 1)
+                        .every((n) => val(w, n.key) === 0);
                       return (
                         <div
                           key={s.key}
@@ -175,7 +193,7 @@ export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
                       <p className="mb-1.5 text-slate-500">
                         Week of {weekLabel(w.start)}
                       </p>
-                      {SERIES.map((s) => (
+                      {series.map((s) => (
                         <p key={s.key} className="flex items-center gap-2">
                           <span
                             aria-hidden
@@ -183,7 +201,7 @@ export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
                             style={{ background: s.color }}
                           />
                           <span className="text-ink font-semibold tabular-nums">
-                            {w[s.key].toLocaleString("en-GB")}
+                            {val(w, s.key).toLocaleString("en-GB")}
                           </span>
                           <span className="text-slate-500">{s.label}</span>
                         </p>
@@ -223,18 +241,15 @@ export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
                 <th scope="col" className="py-1.5 pr-4 font-semibold">
                   Week of
                 </th>
-                <th
-                  scope="col"
-                  className="py-1.5 pr-4 text-right font-semibold"
-                >
-                  ETEN
-                </th>
-                <th
-                  scope="col"
-                  className="py-1.5 pr-4 text-right font-semibold"
-                >
-                  Customers
-                </th>
+                {series.map((s) => (
+                  <th
+                    key={s.key}
+                    scope="col"
+                    className="py-1.5 pr-4 text-right font-semibold"
+                  >
+                    {s.label}
+                  </th>
+                ))}
                 <th scope="col" className="py-1.5 text-right font-semibold">
                   Total
                 </th>
@@ -246,8 +261,11 @@ export function WeeklyChart({ weeks }: { weeks: WeekBucket[] }) {
                   <th scope="row" className="py-1.5 pr-4 font-normal">
                     {weekLabel(w.start)}
                   </th>
-                  <td className="py-1.5 pr-4 text-right">{w.eten}</td>
-                  <td className="py-1.5 pr-4 text-right">{w.customer}</td>
+                  {series.map((s) => (
+                    <td key={s.key} className="py-1.5 pr-4 text-right">
+                      {val(w, s.key)}
+                    </td>
+                  ))}
                   <td className="py-1.5 text-right font-semibold">
                     {totals[i]}
                   </td>

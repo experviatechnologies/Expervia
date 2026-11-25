@@ -17,8 +17,10 @@ import { getCrmSession } from "@/lib/crm/session";
 import { loadDashboard, type RecentActivity } from "@/lib/crm/dashboard";
 import { ACTIVITY_LABEL, PRODUCT_LABEL, dateTime } from "@/lib/crm/labels";
 import { Card } from "@/components/crm/ui";
+import { StatTile } from "@/components/crm/stat-tile";
 import { cn } from "@/lib/utils";
-import { WeeklyChart } from "./weekly-chart";
+import { WeeklyChart } from "@/components/crm/weekly-chart";
+import { CRM_SERIES } from "@/lib/crm/chart-colors";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -37,46 +39,6 @@ function greeting(): string {
     : hour < 17
       ? "Good afternoon"
       : "Good evening";
-}
-
-function StatTile({
-  label,
-  value,
-  detail,
-  href,
-  children,
-}: {
-  label: string;
-  value: number;
-  detail?: React.ReactNode;
-  href?: string;
-  children?: React.ReactNode;
-}) {
-  const body = (
-    <>
-      <p className="text-sm text-slate-600">{label}</p>
-      <p className="text-ink mt-1 text-3xl font-semibold tracking-tight">
-        {fmt(value)}
-      </p>
-      {detail && <div className="mt-1 text-xs text-slate-500">{detail}</div>}
-      {children}
-    </>
-  );
-  const className =
-    "block rounded-2xl border border-[#ece9f5] bg-white p-5 shadow-[0_1px_2px_rgba(23,19,35,0.04)]";
-  return href ? (
-    <Link
-      href={href}
-      className={cn(
-        className,
-        "hover:border-brand-300 focus-visible:outline-brand-400 transition-colors focus-visible:outline-2",
-      )}
-    >
-      {body}
-    </Link>
-  ) : (
-    <div className={className}>{body}</div>
-  );
 }
 
 /** Signed change vs the previous 30 days; up is good for new contacts. */
@@ -271,7 +233,14 @@ export default async function CrmDashboard() {
             Last 12 weeks, by the date we first heard of each person. Members
             moved onto the platform in bulk are left out.
           </p>
-          <WeeklyChart weeks={d.weeks} />
+          <WeeklyChart
+            weeks={d.weeks}
+            noun="new contacts"
+            series={[
+              { key: "eten", label: "ETEN", color: CRM_SERIES.brand },
+              { key: "customer", label: "Customers", color: CRM_SERIES.second },
+            ]}
+          />
         </Card>
         <Card title="Where contacts come from">
           <Sources sources={d.sources} />

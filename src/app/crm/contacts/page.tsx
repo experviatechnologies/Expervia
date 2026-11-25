@@ -47,6 +47,7 @@ function hrefWith(f: Filters, changes: Record<string, string | null>) {
     account: f.account === "any" ? "" : f.account,
     sort: f.sort === "newest" ? "" : f.sort,
     q: f.q,
+    gender: f.gender === "any" ? "" : f.gender,
   };
   for (const [k, v] of Object.entries({ ...base, ...changes })) {
     if (v) p.set(k, v);
@@ -154,6 +155,7 @@ export default async function ContactsPage({
       account: filters.account,
       sort: filters.sort,
       q: filters.q,
+      gender: filters.gender === "any" ? "" : filters.gender,
     }).filter(([, v]) => v),
   );
 
@@ -219,6 +221,18 @@ export default async function ContactsPage({
           <ContactFilters />
         </Suspense>
       </div>
+
+      {filters.gender !== "any" && (
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+          Showing {filters.gender === "female" ? "women" : "men"} only
+          <Link
+            href={hrefWith(filters, { gender: null })}
+            className="text-brand-700 font-semibold hover:underline"
+          >
+            Show everyone
+          </Link>
+        </p>
+      )}
 
       <section
         aria-label="Contacts list"
