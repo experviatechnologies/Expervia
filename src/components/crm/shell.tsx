@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import {
+  BarChart3,
   Building2,
   Contact2,
   Handshake,
@@ -58,6 +59,10 @@ const NAV: NavGroup[] = [
         badge: "review",
       },
     ],
+  },
+  {
+    heading: "Insights",
+    items: [{ href: "/crm/reports", label: "Reports", icon: BarChart3 }],
   },
   {
     heading: "Communities",
