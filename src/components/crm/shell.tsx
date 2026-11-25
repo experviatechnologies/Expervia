@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { mainSiteUrl } from "@/lib/crm/host";
 
 type NavItem = {
   href: string;
@@ -166,7 +167,7 @@ function Sidebar({
       </nav>
       {showAdminLink && (
         <Link
-          href="/admin/overview"
+          href={mainSiteUrl(`/admin/overview`)}
           className="text-brand-100/80 mt-4 rounded-xl bg-white/6 px-3 py-2.5 text-xs font-semibold transition-colors hover:bg-white/10 hover:text-white"
         >
           Go to the admin console

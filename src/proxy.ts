@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { safeNext } from "@/lib/safe-next";
 import { stripTrackerPrefix } from "@/lib/tracker/host";
+import { CRM_ONLY, stripCrmPrefix } from "@/lib/crm/host";
 
 // Clean tracker paths that only exist on the tracker's own address (Phase 9).
 // They are in the matcher for that host; anywhere else they pass straight
@@ -80,7 +81,32 @@ export async function proxy(request: NextRequest) {
       );
     }
   }
-  if (!onTrackerHost && (rawPath === "/" || under(rawPath, TRACKER_ONLY))) {
+  // The CRM's own address (NEXT_PUBLIC_CRM_HOST): /crm on the main site moves
+  // there. On that address both "/contacts" (rewritten in next.config.ts) and
+  // "/crm/contacts" are served, so the CRM's own links never redirect.
+  const crmHost = process.env.NEXT_PUBLIC_CRM_HOST;
+  const onCrmHost = Boolean(crmHost) && host === crmHost;
+  if (
+    crmHost &&
+    !onCrmHost &&
+    (rawPath === "/crm" || rawPath.startsWith("/crm/"))
+  ) {
+    const parent = crmHost.split(".").slice(1).join(".");
+    if (host === parent || host === `www.${parent}`) {
+      return NextResponse.redirect(
+        `https://${crmHost}${stripCrmPrefix(rawPath)}${request.nextUrl.search}`,
+      );
+    }
+  }
+
+  if (
+    !onTrackerHost &&
+    !onCrmHost &&
+    (rawPath === "/" ||
+      under(rawPath, TRACKER_ONLY) ||
+      under(rawPath, CRM_ONLY) ||
+      rawPath === "/women-in-tech")
+  ) {
     return NextResponse.next();
   }
 
@@ -128,10 +154,15 @@ export async function proxy(request: NextRequest) {
 
   // On the tracker's address, "/requests/x" is the tracker page
   // "/tracker/requests/x": classify it as such below.
+  // On the CRM's address, "/contacts" is the CRM page "/crm/contacts".
   const path =
     onTrackerHost && !under(rawPath, SHARED_ON_TRACKER)
       ? `/tracker${rawPath === "/" ? "" : rawPath}`
-      : rawPath;
+      : onCrmHost &&
+          !under(rawPath, SHARED_ON_TRACKER) &&
+          !under(rawPath, ["/crm"])
+        ? `/crm${rawPath === "/" ? "" : rawPath}`
+        : rawPath;
   const isMfaPage = path === "/mfa";
   const isAdminArea = path === "/admin" || path.startsWith("/admin/");
   const isAdminLogin = path === "/admin/login";
@@ -276,5 +307,16 @@ export const config = {
     "/meetings/:path*",
     "/reports/:path*",
     "/demo/:path*",
+    // The CRM's own address serves these at the root (step 22). On any other
+    // host the proxy returns at once for them.
+    "/contacts/:path*",
+    "/companies/:path*",
+    "/deals/:path*",
+    "/tasks/:path*",
+    "/lists/:path*",
+    "/campaigns/:path*",
+    "/review/:path*",
+    "/activation/:path*",
+    "/women-in-tech",
   ],
 };

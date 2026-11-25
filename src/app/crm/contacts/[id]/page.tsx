@@ -47,6 +47,7 @@ import { DealsCard } from "@/components/crm/deals-card";
 import { TaskForm } from "@/components/crm/task-form";
 import { TaskList } from "@/components/crm/task-list";
 import { ContactLists } from "./contact-lists";
+import { mainSiteUrl } from "@/lib/crm/host";
 
 type Params = Promise<{ id: string }>;
 
@@ -383,7 +384,7 @@ function AccountCard({
       action={
         isOps ? (
           <Link
-            href={`/admin/members/${account.memberId}`}
+            href={mainSiteUrl(`/admin/members/${account.memberId}`)}
             className="text-brand-700 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
           >
             Open in admin

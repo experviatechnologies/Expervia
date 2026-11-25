@@ -73,6 +73,9 @@ export default async function RootLayout({
   // Same for the presales tracker's own address (Phase 9).
   const trackerHost = process.env.NEXT_PUBLIC_TRACKER_HOST;
   const isTrackerHost = Boolean(trackerHost) && host === trackerHost;
+  // And the CRM's own address (CRM step 22).
+  const crmHost = process.env.NEXT_PUBLIC_CRM_HOST;
+  const isCrmHost = Boolean(crmHost) && host === crmHost;
 
   return (
     <html
@@ -107,7 +110,7 @@ export default async function RootLayout({
       </head>
       <body className="bg-surface text-on-surface flex min-h-full flex-col">
         <OrganizationJsonLd />
-        <SiteChrome forceBare={isMentorshipHost || isTrackerHost}>
+        <SiteChrome forceBare={isMentorshipHost || isTrackerHost || isCrmHost}>
           {children}
         </SiteChrome>
         <ServiceWorkerManager />

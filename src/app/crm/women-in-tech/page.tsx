@@ -11,6 +11,7 @@ import { WeeklyChart } from "@/components/crm/weekly-chart";
 import { CRM_SERIES } from "@/lib/crm/chart-colors";
 import { ExportCsvButton } from "@/components/shared/export-csv-button";
 import { exportContactsCsv } from "../contacts/actions";
+import { mainSiteUrl } from "@/lib/crm/host";
 
 export const metadata: Metadata = { title: "Women in Tech" };
 
@@ -135,7 +136,7 @@ export default async function WomenInTechPage() {
           <p className="mt-1 max-w-2xl text-sm text-slate-600">
             Everyone who joined through the{" "}
             <Link
-              href="/women-in-tech"
+              href={mainSiteUrl(`/women-in-tech`)}
               className="text-brand-700 font-semibold hover:underline"
             >
               Women in Tech page

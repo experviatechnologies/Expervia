@@ -7,6 +7,7 @@ import { CRM_ROLE_LABEL, getCrmSession } from "@/lib/crm/session";
 import { reviewCount } from "@/lib/crm/review";
 import { myDueCount } from "@/lib/crm/tasks";
 import { CrmShell } from "@/components/crm/shell";
+import { mainSiteUrl } from "@/lib/crm/host";
 
 export const metadata: Metadata = {
   title: { default: "CRM", template: "%s · Expervia CRM" },
@@ -41,7 +42,7 @@ export default async function CrmLayout({
             administrator to give you the Sales Manager or Management role.
           </p>
           <Link
-            href="/dashboard"
+            href={mainSiteUrl(`/dashboard`)}
             className="bg-brand-700 hover:bg-brand-800 mt-6 inline-flex rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
           >
             Back to your dashboard

@@ -14,11 +14,26 @@ const MENTORSHIP_HOST = process.env.NEXT_PUBLIC_MENTORSHIP_HOST;
 // auth callbacks) and api/ are served as they are. Inert until set.
 const TRACKER_HOST = process.env.NEXT_PUBLIC_TRACKER_HOST;
 
+// The CRM's own address (CRM step 22), e.g. "crm.experviatechnologies.com":
+// that host serves /crm at its root. Its /crm/... paths keep working too, so
+// the CRM's own links need no redirect. Inert until set.
+const CRM_HOST = process.env.NEXT_PUBLIC_CRM_HOST;
+
 const nextConfig: NextConfig = {
   // The service worker (app/sw.js/route.ts) must never be cached, or the app
   // would miss new versions; it may only run same-origin script.
   async headers() {
     return [
+      // The CRM's address is staff-only: keep every page out of search engines.
+      ...(CRM_HOST
+        ? [
+            {
+              source: "/:path*",
+              has: [{ type: "host" as const, value: CRM_HOST }],
+              headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+            },
+          ]
+        : []),
       {
         source: "/sw.js",
         headers: [
@@ -54,6 +69,18 @@ const nextConfig: NextConfig = {
             "/:path((?!tracker$|tracker/|_next/|api/|auth/|signin$|join$|mfa$|forgot-password$|reset-password$|onboarding$|onboarding/|suspended$|.*\\..*).*)",
           has,
           destination: "/tracker/:path",
+        },
+      );
+    }
+    if (CRM_HOST) {
+      const has = [{ type: "host" as const, value: CRM_HOST }];
+      beforeFiles.push(
+        { source: "/", has, destination: "/crm" },
+        {
+          source:
+            "/:path((?!crm$|crm/|_next/|api/|auth/|signin$|join$|mfa$|forgot-password$|reset-password$|onboarding$|onboarding/|suspended$|.*\\..*).*)",
+          has,
+          destination: "/crm/:path",
         },
       );
     }
