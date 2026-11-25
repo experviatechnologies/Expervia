@@ -280,7 +280,7 @@ export function TrackerShell({ children }: { children: React.ReactNode }) {
               onClick={() => setOpen(false)}
               aria-hidden
             />
-            <aside className="bg-trk-rail absolute inset-y-0 left-0 w-72 max-w-[85%] overflow-y-auto">
+            <aside className="bg-trk-rail scrollbar-subtle scrollbar-subtle-dark absolute inset-y-0 left-0 w-72 max-w-[85%] overflow-y-auto">
               <button
                 type="button"
                 onClick={() => setOpen(false)}

@@ -648,3 +648,53 @@
     opacity: 0.45;
   }
 }
+
+/* ----------------------------------------------------------------------------
+   Subtle scrollbar for scrolling panels (sidebars, drawers).
+   Thin, no visible track, a rounded thumb that is faint at rest and clearer
+   while the pointer is over the panel. Space is reserved (scrollbar-gutter)
+   so content never shifts, and scrolling stops at the panel's edge instead
+   of moving the page behind it.
+   Colours come from two variables, so one class works on light and dark
+   surfaces: set --sb-thumb / --sb-thumb-hover on the element to change them.
+   Chrome, Edge and Firefox use the standard properties; Safari uses the
+   ::-webkit-scrollbar rules (Chrome ignores them when the standard ones are set).
+---------------------------------------------------------------------------- */
+.scrollbar-subtle {
+  --sb-thumb: rgb(23 19 35 / 0.14);
+  --sb-thumb-hover: rgb(23 19 35 / 0.32);
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-thumb) transparent;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+.scrollbar-subtle:hover,
+.scrollbar-subtle:focus-within {
+  scrollbar-color: var(--sb-thumb-hover) transparent;
+}
+/* On a dark panel: the CRM sidebar, and app surfaces in dark mode. */
+[data-theme="dark"] .scrollbar-subtle,
+.scrollbar-subtle-dark {
+  --sb-thumb: rgb(255 255 255 / 0.14);
+  --sb-thumb-hover: rgb(255 255 255 / 0.34);
+}
+.scrollbar-subtle::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scrollbar-subtle::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-subtle::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb);
+  border-radius: 9999px;
+  /* A transparent border makes the visible thumb 6px inside a 10px gutter. */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.scrollbar-subtle:hover::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb-hover);
+}
+.scrollbar-subtle::-webkit-scrollbar-corner {
+  background: transparent;
+}

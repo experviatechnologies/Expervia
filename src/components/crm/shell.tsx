@@ -125,7 +125,10 @@ function Sidebar({
   return (
     <div className="bg-brand-950 flex h-full flex-col px-3 py-4">
       <Brand />
-      <nav aria-label="CRM" className="mt-6 flex-1 space-y-5 overflow-y-auto">
+      <nav
+        aria-label="CRM"
+        className="scrollbar-subtle scrollbar-subtle-dark mt-6 -mr-2 flex-1 space-y-5 overflow-y-auto pr-0.5"
+      >
         {NAV.map((group, i) => (
           <div key={group.heading ?? i}>
             {group.heading && (

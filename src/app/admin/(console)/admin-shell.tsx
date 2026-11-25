@@ -163,7 +163,7 @@ export function AdminShell({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
+      <nav className="scrollbar-subtle flex-1 overflow-y-auto px-3 pt-2 pb-4">
         {GROUPS.map((group) => (
           <div key={group.heading} className="mb-1">
             <h6 className="text-eten-faint mx-2 mt-4 mb-1.5 font-mono text-[10.5px] font-bold tracking-[0.16em] uppercase">
