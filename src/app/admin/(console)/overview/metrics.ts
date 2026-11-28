@@ -29,7 +29,6 @@ export type OverviewMetrics = {
     totalMembers: number;
     activeMembers: number;
     activeLast30: number;
-    pendingActivation: number;
     suspendedMembers: number;
     multiPodMembers: number;
     podCount: number;
@@ -175,7 +174,6 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
   const activeMembers = members.filter(
     (m) => m.status === "active" && m.claimed_at,
   ).length;
-  const pendingActivation = members.filter((m) => !m.claimed_at).length;
   const suspendedMembers = members.filter(
     (m) => m.status === "suspended",
   ).length;
@@ -248,7 +246,6 @@ export async function getOverviewMetrics(): Promise<OverviewMetrics> {
       totalMembers,
       activeMembers,
       activeLast30,
-      pendingActivation,
       suspendedMembers,
       multiPodMembers,
       podCount: pods.length,

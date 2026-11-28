@@ -5,7 +5,6 @@ import {
   Users,
   UserCheck,
   Activity,
-  Clock,
   Boxes,
   BadgeCheck,
   ArrowRight,
@@ -117,13 +116,6 @@ export default async function AdminOverviewPage() {
         <Kpi Icon={UserCheck} label="Signed in" value={counts.activeMembers}>
           <Bar pct={activePct} />
           {activePct}% ever
-        </Kpi>
-        <Kpi
-          Icon={Clock}
-          label="Pending activation"
-          value={counts.pendingActivation}
-        >
-          Awaiting first sign-in
         </Kpi>
         <Kpi Icon={Boxes} label="Pods" value={counts.podCount}>
           <b className="text-eten-ink font-bold">{counts.multiPodMembers}</b>{" "}
